@@ -1,0 +1,31 @@
+{
+  "snapshot_id": "optional-uuid-generated-if-omitted",
+  "captured_at": "2026-05-07T08:00:00+08:00",
+  "workshop_id": "WS-01",
+  "source_system": "APS",
+  "schema_version": "1.0",
+  "work_orders": [
+    {
+      "work_order_id": "WO-1001",
+      "product_name": "Part name",
+      "product_family": "family-code",
+      "priority": 1,
+      "due_date": "2026-05-07T18:00:00+08:00",
+      "operations": [
+        {
+          "operation_id": "OP-1001-10",
+          "work_order_id": "WO-1001",
+          "resource_id": "CNC-001",
+          "required_capabilities": ["milling"],
+          "eligible_resources": ["CNC-001", "CNC-002"],
+          "start_time": "2026-05-07T08:30:00+08:00",
+          "end_time": "2026-05-07T10:30:00+08:00",
+          "predecessor_ids": [],
+          "successor_ids": ["OP-1001-20"],
+          "is_frozen": false
+        }
+      ]
+    }
+  ]
+}
+

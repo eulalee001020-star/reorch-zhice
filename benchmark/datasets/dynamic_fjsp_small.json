@@ -1,0 +1,111 @@
+{
+  "scenario_id": "dfjsp-small-001",
+  "scenario_name": "Single workshop equipment failure with alternative resources",
+  "workshop_id": "WS-01",
+  "goal_mode": "balanced",
+  "captured_at": "2026-05-07T08:00:00+08:00",
+  "resources": [
+    {
+      "resource_id": "CNC-001",
+      "name": "CNC Cell 1",
+      "capabilities": ["milling", "drilling"],
+      "is_bottleneck": true,
+      "has_redundancy": false,
+      "criticality": "critical"
+    },
+    {
+      "resource_id": "CNC-002",
+      "name": "CNC Cell 2",
+      "capabilities": ["milling", "drilling"],
+      "is_bottleneck": false,
+      "has_redundancy": true,
+      "criticality": "general"
+    },
+    {
+      "resource_id": "GRIND-001",
+      "name": "Grinding Station",
+      "capabilities": ["grinding"],
+      "is_bottleneck": false,
+      "has_redundancy": false,
+      "criticality": "general"
+    }
+  ],
+  "work_orders": [
+    {
+      "work_order_id": "WO-1001",
+      "product_name": "Pump Housing",
+      "product_family": "pump",
+      "priority": 3,
+      "due_date": "2026-05-07T18:00:00+08:00",
+      "operations": [
+        {
+          "operation_id": "OP-1001-10",
+          "work_order_id": "WO-1001",
+          "resource_id": "CNC-001",
+          "required_capabilities": ["milling"],
+          "start_time": "2026-05-07T08:30:00+08:00",
+          "end_time": "2026-05-07T10:30:00+08:00",
+          "predecessor_ids": [],
+          "successor_ids": ["OP-1001-20"],
+          "eligible_resources": ["CNC-001", "CNC-002"],
+          "is_frozen": false
+        },
+        {
+          "operation_id": "OP-1001-20",
+          "work_order_id": "WO-1001",
+          "resource_id": "GRIND-001",
+          "required_capabilities": ["grinding"],
+          "start_time": "2026-05-07T11:00:00+08:00",
+          "end_time": "2026-05-07T12:30:00+08:00",
+          "predecessor_ids": ["OP-1001-10"],
+          "successor_ids": [],
+          "eligible_resources": ["GRIND-001"],
+          "is_frozen": false
+        }
+      ]
+    },
+    {
+      "work_order_id": "WO-1002",
+      "product_name": "Valve Plate",
+      "product_family": "valve",
+      "priority": 2,
+      "due_date": "2026-05-07T20:00:00+08:00",
+      "operations": [
+        {
+          "operation_id": "OP-1002-10",
+          "work_order_id": "WO-1002",
+          "resource_id": "CNC-002",
+          "required_capabilities": ["drilling"],
+          "start_time": "2026-05-07T09:00:00+08:00",
+          "end_time": "2026-05-07T11:00:00+08:00",
+          "predecessor_ids": [],
+          "successor_ids": [],
+          "eligible_resources": ["CNC-001", "CNC-002"],
+          "is_frozen": false
+        }
+      ]
+    }
+  ],
+  "dynamic_events": [
+    {
+      "event_id": "EVT-FAIL-CNC-001",
+      "incident_type": "equipment_failure",
+      "resource_id": "CNC-001",
+      "occurred_at": "2026-05-07T08:45:00+08:00",
+      "estimated_repair_time_minutes": 120,
+      "report_source": "MES",
+      "description": "Spindle alarm on bottleneck CNC-001."
+    }
+  ],
+  "expected_outcomes": {
+    "minimum_feasible_plans": 1,
+    "preferred_strategy_candidates": ["local_repair", "global_reschedule"],
+    "must_validate_constraints": [
+      "operation_precedence",
+      "resource_capacity",
+      "resource_capability",
+      "frozen_window"
+    ]
+  }
+}
+

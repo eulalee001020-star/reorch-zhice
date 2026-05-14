@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "hard_constraints": [
+    {
+      "key": "operation_precedence",
+      "name": "Operation Precedence",
+      "description": "A successor operation cannot start before all predecessors finish.",
+      "validation": "for each edge predecessor -> successor, predecessor.end_time <= successor.start_time"
+    },
+    {
+      "key": "resource_capacity",
+      "name": "Resource Capacity",
+      "description": "A unary equipment resource can process at most one operation at a time.",
+      "validation": "no overlapping intervals on the same unary resource"
+    },
+    {
+      "key": "resource_capability",
+      "name": "Resource Capability",
+      "description": "An operation can only be assigned to a resource whose capabilities cover required capabilities.",
+      "validation": "operation.required_capabilities subset resource.capabilities"
+    },
+    {
+      "key": "calendar_availability",
+      "name": "Calendar Availability",
+      "description": "Operations must be scheduled inside equipment/operator/material available windows.",
+      "validation": "operation interval is covered by all required calendars"
+    },
+    {
+      "key": "material_availability",
+      "name": "Material Availability",
+      "description": "Operations cannot start before required material is available.",
+      "validation": "operation.start_time >= material.available_at for all required materials"
+    },
+    {
+      "key": "frozen_window",
+      "name": "Frozen Window",
+      "description": "Started, dispatched, or near-term operations inside the frozen window cannot be moved unless explicitly unlocked.",
+      "validation": "operation unchanged when operation.is_frozen is true"
+    }
+  ],
+  "soft_constraints": [
+    {
+      "key": "delivery_priority",
+      "description": "Minimize tardiness for high-priority and critical customer orders."
+    },
+    {
+      "key": "schedule_stability",
+      "description": "Minimize unnecessary movement of unaffected operations."
+    },
+    {
+      "key": "bottleneck_protection",
+      "description": "Keep bottleneck resources fed while avoiding overload."
+    },
+    {
+      "key": "changeover_reduction",
+      "description": "Reduce sequence-dependent setup or product family switches."
+    },
+    {
+      "key": "execution_simplicity",
+      "description": "Prefer plans that are easier for shop-floor execution teams to understand and follow."
+    }
+  ]
+}
+

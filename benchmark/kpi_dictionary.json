@@ -1,0 +1,81 @@
+{
+  "version": "1.0",
+  "kpis": [
+    {
+      "key": "feasible_plan_rate",
+      "name": "Feasible Plan Rate",
+      "category": "solver_quality",
+      "unit": "ratio",
+      "direction": "higher_is_better",
+      "formula": "feasible_candidate_plans / total_candidate_plans",
+      "release_gate": ">= 0.99 for hard-constraint validation"
+    },
+    {
+      "key": "response_time_seconds",
+      "name": "Decision Response Time",
+      "category": "latency",
+      "unit": "seconds",
+      "direction": "lower_is_better",
+      "formula": "recommendation_ready_at - incident_received_at",
+      "release_gate": "P95 <= 180 seconds for P2/P3 incidents"
+    },
+    {
+      "key": "total_tardiness_minutes",
+      "name": "Total Tardiness",
+      "category": "delivery",
+      "unit": "minutes",
+      "direction": "lower_is_better",
+      "formula": "sum(max(0, completion_time(work_order) - due_date(work_order)))"
+    },
+    {
+      "key": "max_tardiness_minutes",
+      "name": "Maximum Tardiness",
+      "category": "delivery",
+      "unit": "minutes",
+      "direction": "lower_is_better",
+      "formula": "max(max(0, completion_time(work_order) - due_date(work_order)))"
+    },
+    {
+      "key": "otd_rate",
+      "name": "On-Time Delivery Rate",
+      "category": "delivery",
+      "unit": "ratio",
+      "direction": "higher_is_better",
+      "formula": "on_time_work_orders / total_work_orders"
+    },
+    {
+      "key": "schedule_perturbation_index",
+      "name": "Schedule Perturbation Index",
+      "category": "stability",
+      "unit": "normalized_score",
+      "direction": "lower_is_better",
+      "formula": "weighted_sum(time_shift_minutes, resource_switch_count, resequenced_operation_count)"
+    },
+    {
+      "key": "bottleneck_utilization",
+      "name": "Bottleneck Utilization",
+      "category": "resource",
+      "unit": "ratio",
+      "direction": "target_range",
+      "formula": "busy_minutes_on_bottleneck_resources / available_minutes_on_bottleneck_resources",
+      "target_range": "0.80-0.95"
+    },
+    {
+      "key": "changeover_count",
+      "name": "Changeover Count",
+      "category": "execution_complexity",
+      "unit": "count",
+      "direction": "lower_is_better",
+      "formula": "count(product_family/resource sequence changes)"
+    },
+    {
+      "key": "manual_override_rate",
+      "name": "Manual Override Rate",
+      "category": "human_in_loop",
+      "unit": "ratio",
+      "direction": "lower_is_better",
+      "formula": "override_decisions / total_confirmed_decisions"
+    }
+  ]
+}
+

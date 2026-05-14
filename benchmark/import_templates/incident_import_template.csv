@@ -1,0 +1,3 @@
+event_id,incident_type,occurred_at,resource_id,report_source,estimated_repair_time_minutes,description
+EVT-FAIL-CNC-001,equipment_failure,2026-05-07T08:45:00+08:00,CNC-001,MES,120,Spindle alarm
+

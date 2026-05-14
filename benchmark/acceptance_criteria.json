@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "release_gates": [
+    {
+      "key": "benchmark_assets_load",
+      "criteria": "All benchmark JSON assets are parseable and contain required top-level fields.",
+      "required": true
+    },
+    {
+      "key": "hard_constraint_validation",
+      "criteria": "For every candidate plan, hard-constraint validation returns structured pass/fail details.",
+      "required": true
+    },
+    {
+      "key": "single_workshop_dynamic_rescheduling",
+      "criteria": "For equipment failure, urgent order, and due-date change scenarios, the system generates at least one feasible plan.",
+      "required": true
+    },
+    {
+      "key": "top_n_recommendation",
+      "criteria": "The solver returns ranked candidate plans with KPI vectors and a recommended plan.",
+      "required": true
+    },
+    {
+      "key": "human_confirmation_traceability",
+      "criteria": "Every confirmation or override creates an auditable DecisionRecord with user, timestamp, selected plan, recommendation, and reason when applicable.",
+      "required": true
+    },
+    {
+      "key": "snapshot_reproducibility",
+      "criteria": "Every impact report and solver run is reproducible from an immutable schedule snapshot version.",
+      "required": true
+    }
+  ]
+}
+
