@@ -1,0 +1,26 @@
+canonical_object,canonical_field,required,source_system,source_table_or_api,source_field,source_type,target_type,transform_rule,enum_mapping,nullable,default_value,validation_rule,sample_value,owner,status,remark
+WorkOrder,work_order_id,yes,MES,/api/orders,orderNo,string,string,trim,-,no,-,unique non-empty,WO-20260514-001,customer IT,pending,Stable across ERP/MES/APS
+WorkOrder,product_id,no,ERP,/api/orders,sku,string,string,trim,-,yes,-,-,P001,customer IT,pending,-
+WorkOrder,product_name,yes,ERP,/api/orders,skuName,string,string,trim,-,no,product_id if absent,non-empty,PCR Kit A,customer IT,pending,-
+WorkOrder,quantity,yes,ERP,/api/orders,qty,number,number,cast float,-,no,1,greater than 0,100,customer IT,pending,-
+WorkOrder,priority,yes,ERP,/api/orders,priorityCode,string,int,map priority,"LOW=0;NORMAL=1;HIGH=3;URGENT=3",no,0,known priority enum,HIGH,customer IT,pending,-
+WorkOrder,due_time,yes,ERP,/api/orders,deliveryDate,string,datetime,parse ISO8601,-,no,-,valid datetime with timezone,2026-05-15T18:00:00+08:00,customer IT,pending,-
+WorkOrder,status,yes,MES,/api/orders,state,string,enum,map status,"released=released;running=in_progress;done=completed;cancelled=cancelled",no,released,known status,released,customer IT,pending,-
+Operation,operation_id,yes,MES,/api/operations,operationNo,string,string,trim,-,no,-,unique non-empty,OP-001,customer IT,pending,-
+Operation,work_order_id,yes,MES,/api/operations,orderNo,string,string,trim,-,no,-,must reference WorkOrder,WO-20260514-001,customer IT,pending,-
+Operation,sequence,yes,MES,/api/operations,seq,number,int,cast int,-,no,0,non-negative,10,customer IT,pending,-
+Operation,required_capability,yes,MES,/api/operations,processCapability,string,string,trim,-,no,-,must match machine capabilities,PCR,process engineer,pending,-
+Operation,processing_time_min,yes,APS,/api/operations,stdMinutes,number,int,cast int,-,no,-,greater than 0,45,customer IT,pending,-
+Operation,machine_id,no,APS,/api/current-schedule,machineCode,string,string,trim,-,yes,-,must reference Machine,M-PCR-01,customer IT,pending,current assignment
+Operation,eligible_machine_ids,no,APS,/api/operations,eligibleMachines,string,list,split comma,-,yes,[],must reference Machine,"M-PCR-01,M-PCR-02",customer IT,pending,-
+Operation,start_time,no,APS,/api/current-schedule,startTime,string,datetime,parse ISO8601,-,yes,-,valid datetime,2026-05-14T10:00:00+08:00,customer IT,pending,-
+Operation,end_time,no,APS,/api/current-schedule,endTime,string,datetime,parse ISO8601,-,yes,-,end later than start,2026-05-14T10:45:00+08:00,customer IT,pending,-
+Machine,machine_id,yes,MES,/api/machines,machineCode,string,string,trim,-,no,-,unique non-empty,M-PCR-01,customer IT,pending,-
+Machine,name,no,MES,/api/machines,machineName,string,string,trim,-,yes,machine_id,-,PCR Line 01,customer IT,pending,-
+Machine,capabilities,yes,MES,/api/machines,capabilityCodes,string,list,split comma,-,no,[],must support operation capabilities,"PCR,QC",process engineer,pending,-
+Machine,status,yes,MES,/api/machines,status,string,enum,map status,"idle=available;running=busy;down=down;maint=maintenance",no,available,known status,available,customer IT,pending,-
+Incident,incident_id,yes,MES,/api/incidents,eventId,string,string,trim,-,no,-,unique non-empty,INC-001,customer IT,pending,-
+Incident,incident_type,yes,MES,/api/incidents,eventType,string,enum,map incident type,"machine_stop=machine_down;material_late=material_shortage;urgent_order=urgent_order_insert",no,-,known incident type,machine_down,customer IT,pending,-
+Incident,machine_id,yes,MES,/api/incidents,machineCode,string,string,trim,-,no,-,must reference Machine,M-PCR-01,customer IT,pending,-
+Incident,start_time,yes,MES,/api/incidents,occurredAt,string,datetime,parse ISO8601,-,no,-,valid datetime with timezone,2026-05-14T10:30:00+08:00,customer IT,pending,-
+Incident,severity,yes,MES,/api/incidents,severity,string,enum,map severity,"P1=P1-Critical;P2=P2-High;P3=P3-Medium;P4=P4-Low",no,P3-Medium,known severity,P2,customer IT,pending,-
