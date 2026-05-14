@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser, get_optional_current_user
+from app.models.agent import FeedbackStructuringRequest
 from app.models.decision import ConfirmRequest, ConfirmResponse, DecisionRecord
 from app.models.enums import ConfirmAction, WritebackStatus
 from app.models.execution import ExecutionResult
@@ -39,7 +40,9 @@ from app.services.persistence import (
     list_candidate_plans_from_db,
     persist_audit_log,
     persist_decision_record,
+    record_entity_version,
 )
+from app.services.agent_workflow import FeedbackAgent
 from app.services.writeback_module import WritebackModule
 
 logger = logging.getLogger(__name__)
@@ -261,6 +264,21 @@ async def confirm_plan(
                 "is_override": record.is_override,
             },
         )
+        if record.is_override and record.override_reason:
+            feedback = await FeedbackAgent().structure_override(
+                FeedbackStructuringRequest(
+                    override_text=record.override_reason,
+                    decision_record_id=record.decision_record_id,
+                    incident_id=incident_id,
+                    planner_id=record.confirmed_by,
+                )
+            )
+            await record_entity_version(
+                entity_type="feedback_case_candidate",
+                entity_id=str(record.decision_record_id),
+                data=feedback.model_dump(mode="json"),
+                changed_by=current_user.user_id,
+            )
 
         # 8. Trigger writeback
         await _writeback_module.writeback_to_mes(selected_plan, record)

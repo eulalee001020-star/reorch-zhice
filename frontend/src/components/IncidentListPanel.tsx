@@ -11,9 +11,12 @@
  * Requirements: 10.1-10.11
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
+  Button,
   Card,
+  Input,
   Table,
   Tag,
   Select,
@@ -22,16 +25,19 @@ import {
   Statistic,
   Space,
   DatePicker,
+  message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useIncidentStore, useWorkbenchStore } from '@/stores';
 import { switchIncident } from '@/stores';
+import { createIncident, understandIncidentText } from '@/api';
 import type { Incident } from '@/types';
 import { IncidentSeverity, IncidentStatus, IncidentType } from '@/types';
 import { incidentStatusMap } from '@/utils/statusMapping';
 
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const SEVERITY_ORDER: Record<string, number> = {
   [IncidentSeverity.P1_CRITICAL]: 0,
@@ -60,8 +66,12 @@ export const IncidentListPanel: React.FC = () => {
   const filters = useIncidentStore((s) => s.filters);
   const setFilters = useIncidentStore((s) => s.setFilters);
   const fetchIncidents = useIncidentStore((s) => s.fetchIncidents);
+  const upsertIncident = useIncidentStore((s) => s.upsertIncident);
   const selectedId = useIncidentStore((s) => s.selectedIncidentId);
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
+  const [agentText, setAgentText] = useState('');
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentHint, setAgentHint] = useState<string | null>(null);
 
   useEffect(() => {
     fetchIncidents();
@@ -109,6 +119,38 @@ export const IncidentListPanel: React.FC = () => {
 
   const handleRowClick = (record: Incident) => {
     switchIncident(record.incident_id);
+  };
+
+  const handleAgentIntake = async () => {
+    const text = agentText.trim();
+    if (!text) {
+      message.warning('请输入异常描述');
+      return;
+    }
+    setAgentLoading(true);
+    setAgentHint(null);
+    try {
+      const understood = await understandIncidentText({
+        text,
+        occurred_at: dayjs().toISOString(),
+      });
+      if (understood.requires_human_confirmation || !understood.incident_create_request) {
+        setAgentHint(
+          `${understood.incident_type}，置信度 ${(understood.confidence * 100).toFixed(0)}%。需人工确认后再进入求解。`,
+        );
+        return;
+      }
+
+      const incident = await createIncident(understood.incident_create_request);
+      upsertIncident(incident);
+      setAgentText('');
+      await switchIncident(incident.incident_id);
+      message.success('异常已创建并进入 Agent 决策流');
+    } catch {
+      message.error('AI 异常接入失败');
+    } finally {
+      setAgentLoading(false);
+    }
   };
 
   const columns: ColumnsType<Incident> = [
@@ -169,6 +211,26 @@ export const IncidentListPanel: React.FC = () => {
         <Col span={6}><Statistic title="今日处理" value={stats.todayProcessed} valueStyle={{ fontSize: 16 }} /></Col>
         <Col span={6}><Statistic title="平均响应" value={`${stats.avgResponse}m`} valueStyle={{ fontSize: 16 }} /></Col>
       </Row>
+
+      <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
+        <TextArea
+          autoSize={{ minRows: 1, maxRows: 3 }}
+          value={agentText}
+          onChange={(e) => setAgentText(e.target.value)}
+          placeholder="M2 设备下午坏了，估计要修三个小时"
+        />
+        <Button type="primary" loading={agentLoading} onClick={handleAgentIntake}>
+          AI 接入
+        </Button>
+      </Space.Compact>
+      {agentHint && (
+        <Alert
+          type="warning"
+          showIcon
+          message={agentHint}
+          style={{ marginBottom: 8 }}
+        />
+      )}
 
       {/* Filters */}
       <Space wrap size={4} style={{ marginBottom: 8 }}>

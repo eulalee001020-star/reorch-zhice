@@ -69,6 +69,7 @@ async def readyz() -> dict[str, bool | str]:
 # ── Router registration ──────────────────────────────────────────────
 from app.api.incidents import router as incidents_router
 from app.api.auth import router as auth_router
+from app.api.agents import router as agents_router
 from app.api.analysis import router as analysis_router
 from app.api.solver import router as solver_router
 from app.api.confirmation import router as confirmation_router
@@ -79,6 +80,7 @@ from app.api.ws import router as ws_router
 from app.adapters.health_check import router as integration_health_router
 
 app.include_router(auth_router)
+app.include_router(agents_router)
 app.include_router(incidents_router)
 app.include_router(analysis_router)
 app.include_router(solver_router)

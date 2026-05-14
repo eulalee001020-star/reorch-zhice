@@ -16,7 +16,7 @@ import { usePlanStore } from './planStore';
 import { useConfirmStore } from './confirmStore';
 import { useWorkbenchStore, type WorkbenchView } from './workbenchStore';
 import { useIncidentStore } from './incidentStore';
-import { recommendPlan } from '@/api';
+import { recommendPlan, runAgentDecisionFlow } from '@/api';
 
 // ---------------------------------------------------------------------------
 // Guard: can we transition to multi_plan_selection?
@@ -63,11 +63,53 @@ export async function switchIncident(incidentId: string): Promise<void> {
   // 3. Return to default view
   workbenchStore.setCurrentView('incident_analysis');
 
-  // 4. Fetch fresh analysis data for the new incident
-  await Promise.all([
-    analysisStore.fetchImpactReport(incidentId),
-    analysisStore.fetchStrategy(incidentId),
-  ]);
+  // 4. Run controlled Agent workflow: Impact -> Strategy -> Solver -> Evaluation.
+  useAnalysisStore.setState((s) => {
+    s.loadingImpact = true;
+    s.loadingStrategy = true;
+  });
+  usePlanStore.setState((s) => {
+    s.loadingPlans = true;
+    s.loadingRecommendation = true;
+  });
+
+  const flowPlanState = usePlanStore.getState();
+  try {
+    const output = await runAgentDecisionFlow({
+      incident_id: incidentId,
+      goal_mode: flowPlanState.goalMode,
+      manual_weights: flowPlanState.manualWeights,
+      auto_solve: true,
+      auto_recommend: true,
+    });
+
+    useAnalysisStore.setState((s) => {
+      s.impactReport = output.impact_report;
+      s.strategyRecommendation = output.strategy;
+    });
+    usePlanStore.setState((s) => {
+      s.candidatePlans = output.candidate_plans;
+      s.planSelectionOutput = output.recommendation ?? null;
+      s.autoPreselected = output.recommendation?.auto_preselected ?? false;
+      if (output.recommendation?.auto_preselected) {
+        s.selectedPlanId = output.recommendation.recommended_plan_id;
+      }
+    });
+  } catch {
+    await Promise.all([
+      analysisStore.fetchImpactReport(incidentId),
+      analysisStore.fetchStrategy(incidentId),
+    ]);
+  } finally {
+    useAnalysisStore.setState((s) => {
+      s.loadingImpact = false;
+      s.loadingStrategy = false;
+    });
+    usePlanStore.setState((s) => {
+      s.loadingPlans = false;
+      s.loadingRecommendation = false;
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------

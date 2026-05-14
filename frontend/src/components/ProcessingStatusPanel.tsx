@@ -19,6 +19,7 @@ export const ProcessingStatusPanel: React.FC = () => {
   const incidents = useIncidentStore((s) => s.incidents);
   const strategyRecommendation = useAnalysisStore((s) => s.strategyRecommendation);
   const loadingImpact = useAnalysisStore((s) => s.loadingImpact);
+  const loadingPlans = usePlanStore((s) => s.loadingPlans);
   const loadingRecommendation = usePlanStore((s) => s.loadingRecommendation);
 
   const incident = incidents.find((i) => i.incident_id === incidentContextId);
@@ -49,8 +50,8 @@ export const ProcessingStatusPanel: React.FC = () => {
         <Descriptions.Item label="分析/求解">
           <Space size={4}>
             {loadingImpact && <Badge status="processing" text="分析中" />}
-            {loadingRecommendation && <Badge status="processing" text="求解中" />}
-            {!loadingImpact && !loadingRecommendation && (
+            {(loadingPlans || loadingRecommendation) && <Badge status="processing" text="求解中" />}
+            {!loadingImpact && !loadingPlans && !loadingRecommendation && (
               <Badge status="default" text="空闲" />
             )}
           </Space>

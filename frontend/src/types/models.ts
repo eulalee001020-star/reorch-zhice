@@ -35,10 +35,14 @@ export interface LoginResponse {
 
 export interface IncidentCreateRequest {
   incident_type: IncidentType;
+  external_event_id?: string | null;
   occurred_at: string; // ISO-8601
+  workshop_id?: string | null;
   resource_id: string;
   report_source: ReportSource;
+  source_system?: string | null;
   description?: string | null;
+  idempotency_key?: string | null;
   raw_payload?: Record<string, unknown> | null;
 }
 
@@ -314,6 +318,83 @@ export interface SolverChainExplanation {
   computation_time_seconds: number;
   stages: string[];
   frozen_constraints?: string[] | null;
+}
+
+// ---------------------------------------------------------------------------
+// Controlled Agents
+// ---------------------------------------------------------------------------
+
+export interface AgentTraceStep {
+  agent_name: string;
+  input_summary: string;
+  output_summary: string;
+  freedom_level: string;
+  llm_allowed: boolean;
+  deterministic_tools: string[];
+  guardrail: string;
+}
+
+export interface IncidentUnderstandingRequest {
+  text: string;
+  occurred_at?: string | null;
+  workshop_id?: string | null;
+  report_source?: string;
+  source_system?: string | null;
+}
+
+export interface IncidentUnderstandingOutput {
+  incident_type: string;
+  resource_id?: string | null;
+  estimated_duration_minutes?: number | null;
+  risk_hint?: string | null;
+  confidence: number;
+  requires_human_confirmation: boolean;
+  supported_by_solver: boolean;
+  unsupported_reason?: string | null;
+  normalized_fields: Record<string, unknown>;
+  incident_create_request?: IncidentCreateRequest | null;
+  trace: AgentTraceStep[];
+}
+
+export interface AgentDecisionFlowRequest {
+  incident_id: string;
+  estimated_repair_time_minutes?: number;
+  goal_mode?: string;
+  manual_weights?: Record<string, number> | null;
+  auto_solve?: boolean;
+  auto_recommend?: boolean;
+  planner_id?: string;
+}
+
+export interface AgentDecisionFlowResponse {
+  incident: Incident;
+  impact_report: ImpactReport;
+  strategy: StrategyRecommendation;
+  candidate_plans: CandidatePlan[];
+  comparison_matrix?: ComparisonMatrix | null;
+  recommendation?: PlanSelectionOutput | null;
+  recommendation_explanation?: RecommendationExplanation | null;
+  solver_chain_explanation?: SolverChainExplanation | null;
+  requires_human_confirmation: boolean;
+  trace: AgentTraceStep[];
+}
+
+export interface FeedbackStructuringRequest {
+  override_text: string;
+  decision_record_id?: string | null;
+  incident_id?: string | null;
+  planner_id?: string | null;
+}
+
+export interface FeedbackStructuringOutput {
+  override_reason: string;
+  reason_detail: string;
+  future_rule_candidate?: string | null;
+  confidence: number;
+  requires_human_review: boolean;
+  decision_record_id?: string | null;
+  incident_id?: string | null;
+  trace: AgentTraceStep[];
 }
 
 // ---------------------------------------------------------------------------

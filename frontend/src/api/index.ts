@@ -3,6 +3,8 @@ export type { ListIncidentsParams } from './incidents';
 
 export { login, getMe } from './auth';
 
+export { understandIncidentText, runAgentDecisionFlow, structureFeedback } from './agents';
+
 export { getImpactReport, getStrategy, createScheduleSnapshot } from './analysis';
 
 export {
