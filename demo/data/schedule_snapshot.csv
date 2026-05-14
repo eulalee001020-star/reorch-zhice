@@ -1,0 +1,6 @@
+operation_id,baseline_machine_id,baseline_start_time,baseline_end_time,is_frozen,dispatch_status
+OP-DEMO-001-20,M-03,2026-05-14T13:30:00+08:00,2026-05-14T14:30:00+08:00,false,released
+OP-DEMO-002-20,M-03,2026-05-14T14:30:00+08:00,2026-05-14T15:30:00+08:00,false,released
+OP-DEMO-004-20,M-03,2026-05-14T15:30:00+08:00,2026-05-14T16:40:00+08:00,false,released
+OP-DEMO-006-20,M-03,2026-05-14T16:40:00+08:00,2026-05-14T17:40:00+08:00,false,released
+OP-DEMO-009-20,M-03,2026-05-14T17:40:00+08:00,2026-05-14T18:40:00+08:00,false,released

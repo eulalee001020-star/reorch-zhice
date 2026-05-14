@@ -1,0 +1,4 @@
+work_order_id,operation_id,machine_id,status,actual_start,actual_end,completion_pct,deviation_reason
+WO-DEMO-001,OP-DEMO-001-20,M-02,completed,2026-05-14T13:45:00+08:00,2026-05-14T14:45:00+08:00,1.0,reassigned_after_m03_down
+WO-DEMO-002,OP-DEMO-002-20,M-04,completed,2026-05-14T14:50:00+08:00,2026-05-14T15:50:00+08:00,1.0,reassigned_after_m03_down
+WO-DEMO-004,OP-DEMO-004-20,M-02,in_progress,2026-05-14T16:05:00+08:00,,0.6,reassigned_after_m03_down

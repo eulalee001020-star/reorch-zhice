@@ -38,6 +38,7 @@ node_modules/
 # Local data/logs
 *.log
 logs/
+demo/runtime/
 *.sqlite
 *.sqlite3
 *.db

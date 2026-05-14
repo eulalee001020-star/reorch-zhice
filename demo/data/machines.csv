@@ -1,0 +1,9 @@
+machine_id,name,capabilities,status,is_bottleneck,has_redundancy,criticality
+M-01,Cutting Cell 01,CUT,available,false,true,general
+M-02,CNC Cell 02,CNC,available,true,true,critical
+M-03,CNC Cell 03,CNC,down,true,true,critical
+M-04,CNC Cell 04,CNC,available,true,true,critical
+M-05,Heat Treatment 01,HEAT,available,false,false,general
+M-06,Quality Check 01,QC,available,false,true,general
+M-07,Assembly Cell 01,ASSEMBLY,available,false,true,general
+M-08,Packing Cell 01,PACK,available,false,true,general

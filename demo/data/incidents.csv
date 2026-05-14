@@ -1,0 +1,2 @@
+incident_id,type,machine_id,start_time,severity,description
+INC-DEMO-M03-DOWN,machine_down,M-03,2026-05-14T13:10:00+08:00,P1-Critical,M-03 unexpectedly down; maintenance estimates four hours.
