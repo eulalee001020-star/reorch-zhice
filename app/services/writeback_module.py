@@ -16,13 +16,17 @@ Key responsibilities:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
+import httpx
+
+from app.core.config import settings
 from app.models.decision import DecisionRecord
 from app.models.enums import WritebackStatus
 from app.models.execution import ExecutionResult
 from app.models.solver import CandidatePlan
+from app.services.persistence import persist_execution_result, persist_writeback_job
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +58,16 @@ class MESInstruction:
         self.status: str = "pending"  # pending / success / failed
         self.error: str | None = None
 
+    def as_payload(self) -> dict:
+        return {
+            "instruction_id": self.instruction_id,
+            "work_order_id": self.work_order_id,
+            "operation_id": self.operation_id,
+            "resource_id": self.resource_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+        }
+
 
 class WritebackReport:
     """Summary of a writeback operation."""
@@ -63,20 +77,27 @@ class WritebackReport:
         self.success_count: int = 0
         self.failed_count: int = 0
         self.failed_instructions: list[dict] = []
+        self.instructions: list[dict] = []
         self.status: WritebackStatus = WritebackStatus.SUCCESS
         self.timestamp: str = datetime.now(tz=timezone.utc).isoformat()
 
 
 class MESAdapter:
-    """In-memory MES adapter mock for MVP.
+    """Configurable MES adapter.
 
-    Simulates sending instructions to MES. In production, this would
-    be replaced by a real MES integration adapter.
+    If ``INTEGRATION_MES_BASE_URL`` is set, instructions are sent to that
+    customer endpoint. Otherwise the adapter runs in local PoC mode so tests
+    and offline demos remain deterministic.
     """
 
     def __init__(self) -> None:
         # Track which instruction IDs should fail (for testing)
         self._fail_ids: set[str] = set()
+        self._base_url = settings.integration.mes_base_url
+        self._api_key = settings.integration.mes_api_key
+        self._writeback_path = settings.integration.mes_writeback_path
+        self._progress_path = settings.integration.mes_progress_path
+        self._timeout = settings.integration.request_timeout_seconds
 
     def set_fail_ids(self, ids: set[str]) -> None:
         """Configure instruction IDs that should simulate failure."""
@@ -88,6 +109,25 @@ class MESAdapter:
             instruction.status = "failed"
             instruction.error = f"MES rejected instruction {instruction.instruction_id}"
             return False
+        if self._base_url:
+            try:
+                headers = {"Content-Type": "application/json"}
+                if self._api_key:
+                    headers["X-API-Key"] = self._api_key
+                async with httpx.AsyncClient(
+                    base_url=self._base_url,
+                    timeout=self._timeout,
+                    headers=headers,
+                ) as client:
+                    response = await client.post(
+                        self._writeback_path,
+                        json=instruction.as_payload(),
+                    )
+                response.raise_for_status()
+            except Exception as exc:
+                instruction.status = "failed"
+                instruction.error = str(exc)
+                return False
         instruction.status = "success"
         return True
 
@@ -98,7 +138,29 @@ class MESAdapter:
 
         Returns dict of work_order_id -> {completion_pct, actual_start, actual_end, ...}
         """
-        # MVP mock: return 100% completion for all
+        if self._base_url:
+            try:
+                headers = {}
+                if self._api_key:
+                    headers["X-API-Key"] = self._api_key
+                async with httpx.AsyncClient(
+                    base_url=self._base_url,
+                    timeout=self._timeout,
+                    headers=headers,
+                ) as client:
+                    response = await client.post(
+                        self._progress_path,
+                        json={"work_order_ids": work_order_ids},
+                    )
+                response.raise_for_status()
+                data = response.json()
+                if isinstance(data, dict) and "progress" in data:
+                    return data["progress"]
+                if isinstance(data, dict):
+                    return data
+            except Exception as exc:
+                logger.warning("MES progress fetch failed, using local fallback: %s", exc)
+
         now = datetime.now(tz=timezone.utc).isoformat()
         return {
             wo_id: {
@@ -159,11 +221,21 @@ class WritebackModule:
 
         report = WritebackReport()
         report.total_instructions = len(instructions)
+        report.instructions = [instr.as_payload() for instr in instructions]
 
         if not instructions:
             report.status = WritebackStatus.SUCCESS
             self._writeback_reports[incident_key] = report
             self._writeback_statuses[incident_key] = report.status
+            await persist_writeback_job(
+                incident_id=decision_record.incident_id,
+                decision_record_id=decision_record.decision_record_id,
+                confirmed_plan_id=decision_record.confirmed_plan_id,
+                target_system="MES",
+                status=report.status,
+                request_payload={"instructions": []},
+                response_payload=_report_payload(report),
+            )
             logger.info(
                 "Writeback for incident %s: no instructions to send",
                 incident_key,
@@ -196,6 +268,28 @@ class WritebackModule:
 
         self._writeback_reports[incident_key] = report
         self._writeback_statuses[incident_key] = report.status
+
+        next_retry_at = (
+            datetime.now(tz=timezone.utc) + timedelta(minutes=1)
+            if report.failed_count > 0
+            else None
+        )
+        await persist_writeback_job(
+            incident_id=decision_record.incident_id,
+            decision_record_id=decision_record.decision_record_id,
+            confirmed_plan_id=decision_record.confirmed_plan_id,
+            target_system="MES",
+            status=report.status,
+            request_payload={"instructions": report.instructions},
+            response_payload=_report_payload(report),
+            error_message="; ".join(
+                str(item.get("error")) for item in report.failed_instructions
+            )
+            if report.failed_instructions
+            else None,
+            retry_count=0,
+            next_retry_at=next_retry_at,
+        )
 
         logger.info(
             "Writeback for incident %s: status=%s, total=%d, success=%d, failed=%d",
@@ -247,11 +341,13 @@ class WritebackModule:
         planned_times: dict[str, datetime] = {}
         actual_times: dict[str, datetime] = {}
         total_deviation = 0.0
+        utilization_samples: list[float] = []
         wo_count = max(len(work_order_ids), 1)
 
         for wo_id in work_order_ids:
             wo_progress = progress.get(wo_id, {})
             completion_pct = wo_progress.get("completion_pct", 0.0)
+            utilization_samples.append(float(wo_progress.get("resource_utilization", completion_pct)))
 
             # For MVP, use current time as both planned and actual
             planned_times[wo_id] = now
@@ -284,12 +380,18 @@ class WritebackModule:
             actual_completion_times=actual_times,
             planned_completion_times=planned_times,
             actual_otd=1.0 - avg_deviation,
-            actual_resource_utilization=0.85,  # MVP placeholder
+            actual_resource_utilization=round(
+                sum(utilization_samples) / len(utilization_samples)
+                if utilization_samples
+                else 0.0,
+                4,
+            ),
             deviation_percentage=round(avg_deviation * 100, 2),
         )
 
         # Store and link back to DecisionRecord (Req 8.8)
         self._execution_results[key] = execution_result
+        await persist_execution_result(execution_result)
 
         logger.info(
             "Execution tracking for incident %s: OTD=%.2f, deviation=%.2f%%",
@@ -349,10 +451,27 @@ class WritebackModule:
     def _get_affected_work_order_ids(self, incident_key: str) -> list[str]:
         """Extract work order IDs from the writeback report or decision record."""
         report = self._writeback_reports.get(incident_key)
-        if report and report.failed_instructions:
-            # Collect all WO IDs from failed + successful instructions
-            pass
+        if report and report.instructions:
+            return sorted(
+                {
+                    str(item["work_order_id"])
+                    for item in report.instructions
+                    if item.get("work_order_id")
+                }
+            )
 
         # Fallback: extract from decision record's associated data
         # For MVP, return a default list
         return [f"WO-{incident_key[:8]}"]
+
+
+def _report_payload(report: WritebackReport) -> dict:
+    return {
+        "total_instructions": report.total_instructions,
+        "success_count": report.success_count,
+        "failed_count": report.failed_count,
+        "failed_instructions": report.failed_instructions,
+        "instructions": report.instructions,
+        "status": report.status.value,
+        "timestamp": report.timestamp,
+    }

@@ -1,6 +1,8 @@
 export { createIncident, listIncidents, getIncident } from './incidents';
 export type { ListIncidentsParams } from './incidents';
 
+export { login, getMe } from './auth';
+
 export { getImpactReport, getStrategy, createScheduleSnapshot } from './analysis';
 
 export {

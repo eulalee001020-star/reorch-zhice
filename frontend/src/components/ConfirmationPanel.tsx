@@ -40,6 +40,7 @@ import {
   useWorkbenchStore,
   usePlanStore,
   useConfirmStore,
+  useAuthStore,
 } from '@/stores';
 import { ConfirmAction } from '@/types';
 import { confirmPlan } from '@/api';
@@ -55,6 +56,7 @@ export const ConfirmationPanel: React.FC = () => {
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
   const overrideReason = useConfirmStore((s) => s.overrideReason);
   const setOverrideReason = useConfirmStore((s) => s.setOverrideReason);
+  const currentUser = useAuthStore((s) => s.user);
 
   const [mode, setMode] = useState<PanelMode>('view');
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -76,6 +78,9 @@ export const ConfirmationPanel: React.FC = () => {
 
   const pso = planSelectionOutput;
   const activePlanId = selectedPlanId ?? pso?.recommended_plan_id;
+  const canConfirm = currentUser
+    ? ['Planner', 'IT_Admin', 'Management'].includes(currentUser.role)
+    : false;
 
   const handleConfirm = async (action: ConfirmAction) => {
     if (!incidentContextId || !activePlanId) return;
@@ -93,7 +98,7 @@ export const ConfirmationPanel: React.FC = () => {
         selected_plan_id: activePlanId,
         adjustments: action === ConfirmAction.ACCEPT_WITH_ADJUSTMENT ? adjustments : undefined,
         override_reason: action === ConfirmAction.REJECT_AND_RESELECT ? overrideReason : undefined,
-        confirmed_by: 'current_planner', // TODO: from auth context
+        confirmed_by: currentUser?.user_id,
       }).then((res) => {
         setDecisionRecordId(res.decision_record_id);
       });
@@ -219,6 +224,14 @@ export const ConfirmationPanel: React.FC = () => {
           )}
 
           <Divider style={{ margin: '12px 0' }} />
+          {!canConfirm && (
+            <Alert
+              message="当前角色仅可查看，不能确认或回写方案"
+              type="info"
+              showIcon
+              style={{ marginBottom: 12 }}
+            />
+          )}
 
           {/* Adjust mode */}
           {mode === 'adjust' ? (
@@ -249,6 +262,7 @@ export const ConfirmationPanel: React.FC = () => {
                   type="primary"
                   size="small"
                   loading={confirming}
+                  disabled={!canConfirm}
                   onClick={() => handleConfirm(ConfirmAction.ACCEPT_WITH_ADJUSTMENT)}
                 >
                   确认微调
@@ -266,7 +280,7 @@ export const ConfirmationPanel: React.FC = () => {
                 icon={<CheckOutlined />}
                 block
                 loading={confirming}
-                disabled={!activePlanId}
+                disabled={!activePlanId || !canConfirm}
                 onClick={() => handleConfirm(ConfirmAction.ACCEPT)}
               >
                 确认采纳
@@ -274,7 +288,7 @@ export const ConfirmationPanel: React.FC = () => {
               <Button
                 icon={<EditOutlined />}
                 block
-                disabled={!activePlanId}
+                disabled={!activePlanId || !canConfirm}
                 onClick={() => setMode('adjust')}
               >
                 微调后采纳
@@ -283,7 +297,7 @@ export const ConfirmationPanel: React.FC = () => {
                 danger
                 icon={<RollbackOutlined />}
                 block
-                disabled={!activePlanId}
+                disabled={!activePlanId || !canConfirm}
                 onClick={() => setRejectModalOpen(true)}
               >
                 否决并重选

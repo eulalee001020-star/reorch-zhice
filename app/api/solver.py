@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["solver"])
 
 # ---------------------------------------------------------------------------
-# In-memory stores (MVP placeholder until DB session is wired up)
+# Local fallback caches used only when PostgreSQL is unavailable in dev/test.
 # ---------------------------------------------------------------------------
 _candidate_plans_store: dict[str, list[CandidatePlan]] = {}  # incident_id -> plans
 _plan_index: dict[str, CandidatePlan] = {}  # plan_id -> plan
@@ -82,7 +82,13 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
     from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
     from app.api.incidents import _incident_store
     from app.services.hybrid_solver import HybridSolver
-    from app.services.persistence import fetch_any_snapshot, fetch_incident
+    from app.services.persistence import (
+        fetch_any_snapshot,
+        fetch_impact_report,
+        fetch_incident,
+        fetch_strategy_recommendation,
+        persist_candidate_plans,
+    )
     from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
 
     key = str(incident_id)
@@ -102,6 +108,10 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
     # 2. Look up impact report
     impact_report = _impact_report_cache.get(key)
     if impact_report is None:
+        impact_report = await fetch_impact_report(incident_id)
+        if impact_report is not None:
+            _impact_report_cache[key] = impact_report
+    if impact_report is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Impact report for incident {incident_id} not found. Run impact analysis first.",
@@ -109,6 +119,10 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
 
     # 3. Look up strategy
     strategy = _strategy_cache.get(key)
+    if strategy is None:
+        strategy = await fetch_strategy_recommendation(incident_id)
+        if strategy is not None:
+            _strategy_cache[key] = strategy
     if strategy is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -122,6 +136,8 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
         break
     if snapshot is None:
         snapshot = await fetch_any_snapshot()
+        if snapshot is not None:
+            _snapshot_store[str(snapshot.snapshot_id)] = snapshot
     if snapshot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -158,6 +174,11 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
     _candidate_plans_store[key] = candidates
     for plan in candidates:
         _plan_index[str(plan.plan_id)] = plan
+    await persist_candidate_plans(
+        incident_id,
+        candidates,
+        baseline_snapshot_id=snapshot.snapshot_id,
+    )
 
     logger.info("Solve completed for incident %s: %d candidate(s)", key, len(candidates))
     return candidates
@@ -176,8 +197,17 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
     responses={404: {"description": "Incident 不存在或尚未求解"}},
 )
 async def list_candidate_plans(incident_id: UUID) -> list[CandidatePlan]:
+    from app.services.persistence import list_candidate_plans_from_db
+
     key = str(incident_id)
     plans = _candidate_plans_store.get(key)
+    if plans is None:
+        db_plans = await list_candidate_plans_from_db(incident_id)
+        if db_plans:
+            _candidate_plans_store[key] = db_plans
+            for plan in db_plans:
+                _plan_index[str(plan.plan_id)] = plan
+            plans = db_plans
     if plans is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -199,8 +229,14 @@ async def list_candidate_plans(incident_id: UUID) -> list[CandidatePlan]:
     responses={404: {"description": "方案不存在"}},
 )
 async def get_candidate_plan(plan_id: UUID) -> CandidatePlan:
+    from app.services.persistence import fetch_candidate_plan
+
     key = str(plan_id)
     plan = _plan_index.get(key)
+    if plan is None:
+        plan = await fetch_candidate_plan(plan_id)
+        if plan is not None:
+            _plan_index[key] = plan
     if plan is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -231,13 +267,7 @@ class GanttResponse(BaseModel):
     responses={404: {"description": "方案不存在"}},
 )
 async def get_candidate_plan_gantt(plan_id: UUID) -> GanttResponse:
-    key = str(plan_id)
-    plan = _plan_index.get(key)
-    if plan is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Candidate plan {plan_id} not found",
-        )
+    plan = await get_candidate_plan(plan_id)
     return GanttResponse(
         plan_id=str(plan.plan_id),
         schedule_detail=plan.schedule_detail,
@@ -268,7 +298,12 @@ async def recommend_plan(
 ) -> PlanSelectionOutput:
     from app.api.analysis import _snapshot_store
     from app.api.incidents import _incident_store
-    from app.services.persistence import fetch_any_snapshot, fetch_incident
+    from app.services.persistence import (
+        fetch_any_snapshot,
+        fetch_incident,
+        list_candidate_plans_from_db,
+        persist_plan_recommendation,
+    )
     from app.services.plan_recommendation_engine import PlanRecommendationEngine
     from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
 
@@ -288,6 +323,13 @@ async def recommend_plan(
 
     # 2. Look up candidate plans
     candidates = _candidate_plans_store.get(key)
+    if not candidates:
+        db_candidates = await list_candidate_plans_from_db(incident_id)
+        if db_candidates:
+            candidates = db_candidates
+            _candidate_plans_store[key] = candidates
+            for plan in candidates:
+                _plan_index[str(plan.plan_id)] = plan
     if not candidates:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -331,6 +373,7 @@ async def recommend_plan(
 
     # 7. Store result
     _recommendation_store[key] = output
+    await persist_plan_recommendation(incident_id, output)
 
     logger.info(
         "Recommendation completed for incident %s: recommended=%s, confidence=%.2f",
@@ -354,8 +397,14 @@ async def recommend_plan(
     responses={404: {"description": "推荐结果不存在"}},
 )
 async def get_recommendation(incident_id: UUID) -> PlanSelectionOutput:
+    from app.services.persistence import fetch_plan_recommendation
+
     key = str(incident_id)
     output = _recommendation_store.get(key)
+    if output is None:
+        output = await fetch_plan_recommendation(incident_id)
+        if output is not None:
+            _recommendation_store[key] = output
     if output is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

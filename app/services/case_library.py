@@ -127,6 +127,9 @@ class CaseLibrary:
         )
 
         self._case_store[str(case.case_id)] = case
+        from app.services.persistence import persist_case_record
+
+        await persist_case_record(case, user_id=decision_record.confirmed_by)
 
         logger.info(
             "Case created: %s for incident %s (override=%s)",

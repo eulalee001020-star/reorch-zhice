@@ -12,6 +12,10 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Callable, Awaitable
 
+import httpx
+
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Default Kafka topic for IoT events
@@ -55,6 +59,9 @@ class IoTAdapter:
         self._event_handler = event_handler
         self._received_events: list[IoTEvent] = []
         self._running = False
+        self._base_url = settings.integration.iot_base_url
+        self._api_key = settings.integration.iot_api_key
+        self._timeout = settings.integration.request_timeout_seconds
 
     @property
     def is_available(self) -> bool:
@@ -87,15 +94,18 @@ class IoTAdapter:
         )
         return event
 
-    # ── Kafka consumer simulation (Req 18.2) ───────────────────────
+    # ── Customer intake / Kafka consumer control (Req 18.2) ─────────
 
     async def start_consuming(self) -> None:
         """Start consuming from IoT Kafka topic.
 
-        In production, this would start a KafkaConsumer loop.
-        For MVP, this is a no-op placeholder.
+        PoC mode marks the adapter as running. With a configured customer HTTP
+        endpoint, this performs a lightweight health pull so deployment errors
+        surface early.
         """
         self._running = True
+        if self._base_url:
+            await self._fetch_json(settings.integration.iot_health_path)
         logger.info("IoT adapter started consuming from %s", IOT_EVENTS_TOPIC)
 
     async def stop_consuming(self) -> None:
@@ -106,9 +116,18 @@ class IoTAdapter:
     # ── Health check ───────────────────────────────────────────────
 
     async def health_check(self) -> dict[str, Any]:
+        remote_ok: bool | None = None
+        if self._base_url:
+            try:
+                await self._fetch_json(settings.integration.iot_health_path)
+                remote_ok = True
+            except Exception:
+                remote_ok = False
         return {
             "system": "IoT",
             "available": self._available,
+            "mode": "customer_http" if self._base_url else "local_poc",
+            "remote_ok": remote_ok,
             "consuming": self._running,
             "events_received": len(self._received_events),
         }
@@ -146,3 +165,16 @@ class IoTAdapter:
         except Exception as exc:
             logger.error("Failed to parse IoT event: %s", exc)
             return None
+
+    async def _fetch_json(self, path: str) -> Any:
+        headers = {}
+        if self._api_key:
+            headers["X-API-Key"] = self._api_key
+        async with httpx.AsyncClient(
+            base_url=self._base_url,
+            timeout=self._timeout,
+            headers=headers,
+        ) as client:
+            response = await client.get(path)
+        response.raise_for_status()
+        return response.json()

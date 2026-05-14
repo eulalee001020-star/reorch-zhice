@@ -88,6 +88,57 @@ class AppSettings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
 
 
+class AuthSettings(BaseSettings):
+    """Authentication settings.
+
+    ``users`` format:
+    username:password:user_id:role:api_key:display_name,username2:...
+
+    This is intentionally simple for PoC deployments. Production deployments
+    should replace it with an external IdP or a dedicated user table.
+    """
+
+    model_config = {"env_prefix": "AUTH_"}
+
+    users: str = (
+        "planner:planner123:planner-1:Planner:planner-key-001:Planner,"
+        "executor:executor123:executor-1:Shop_Floor_Executor:executor-key-001:Executor,"
+        "manager:manager123:mgmt-1:Management:mgmt-key-001:Manager,"
+        "admin:admin123:admin-1:IT_Admin:admin-key-001:Admin"
+    )
+
+
+class IntegrationSettings(BaseSettings):
+    """Customer-system adapter settings.
+
+    Empty base URLs keep adapters in local PoC mode. Set the relevant base URL
+    and path/API key values to connect a customer ERP/MES/APS/IoT system.
+    """
+
+    model_config = {"env_prefix": "INTEGRATION_"}
+
+    mes_base_url: str | None = None
+    mes_api_key: str | None = None
+    mes_writeback_path: str = "/api/schedule/writeback"
+    mes_progress_path: str = "/api/execution/progress"
+    mes_health_path: str = "/health"
+    mes_format: str = "standard"
+
+    erp_aps_base_url: str | None = None
+    erp_aps_api_key: str | None = None
+    erp_aps_snapshot_path: str = "/api/schedule/snapshot"
+    erp_aps_resources_path: str = "/api/resources"
+    erp_aps_work_orders_path: str = "/api/work-orders"
+    erp_aps_health_path: str = "/health"
+
+    iot_base_url: str | None = None
+    iot_api_key: str | None = None
+    iot_events_path: str = "/api/events"
+    iot_health_path: str = "/health"
+
+    request_timeout_seconds: float = 10.0
+
+
 class Settings(BaseSettings):
     """Aggregated settings — single entry point for all configuration."""
 
@@ -95,6 +146,8 @@ class Settings(BaseSettings):
     redis: RedisSettings = RedisSettings()
     kafka: KafkaSettings = KafkaSettings()
     app: AppSettings = AppSettings()
+    auth: AuthSettings = AuthSettings()
+    integration: IntegrationSettings = IntegrationSettings()
 
 
 settings = Settings()

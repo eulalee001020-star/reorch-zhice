@@ -18,6 +18,8 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
+from app.core.config import settings
+
 # ── Roles ───────────────────────────────────────────────────────────
 
 
@@ -32,29 +34,49 @@ class Role(str, Enum):
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-# MVP: in-memory API key → user mapping.
-# Replace with DB / external IdP lookup in production.
-_API_KEY_STORE: dict[str, "APIKeyRecord"] = {
-    "planner-key-001": APIKeyRecord(user_id="planner-1", role=Role.PLANNER)
-    if False
-    else None,  # populated at module level below
-}
-
-
 class APIKeyRecord(BaseModel):
     user_id: str
     role: Role
+    username: str
+    display_name: str
+    api_key: str
 
 
-# Re-populate after class definition
-_API_KEY_STORE = {
-    "planner-key-001": APIKeyRecord(user_id="planner-1", role=Role.PLANNER),
-    "executor-key-001": APIKeyRecord(
-        user_id="executor-1", role=Role.SHOP_FLOOR_EXECUTOR
-    ),
-    "mgmt-key-001": APIKeyRecord(user_id="mgmt-1", role=Role.MANAGEMENT),
-    "admin-key-001": APIKeyRecord(user_id="admin-1", role=Role.IT_ADMIN),
-}
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    api_key: str
+    user: "CurrentUser"
+
+
+def _parse_auth_users() -> tuple[dict[str, APIKeyRecord], dict[str, tuple[str, APIKeyRecord]]]:
+    api_keys: dict[str, APIKeyRecord] = {}
+    credentials: dict[str, tuple[str, APIKeyRecord]] = {}
+
+    for item in settings.auth.users.split(","):
+        parts = [p.strip() for p in item.split(":")]
+        if len(parts) < 5:
+            continue
+        username, password, user_id, role_name, api_key = parts[:5]
+        display_name = parts[5] if len(parts) >= 6 and parts[5] else username
+        role = Role(role_name)
+        record = APIKeyRecord(
+            user_id=user_id,
+            role=role,
+            username=username,
+            display_name=display_name,
+            api_key=api_key,
+        )
+        api_keys[api_key] = record
+        credentials[username] = (password, record)
+
+    return api_keys, credentials
+
+
+_API_KEY_STORE, _CREDENTIAL_STORE = _parse_auth_users()
 
 
 # ── Current user dependency ─────────────────────────────────────────
@@ -63,6 +85,8 @@ _API_KEY_STORE = {
 class CurrentUser(BaseModel):
     user_id: str
     role: Role
+    username: str = "system"
+    display_name: str = "System"
 
 
 async def get_current_user(
@@ -80,7 +104,12 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
         )
-    return CurrentUser(user_id=record.user_id, role=record.role)
+    return CurrentUser(
+        user_id=record.user_id,
+        role=record.role,
+        username=record.username,
+        display_name=record.display_name,
+    )
 
 
 async def get_optional_current_user(
@@ -99,7 +128,32 @@ async def get_optional_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
         )
-    return CurrentUser(user_id=record.user_id, role=record.role)
+    return CurrentUser(
+        user_id=record.user_id,
+        role=record.role,
+        username=record.username,
+        display_name=record.display_name,
+    )
+
+
+async def authenticate_user(username: str, password: str) -> LoginResponse:
+    """Validate PoC credentials and return an API key-backed session."""
+    stored = _CREDENTIAL_STORE.get(username)
+    if stored is None or stored[0] != password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+    record = stored[1]
+    return LoginResponse(
+        api_key=record.api_key,
+        user=CurrentUser(
+            user_id=record.user_id,
+            role=record.role,
+            username=record.username,
+            display_name=record.display_name,
+        ),
+    )
 
 
 # ── Role-based access dependency factory ────────────────────────────

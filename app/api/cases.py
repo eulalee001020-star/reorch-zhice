@@ -28,6 +28,15 @@ from app.services.case_template_manager import (
     TemplateAlreadyPublishedError,
     TemplateNotFoundError,
 )
+from app.services.persistence import (
+    fetch_case_record,
+    fetch_case_template,
+    fetch_preference_profile,
+    list_case_records_from_db,
+    list_case_templates_from_db,
+    persist_case_template,
+    persist_preference_profile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +109,16 @@ async def list_cases(
     time_to: datetime | None = Query(default=None, description="结束时间"),
     is_override: bool | None = Query(default=None, description="是否 Override"),
 ) -> list[CaseRecord]:
+    if not _case_library._case_store:
+        db_cases = await list_case_records_from_db(
+            incident_type=incident_type,
+            strategy_type=strategy_type,
+            time_from=time_from,
+            time_to=time_to,
+            is_override=is_override,
+        )
+        if db_cases is not None:
+            return db_cases
     return _case_library.list_cases(
         incident_type=incident_type,
         strategy_type=strategy_type,
@@ -124,6 +143,8 @@ async def list_cases(
 async def get_case(case_id: UUID) -> CaseRecord:
     case = _case_library.get_case(case_id)
     if case is None:
+        case = await fetch_case_record(case_id)
+    if case is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Case {case_id} not found.",
@@ -147,6 +168,10 @@ async def list_templates(
         default=None, alias="status", description="模板状态筛选 (draft/published)"
     ),
 ) -> list[CaseTemplate]:
+    if not _template_manager._template_store:
+        db_templates = await list_case_templates_from_db(template_status)
+        if db_templates is not None:
+            return db_templates
     return _template_manager.list_templates(status=template_status)
 
 
@@ -163,13 +188,15 @@ async def list_templates(
     description="创建新的案例模板（草稿状态）。",
 )
 async def create_template(body: CreateTemplateRequest) -> CaseTemplate:
-    return _template_manager.create_template(
+    template = _template_manager.create_template(
         template_name=body.template_name,
         applicable_incident_types=body.applicable_incident_types,
         recommended_strategy=body.recommended_strategy,
         key_parameter_thresholds=body.key_parameter_thresholds,
         created_by=body.created_by,
     )
+    await persist_case_template(template, user_id=body.created_by)
+    return template
 
 
 # ---------------------------------------------------------------------------
@@ -191,13 +218,19 @@ async def edit_template(
     template_id: UUID, body: EditTemplateRequest
 ) -> CaseTemplate:
     try:
-        return _template_manager.edit_template(
+        if _template_manager.get_template(template_id) is None:
+            persisted = await fetch_case_template(template_id)
+            if persisted is not None:
+                _template_manager._template_store[str(template_id)] = persisted
+        template = _template_manager.edit_template(
             template_id=template_id,
             template_name=body.template_name,
             applicable_incident_types=body.applicable_incident_types,
             recommended_strategy=body.recommended_strategy,
             key_parameter_thresholds=body.key_parameter_thresholds,
         )
+        await persist_case_template(template)
+        return template
     except TemplateNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -224,7 +257,12 @@ async def edit_template(
 )
 async def publish_template(template_id: UUID) -> PublishResponse:
     try:
+        if _template_manager.get_template(template_id) is None:
+            persisted = await fetch_case_template(template_id)
+            if persisted is not None:
+                _template_manager._template_store[str(template_id)] = persisted
         template = _template_manager.publish_template(template_id)
+        await persist_case_template(template)
         return PublishResponse(
             template_id=str(template.template_id),
             status=template.status,
@@ -249,4 +287,11 @@ async def publish_template(template_id: UUID) -> PublishResponse:
     description="查询指定 Planner 的偏好画像。",
 )
 async def get_preference_profile(planner_id: str) -> PreferenceProfile:
-    return _case_library.get_preference_profile(planner_id)
+    if planner_id not in _case_library._preference_store:
+        persisted = await fetch_preference_profile(planner_id)
+        if persisted is not None:
+            _case_library._preference_store[planner_id] = persisted
+            return persisted
+    profile = _case_library.get_preference_profile(planner_id)
+    await persist_preference_profile(profile, user_id=planner_id)
+    return profile

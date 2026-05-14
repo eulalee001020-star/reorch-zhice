@@ -2,6 +2,7 @@ export { useIncidentStore } from './incidentStore';
 export { useAnalysisStore } from './analysisStore';
 export { usePlanStore } from './planStore';
 export { useConfirmStore } from './confirmStore';
+export { useAuthStore } from './authStore';
 export { useWorkbenchStore, type WorkbenchView } from './workbenchStore';
 export {
   canEnterPlanSelection,

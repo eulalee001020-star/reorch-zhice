@@ -8,6 +8,7 @@ Validates: Requirements 29.1–29.12
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
@@ -99,10 +100,10 @@ class PlanRecommendationEngine:
         # --- 9. Build ranked_plan_list for frontend ---------------------
         ranked_plan_list = _build_ranked_list(ranked, recommended, top_scored)
 
-        # --- 10. Build comparison matrix (minimal placeholder) ----------
+        # --- 10. Build comparison matrix from schedule-derived KPIs -----
         comparison_matrix = _build_comparison_matrix(ranked, selection_input)
 
-        # --- 11. Build gantt diff payload (minimal placeholder) ---------
+        # --- 11. Build gantt diff payload for frontend rendering --------
         gantt_diff = _build_gantt_diff(recommended, selection_input)
 
         # --- 12. Weights used -------------------------------------------
@@ -155,25 +156,16 @@ def _filter_feasible(
 
 def _rank_plans(plans: list[CandidatePlan]) -> list[CandidatePlan]:
     """Sort plans by normalized_score descending."""
-    def _score(p: CandidatePlan) -> float:
-        try:
-            sd = p.schedule_detail
-            # We rely on the KPI vector being pre-computed and stored
-            # in solver_metadata or we compute a simple proxy.
-            # For ranking, we use the solver_metadata objective trajectory
-            # last value as a proxy if available.
-            return 0.0
-        except Exception:
-            return 0.0
-
-    # Plans should already carry evaluation scores via the comparison
-    # matrix in PlanSelectionInput.  We rank by feasibility_status first
-    # (feasible > timeout_partial > infeasible), then by plan order
-    # (which should already be sorted by EvaluationCenter).
+    # Rank by feasibility first, then by a deterministic KPI proxy computed
+    # from the schedule itself. This keeps recommendation useful even when an
+    # external evaluation stage has not pre-populated KPI rows.
     status_order = {"feasible": 0, "timeout_partial": 1, "infeasible": 2}
     return sorted(
         plans,
-        key=lambda p: status_order.get(p.feasibility_status, 9),
+        key=lambda p: (
+            status_order.get(p.feasibility_status, 9),
+            -_compute_kpi(p, {}).normalized_score,
+        ),
     )
 
 
@@ -348,34 +340,37 @@ def _build_comparison_matrix(
     ranked: list[CandidatePlan],
     inp: PlanSelectionInput,
 ) -> ComparisonMatrix:
-    """Build a minimal ComparisonMatrix from ranked plans.
-
-    The full evaluation is done by EvaluationCenter separately;
-    this provides a placeholder structure for the output.
-    """
+    """Build a comparison matrix from candidate schedule facts."""
     rows: list[ComparisonMatrixRow] = []
+    weights = _resolve_weights(inp)
+    kpis = [_compute_kpi(plan, weights) for plan in ranked]
+    top_score = max((k.normalized_score for k in kpis), default=0.0)
     for plan in ranked:
-        kpi = KPIVector(
-            delayed_order_count=0,
-            max_delay_minutes=0.0,
-            spi=0.0,
-            resource_utilization_delta=0.0,
-            changeover_count_delta=0,
-            critical_order_otd_impact=1.0,
-            normalized_score=0.0,
-        )
+        kpi = _compute_kpi(plan, weights)
         rows.append(
             ComparisonMatrixRow(
                 plan_id=str(plan.plan_id),
                 kpi_vector=kpi,
-                delta_vs_baseline={},
-                is_score_close=False,
+                delta_vs_baseline={
+                    "score_gap_to_best": round(top_score - kpi.normalized_score, 4),
+                    "adjusted_operation_ratio": kpi.spi,
+                    "max_delay_minutes": kpi.max_delay_minutes,
+                },
+                is_score_close=(top_score - kpi.normalized_score) < 0.05,
             )
         )
     return ComparisonMatrix(
         rows=rows,
-        normalization_method="min-max per dimension, weighted sum",
-        score_unit_descriptions={},
+        normalization_method="bounded schedule-derived penalties, weighted sum",
+        score_unit_descriptions={
+            "delayed_order_count": "count",
+            "max_delay_minutes": "minutes",
+            "spi": "0-1 adjusted-operation ratio",
+            "resource_utilization_delta": "0-1 dispersion proxy",
+            "changeover_count_delta": "count",
+            "critical_order_otd_impact": "0-1 on-time ratio for priority orders",
+            "normalized_score": "0-1, higher is better",
+        },
         baseline_snapshot_id=str(inp.schedule_snapshot_id),
     )
 
@@ -384,15 +379,169 @@ def _build_gantt_diff(
     recommended: CandidatePlan,
     inp: PlanSelectionInput,
 ) -> GanttDiffPayload:
-    """Build a minimal GanttDiffPayload placeholder."""
+    """Build a frontend-ready diff payload from the recommended schedule."""
+    adjusted_operations: list[dict] = []
+    time_shifts: list[dict] = []
+    resource_switches: list[dict] = []
+    all_ops = _flatten_operations(recommended)
+
+    for wo, op in all_ops:
+        if op.is_adjusted or op.is_affected:
+            adjusted_operations.append(
+                {
+                    "operation_id": op.operation_id,
+                    "work_order_id": wo.work_order_id,
+                    "resource_id": op.resource_id,
+                    "start_time": op.start_time.isoformat(),
+                    "end_time": op.end_time.isoformat(),
+                    "is_affected": op.is_affected,
+                    "is_adjusted": op.is_adjusted,
+                }
+            )
+            time_shifts.append(
+                {
+                    "operation_id": op.operation_id,
+                    "work_order_id": wo.work_order_id,
+                    "planned_start_time": op.start_time.isoformat(),
+                    "planned_end_time": op.end_time.isoformat(),
+                }
+            )
+
+        original_resource = getattr(op, "original_resource_id", None)
+        if original_resource and original_resource != op.resource_id:
+            resource_switches.append(
+                {
+                    "operation_id": op.operation_id,
+                    "work_order_id": wo.work_order_id,
+                    "from_resource_id": original_resource,
+                    "to_resource_id": op.resource_id,
+                }
+            )
+
+    critical_path_changes = _critical_path_summary(recommended)
+
     return GanttDiffPayload(
         baseline_snapshot_id=str(inp.schedule_snapshot_id),
         candidate_plan_id=str(recommended.plan_id),
-        adjusted_operations=[],
-        time_shifts=[],
-        resource_switches=[],
-        critical_path_changes=[],
+        adjusted_operations=adjusted_operations,
+        time_shifts=time_shifts,
+        resource_switches=resource_switches,
+        critical_path_changes=critical_path_changes,
     )
+
+
+def _flatten_operations(plan: CandidatePlan) -> list[tuple[object, object]]:
+    pairs: list[tuple[object, object]] = []
+    for wo in plan.schedule_detail.work_orders:
+        for op in wo.operations:
+            pairs.append((wo, op))
+    return pairs
+
+
+def _compute_kpi(plan: CandidatePlan, weights: dict[str, float]) -> KPIVector:
+    work_orders = plan.schedule_detail.work_orders
+    op_pairs = _flatten_operations(plan)
+    op_count = max(len(op_pairs), 1)
+
+    delayed_order_count = 0
+    max_delay_minutes = 0.0
+    priority_total = 0
+    priority_on_time = 0
+    for wo in work_orders:
+        if not wo.operations:
+            continue
+        completion = max(op.end_time for op in wo.operations)
+        delay_minutes = max(0.0, (completion - wo.due_date).total_seconds() / 60.0)
+        if delay_minutes > 0:
+            delayed_order_count += 1
+        max_delay_minutes = max(max_delay_minutes, delay_minutes)
+        if wo.priority > 0:
+            priority_total += 1
+            if delay_minutes == 0:
+                priority_on_time += 1
+
+    adjusted_count = sum(1 for _, op in op_pairs if op.is_adjusted or op.is_affected)
+    spi = adjusted_count / op_count
+    changeovers = _count_changeovers(op_pairs)
+    utilization_delta = _resource_utilization_dispersion(op_pairs)
+    critical_otd = priority_on_time / priority_total if priority_total else 1.0
+
+    effective_weights = weights or _resolve_weights(
+        PlanSelectionInput(
+            incident_id=UUID(int=0),
+            incident_type="",
+            severity="",
+            schedule_snapshot_id=UUID(int=0),
+            candidate_plans=[],
+            goal_mode="balanced",
+        )
+    )
+    penalty = (
+        effective_weights.get("delayed_order_count", 0.2) * min(delayed_order_count / 5, 1)
+        + effective_weights.get("max_delay_minutes", 0.15) * min(max_delay_minutes / 480, 1)
+        + effective_weights.get("spi", 0.2) * min(spi, 1)
+        + effective_weights.get("resource_utilization_delta", 0.15) * min(utilization_delta, 1)
+        + effective_weights.get("changeover_count_delta", 0.1) * min(changeovers / 10, 1)
+        + effective_weights.get("critical_order_otd_impact", 0.2) * (1 - critical_otd)
+    )
+
+    return KPIVector(
+        delayed_order_count=delayed_order_count,
+        max_delay_minutes=round(max_delay_minutes, 2),
+        spi=round(spi, 4),
+        resource_utilization_delta=round(utilization_delta, 4),
+        changeover_count_delta=changeovers,
+        critical_order_otd_impact=round(critical_otd, 4),
+        normalized_score=round(max(0.0, min(1.0, 1 - penalty)), 4),
+    )
+
+
+def _count_changeovers(op_pairs: list[tuple[object, object]]) -> int:
+    by_resource: dict[str, list[tuple[datetime, str]]] = {}
+    for wo, op in op_pairs:
+        by_resource.setdefault(op.resource_id, []).append((op.start_time, wo.product_name))
+    count = 0
+    for entries in by_resource.values():
+        entries.sort(key=lambda item: item[0])
+        for idx in range(1, len(entries)):
+            if entries[idx - 1][1] != entries[idx][1]:
+                count += 1
+    return count
+
+
+def _resource_utilization_dispersion(op_pairs: list[tuple[object, object]]) -> float:
+    minutes_by_resource: dict[str, float] = {}
+    for _, op in op_pairs:
+        minutes = max(0.0, (op.end_time - op.start_time).total_seconds() / 60.0)
+        minutes_by_resource[op.resource_id] = minutes_by_resource.get(op.resource_id, 0.0) + minutes
+    if len(minutes_by_resource) <= 1:
+        return 0.0
+    values = list(minutes_by_resource.values())
+    avg = sum(values) / len(values)
+    if avg == 0:
+        return 0.0
+    return min(1.0, (max(values) - min(values)) / (avg * len(values)))
+
+
+def _critical_path_summary(plan: CandidatePlan) -> list[dict]:
+    result: list[dict] = []
+    for wo in plan.schedule_detail.work_orders:
+        if not wo.operations:
+            continue
+        latest = max(wo.operations, key=lambda op: op.end_time)
+        result.append(
+            {
+                "work_order_id": wo.work_order_id,
+                "terminal_operation_id": latest.operation_id,
+                "planned_completion_time": latest.end_time.isoformat(),
+                "due_date": wo.due_date.isoformat(),
+                "delay_minutes": round(
+                    max(0.0, (latest.end_time - wo.due_date).total_seconds() / 60.0),
+                    2,
+                ),
+            }
+        )
+    return result
 
 
 def _resolve_weights(inp: PlanSelectionInput) -> dict[str, float]:

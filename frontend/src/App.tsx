@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ConfigProvider, Layout, Menu } from 'antd';
+import { Button, Card, ConfigProvider, Form, Input, Layout, Menu, Space, Tag, message } from 'antd';
 import {
   DashboardOutlined,
   DatabaseOutlined,
@@ -13,6 +13,7 @@ import DecisionWorkbench from '@/pages/DecisionWorkbench';
 import CaseLibraryPage from '@/pages/CaseLibraryPage';
 import InitialSchedulingPage from '@/pages/InitialSchedulingPage';
 import PocDashboardPage from '@/pages/PocDashboardPage';
+import { useAuthStore } from '@/stores';
 
 dayjs.locale('zh-cn');
 
@@ -20,6 +21,19 @@ const { Header } = Layout;
 
 function App() {
   const [activeTab, setActiveTab] = useState<string>('workbench');
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const login = useAuthStore((s) => s.login);
+  const logout = useAuthStore((s) => s.logout);
+
+  const handleLogin = async (values: { username: string; password: string }) => {
+    try {
+      await login(values.username, values.password);
+      message.success('登录成功');
+    } catch {
+      message.error('用户名或密码错误');
+    }
+  };
 
   return (
     <ConfigProvider
@@ -30,6 +44,30 @@ function App() {
         },
       }}
     >
+      {!user ? (
+        <Layout
+          style={{
+            minHeight: '100vh',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f5f7fb',
+          }}
+        >
+          <Card title="ReOrch 智策" style={{ width: 360 }}>
+            <Form layout="vertical" onFinish={handleLogin} initialValues={{ username: 'planner' }}>
+              <Form.Item name="username" label="用户名" rules={[{ required: true }]}>
+                <Input autoComplete="username" />
+              </Form.Item>
+              <Form.Item name="password" label="密码" rules={[{ required: true }]}>
+                <Input.Password autoComplete="current-password" />
+              </Form.Item>
+              <Button type="primary" htmlType="submit" block loading={loading}>
+                登录
+              </Button>
+            </Form>
+          </Card>
+        </Layout>
+      ) : (
       <Layout style={{ minHeight: '100vh' }}>
         <Header
           style={{
@@ -79,12 +117,18 @@ function App() {
               },
             ]}
           />
+          <Space style={{ color: '#fff' }}>
+            <Tag color="blue">{user.role}</Tag>
+            <span>{user.display_name}</span>
+            <Button size="small" onClick={logout}>退出</Button>
+          </Space>
         </Header>
         {activeTab === 'workbench' && <DecisionWorkbench />}
         {activeTab === 'initial' && <InitialSchedulingPage />}
         {activeTab === 'poc' && <PocDashboardPage />}
         {activeTab === 'cases' && <CaseLibraryPage />}
       </Layout>
+      )}
     </ConfigProvider>
   );
 }

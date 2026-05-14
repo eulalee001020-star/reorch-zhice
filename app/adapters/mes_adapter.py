@@ -19,6 +19,10 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
+import httpx
+
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Retry config
@@ -70,11 +74,16 @@ class MESAdapter:
     - Auto-retry queued instructions on recovery
     """
 
-    def __init__(self, mes_format: MESFormat = MESFormat.STANDARD) -> None:
-        self._format = mes_format
+    def __init__(self, mes_format: MESFormat | None = None) -> None:
+        configured_format = mes_format or MESFormat(settings.integration.mes_format)
+        self._format = configured_format
         self._available = True
         self._local_queue: deque[MESInstruction] = deque()
         self._results: dict[str, MESWritebackResult] = {}
+        self._base_url = settings.integration.mes_base_url
+        self._api_key = settings.integration.mes_api_key
+        self._writeback_path = settings.integration.mes_writeback_path
+        self._timeout = settings.integration.request_timeout_seconds
         # For testing: IDs that should simulate failure
         self._fail_ids: set[str] = set()
 
@@ -213,9 +222,23 @@ class MESAdapter:
         return result
 
     async def _do_send(self, instruction: MESInstruction) -> bool:
-        """Simulate sending to MES. Override in production."""
+        """Send to configured MES endpoint, or local PoC simulator."""
         if instruction.instruction_id in self._fail_ids:
             return False
+        if self._base_url:
+            headers = {"Content-Type": "application/json"}
+            if self._api_key:
+                headers["X-API-Key"] = self._api_key
+            async with httpx.AsyncClient(
+                base_url=self._base_url,
+                timeout=self._timeout,
+                headers=headers,
+            ) as client:
+                response = await client.post(
+                    self._writeback_path,
+                    json=self.convert_instruction(instruction),
+                )
+            response.raise_for_status()
         return True
 
     # ── Queue recovery (Req 18.5) ──────────────────────────────────
@@ -243,9 +266,26 @@ class MESAdapter:
 
     async def health_check(self) -> dict[str, Any]:
         """Check MES connectivity status."""
+        remote_ok: bool | None = None
+        if self._base_url:
+            try:
+                headers = {}
+                if self._api_key:
+                    headers["X-API-Key"] = self._api_key
+                async with httpx.AsyncClient(
+                    base_url=self._base_url,
+                    timeout=self._timeout,
+                    headers=headers,
+                ) as client:
+                    response = await client.get(settings.integration.mes_health_path)
+                remote_ok = response.status_code < 500
+            except Exception:
+                remote_ok = False
         return {
             "system": "MES",
             "available": self._available,
+            "mode": "customer_http" if self._base_url else "local_poc",
+            "remote_ok": remote_ok,
             "queue_size": len(self._local_queue),
             "format": self._format.value,
         }

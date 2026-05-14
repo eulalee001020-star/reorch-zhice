@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/incidents", tags=["incidents"])
 
 # ---------------------------------------------------------------------------
-# In-memory store (MVP placeholder until DB session is wired up)
+# Local fallback cache used only when PostgreSQL is unavailable in dev/test.
 # ---------------------------------------------------------------------------
 _incident_store: dict[str, Incident] = {}
 

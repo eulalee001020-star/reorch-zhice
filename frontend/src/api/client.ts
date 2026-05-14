@@ -11,9 +11,9 @@ const apiClient = axios.create({
 // Request interceptor — attach auth token if available
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('reorch_token');
+    const token = localStorage.getItem('reorch_api_key');
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['X-API-Key'] = token;
     }
     return config;
   },
@@ -28,9 +28,8 @@ apiClient.interceptors.response.use(
       const { status, data } = error.response;
 
       if (status === 401) {
-        // Token expired or invalid — redirect to login
-        localStorage.removeItem('reorch_token');
-        window.location.href = '/login';
+        localStorage.removeItem('reorch_api_key');
+        localStorage.removeItem('reorch_user');
       }
 
       if (status === 403) {

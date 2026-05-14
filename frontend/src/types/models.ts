@@ -16,6 +16,18 @@ import type {
   StrategyType,
 } from './enums';
 
+export interface CurrentUser {
+  user_id: string;
+  role: string;
+  username: string;
+  display_name: string;
+}
+
+export interface LoginResponse {
+  api_key: string;
+  user: CurrentUser;
+}
+
 // ---------------------------------------------------------------------------
 // Incident & Schedule
 // ---------------------------------------------------------------------------
@@ -313,7 +325,7 @@ export interface ConfirmRequest {
   selected_plan_id: string;
   adjustments?: Record<string, unknown>[] | null;
   override_reason?: string | null;
-  confirmed_by: string;
+  confirmed_by?: string | null;
 }
 
 export interface ConfirmResponse {

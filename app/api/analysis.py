@@ -25,8 +25,12 @@ from app.services.impact_analysis_engine import ImpactAnalysisEngine
 from app.services.persistence import (
     assign_snapshot_version,
     fetch_any_snapshot,
+    fetch_impact_report,
     fetch_incident,
+    fetch_strategy_recommendation,
+    persist_impact_report,
     persist_schedule_snapshot,
+    persist_strategy_recommendation,
 )
 from app.services.strategy_selector import StrategySelector
 
@@ -35,7 +39,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["analysis"])
 
 # ---------------------------------------------------------------------------
-# In-memory stores (MVP placeholder until DB session is wired up)
+# Local fallback caches used only when PostgreSQL is unavailable in dev/test.
 # ---------------------------------------------------------------------------
 _snapshot_store: dict[str, ScheduleSnapshot] = {}
 _impact_report_cache: dict[str, ImpactReport] = {}
@@ -85,6 +89,11 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
     if cache_key in _impact_report_cache:
         return _impact_report_cache[cache_key]
 
+    persisted_report = await fetch_impact_report(incident_id)
+    if persisted_report is not None:
+        _impact_report_cache[cache_key] = persisted_report
+        return persisted_report
+
     # Look up incident from the incidents API in-memory store
     from app.api.incidents import _incident_store
 
@@ -113,6 +122,7 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
     report = await engine.analyze(incident, snapshot)
 
     _impact_report_cache[cache_key] = report
+    await persist_impact_report(report)
     return report
 
 
@@ -142,6 +152,11 @@ async def get_strategy(
     # Return cached strategy if available
     if cache_key in _strategy_cache:
         return _strategy_cache[cache_key]
+
+    persisted_strategy = await fetch_strategy_recommendation(incident_id)
+    if persisted_strategy is not None:
+        _strategy_cache[cache_key] = persisted_strategy
+        return persisted_strategy
 
     # Ensure impact report exists (trigger analysis if needed)
     if cache_key not in _impact_report_cache:
@@ -176,4 +191,5 @@ async def get_strategy(
     )
 
     _strategy_cache[cache_key] = recommendation
+    await persist_strategy_recommendation(incident_id, recommendation)
     return recommendation

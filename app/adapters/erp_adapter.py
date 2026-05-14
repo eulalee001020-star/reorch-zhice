@@ -14,6 +14,9 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
+import httpx
+
+from app.core.config import settings
 from app.models.schedule import (
     Operation,
     Resource,
@@ -33,6 +36,9 @@ class ERPAdapter:
 
     def __init__(self) -> None:
         self._available = True
+        self._base_url = settings.integration.erp_aps_base_url
+        self._api_key = settings.integration.erp_aps_api_key
+        self._timeout = settings.integration.request_timeout_seconds
         # In-memory master data stores for MVP
         self._resources: dict[str, Resource] = {}
         self._work_orders: dict[str, WorkOrder] = {}
@@ -55,13 +61,21 @@ class ERPAdapter:
         Parses the raw APS payload into structured WorkOrder/Operation
         objects and creates an immutable ScheduleSnapshot.
         """
-        work_orders = self._parse_work_orders(raw_data.get("work_orders", []))
+        source_payload = raw_data
+        if self._base_url and not raw_data:
+            source_payload = await self._fetch_json(
+                settings.integration.erp_aps_snapshot_path,
+                params={"workshop_id": workshop_id},
+            )
+
+        work_orders = self._parse_work_orders(source_payload.get("work_orders", []))
         snapshot = ScheduleSnapshot(
             snapshot_id=uuid4(),
             captured_at=datetime.now(tz=timezone.utc),
             workshop_id=workshop_id,
             work_orders=work_orders,
-            raw_data=raw_data,
+            source_system="ERP_APS",
+            raw_data=source_payload,
         )
         self._snapshots[str(snapshot.snapshot_id)] = snapshot
         logger.info(
@@ -77,6 +91,9 @@ class ERPAdapter:
 
     async def sync_resources(self, raw_resources: list[dict[str, Any]]) -> list[Resource]:
         """Sync resource master data from ERP."""
+        if self._base_url and not raw_resources:
+            data = await self._fetch_json(settings.integration.erp_aps_resources_path)
+            raw_resources = data.get("resources", data if isinstance(data, list) else [])
         resources: list[Resource] = []
         for raw in raw_resources:
             resource = Resource(
@@ -94,6 +111,9 @@ class ERPAdapter:
 
     async def sync_work_orders(self, raw_orders: list[dict[str, Any]]) -> list[WorkOrder]:
         """Sync work order master data from ERP."""
+        if self._base_url and not raw_orders:
+            data = await self._fetch_json(settings.integration.erp_aps_work_orders_path)
+            raw_orders = data.get("work_orders", data if isinstance(data, list) else [])
         orders: list[WorkOrder] = []
         for raw in raw_orders:
             wo = WorkOrder(
@@ -117,9 +137,18 @@ class ERPAdapter:
     # ── Health check ───────────────────────────────────────────────
 
     async def health_check(self) -> dict[str, Any]:
+        remote_ok: bool | None = None
+        if self._base_url:
+            try:
+                await self._fetch_json(settings.integration.erp_aps_health_path)
+                remote_ok = True
+            except Exception:
+                remote_ok = False
         return {
             "system": "ERP/APS",
             "available": self._available,
+            "mode": "customer_http" if self._base_url else "local_poc",
+            "remote_ok": remote_ok,
             "resources_count": len(self._resources),
             "work_orders_count": len(self._work_orders),
             "snapshots_count": len(self._snapshots),
@@ -158,3 +187,21 @@ class ERPAdapter:
             )
             ops.append(op)
         return ops
+
+    async def _fetch_json(
+        self,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+    ) -> Any:
+        headers = {}
+        if self._api_key:
+            headers["X-API-Key"] = self._api_key
+        async with httpx.AsyncClient(
+            base_url=self._base_url,
+            timeout=self._timeout,
+            headers=headers,
+        ) as client:
+            response = await client.get(path, params=params)
+        response.raise_for_status()
+        return response.json()

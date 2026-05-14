@@ -29,7 +29,17 @@ from app.services.confirmation_module import (
     PermissionDeniedError,
 )
 from app.services.export_service import ExportService
-from app.services.persistence import persist_audit_log, record_entity_version
+from app.services.persistence import (
+    fetch_any_snapshot,
+    fetch_decision_record_by_id,
+    fetch_decision_record_by_incident,
+    fetch_execution_result_by_incident,
+    fetch_plan_recommendation,
+    fetch_writeback_job_by_incident,
+    list_candidate_plans_from_db,
+    persist_audit_log,
+    persist_decision_record,
+)
 from app.services.writeback_module import WritebackModule
 
 logger = logging.getLogger(__name__)
@@ -37,7 +47,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["confirmation"])
 
 # ---------------------------------------------------------------------------
-# In-memory stores (MVP placeholder)
+# Local fallback stores used only when PostgreSQL is unavailable in dev/test.
 # ---------------------------------------------------------------------------
 _decision_record_store: dict[str, DecisionRecord] = {}  # incident_id -> record
 _confirmation_module = ConfirmationModule()
@@ -63,7 +73,7 @@ class ConfirmRequestBody(BaseModel):
     override_reason: str | None = Field(
         default=None, description="否决原因（仅 reject_and_reselect 时必填）"
     )
-    confirmed_by: str = Field(description="确认人标识")
+    confirmed_by: str | None = Field(default=None, description="确认人标识")
 
 
 class WritebackStatusResponse(BaseModel):
@@ -113,9 +123,15 @@ async def confirm_plan(
     from app.api.solver import _candidate_plans_store, _recommendation_store
 
     key = str(incident_id)
+    actor_id = current_user.user_id
 
     # 1. Look up candidate plans
     candidates = _candidate_plans_store.get(key)
+    if not candidates:
+        db_candidates = await list_candidate_plans_from_db(incident_id)
+        if db_candidates:
+            candidates = db_candidates
+            _candidate_plans_store[key] = candidates
     if not candidates:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -128,6 +144,10 @@ async def confirm_plan(
         snapshot = snap
         break
     if snapshot is None:
+        snapshot = await fetch_any_snapshot()
+        if snapshot is not None:
+            _snapshot_store[str(snapshot.snapshot_id)] = snapshot
+    if snapshot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No ScheduleSnapshot available.",
@@ -135,6 +155,10 @@ async def confirm_plan(
 
     # 3. Get recommendation for recommended_plan_id
     recommendation = _recommendation_store.get(key)
+    if recommendation is None:
+        recommendation = await fetch_plan_recommendation(incident_id)
+        if recommendation is not None:
+            _recommendation_store[key] = recommendation
     recommended_plan_id = (
         recommendation.recommended_plan_id
         if recommendation
@@ -161,7 +185,7 @@ async def confirm_plan(
         selected_plan_id=body.selected_plan_id,
         adjustments=body.adjustments,
         override_reason=body.override_reason,
-        confirmed_by=body.confirmed_by,
+        confirmed_by=actor_id if actor_id != "system" else body.confirmed_by or actor_id,
     )
 
     # 6. Execute confirmation
@@ -214,7 +238,7 @@ async def confirm_plan(
             is_override=body.action == ConfirmAction.REJECT_AND_RESELECT,
             is_manual_adjusted=response.is_manual_adjusted,
             override_reason=body.override_reason,
-            confirmed_by=body.confirmed_by,
+            confirmed_by=confirm_request.confirmed_by,
             confirmed_at=datetime.now(tz=timezone.utc),
             plan_selection_input_version="1.0",
             plan_selection_output_version="1.0",
@@ -224,12 +248,7 @@ async def confirm_plan(
             repair_policy_advisor_version="1.0.0",
         )
         _decision_record_store[key] = record
-        await record_entity_version(
-            entity_type="decision_record",
-            entity_id=str(record.decision_record_id),
-            data=record.model_dump(mode="json"),
-            changed_by=current_user.user_id,
-        )
+        await persist_decision_record(record, user_id=current_user.user_id)
         await persist_audit_log(
             action=body.action.value,
             entity_type="decision_record",
@@ -271,6 +290,10 @@ async def get_decision_record(incident_id: UUID) -> DecisionRecord:
     key = str(incident_id)
     record = _decision_record_store.get(key)
     if record is None:
+        record = await fetch_decision_record_by_incident(incident_id)
+        if record is not None:
+            _decision_record_store[key] = record
+    if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No decision record for incident {incident_id}. Confirm a plan first.",
@@ -293,6 +316,11 @@ async def get_decision_record(incident_id: UUID) -> DecisionRecord:
 async def get_writeback_status(incident_id: UUID) -> WritebackStatusResponse:
     key = str(incident_id)
     wb_status = _writeback_module.get_writeback_status(incident_id)
+    persisted_job = None
+    if wb_status is None:
+        persisted_job = await fetch_writeback_job_by_incident(incident_id)
+        if persisted_job is not None:
+            wb_status = WritebackStatus(persisted_job["status"])
     if wb_status is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -300,6 +328,19 @@ async def get_writeback_status(incident_id: UUID) -> WritebackStatusResponse:
         )
 
     report = _writeback_module.get_writeback_report(incident_id)
+    if report is None and persisted_job is None:
+        persisted_job = await fetch_writeback_job_by_incident(incident_id)
+    if report is None and persisted_job is not None:
+        response_payload = persisted_job.get("response_payload") or {}
+        return WritebackStatusResponse(
+            incident_id=key,
+            status=WritebackStatus(persisted_job["status"]),
+            total_instructions=response_payload.get("total_instructions", 0),
+            success_count=response_payload.get("success_count", 0),
+            failed_count=response_payload.get("failed_count", 0),
+            failed_instructions=response_payload.get("failed_instructions", []),
+            timestamp=persisted_job.get("updated_at") or "",
+        )
     return WritebackStatusResponse(
         incident_id=key,
         status=wb_status,
@@ -326,6 +367,8 @@ async def get_writeback_status(incident_id: UUID) -> WritebackStatusResponse:
 async def get_execution_result(incident_id: UUID) -> ExecutionResult:
     key = str(incident_id)
     result = _writeback_module.get_execution_result(incident_id)
+    if result is None:
+        result = await fetch_execution_result_by_incident(incident_id)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -359,7 +402,7 @@ class ExportResponse(BaseModel):
 )
 async def export_pdf(decision_record_id: UUID) -> ExportResponse:
     # Find the decision record and register it for export
-    record = _find_decision_record(decision_record_id)
+    record = await _find_decision_record(decision_record_id)
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -398,7 +441,7 @@ async def export_pdf(decision_record_id: UUID) -> ExportResponse:
     responses={404: {"description": "决策记录不存在"}},
 )
 async def export_excel(decision_record_id: UUID) -> ExportResponse:
-    record = _find_decision_record(decision_record_id)
+    record = await _find_decision_record(decision_record_id)
     if record is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -429,13 +472,13 @@ async def export_excel(decision_record_id: UUID) -> ExportResponse:
 # ---------------------------------------------------------------------------
 
 
-def _find_decision_record(decision_record_id: UUID) -> DecisionRecord | None:
+async def _find_decision_record(decision_record_id: UUID) -> DecisionRecord | None:
     """Find a decision record by ID across all stores."""
     target = str(decision_record_id)
     for record in _decision_record_store.values():
         if str(record.decision_record_id) == target:
             return record
-    return None
+    return await fetch_decision_record_by_id(decision_record_id)
 
 
 def _register_for_export(record: DecisionRecord) -> None:
