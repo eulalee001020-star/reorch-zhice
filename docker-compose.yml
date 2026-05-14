@@ -48,12 +48,31 @@ services:
       - "9092:9092"
       - "9644:9644"
 
+  mock-integration:
+    build: .
+    command: ["uvicorn", "app.adapters.mock_server:app", "--host", "0.0.0.0", "--port", "8010"]
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: .
     environment:
       DB_HOST: postgres
       REDIS_HOST: redis
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      INTEGRATION_MES_BASE_URL: http://mock-integration:8010
+      INTEGRATION_MES_WRITEBACK_PATH: /api/schedule/writeback
+      INTEGRATION_ERP_APS_BASE_URL: http://mock-integration:8010
+      INTEGRATION_ERP_APS_SNAPSHOT_PATH: /api/schedule/snapshot
+      INTEGRATION_ERP_APS_RESOURCES_PATH: /api/resources
+      INTEGRATION_ERP_APS_WORK_ORDERS_PATH: /api/work-orders
+      INTEGRATION_IOT_BASE_URL: http://mock-integration:8010
+      INTEGRATION_IOT_EVENTS_PATH: /api/incidents
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,11 +80,18 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_started
+      mock-integration:
+        condition: service_healthy
     ports:
       - "8000:8000"
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
   worker:
     build: .
@@ -85,6 +111,11 @@ services:
       - backend
     ports:
       - "3000:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
   postgres_data:

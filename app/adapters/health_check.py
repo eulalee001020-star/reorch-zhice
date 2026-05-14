@@ -21,6 +21,7 @@ router = APIRouter(prefix="/api/v1/health", tags=["health"])
 # ── In-memory adapter registry ─────────────────────────────────────
 
 _adapters: dict[str, Any] = {}
+_default_adapters_loaded = False
 
 
 def register_adapter(name: str, adapter: Any) -> None:
@@ -29,6 +30,7 @@ def register_adapter(name: str, adapter: Any) -> None:
 
 
 def get_registered_adapters() -> dict[str, Any]:
+    _ensure_default_adapters()
     return dict(_adapters)
 
 
@@ -37,6 +39,7 @@ def get_registered_adapters() -> dict[str, Any]:
 
 async def check_all_integrations() -> dict[str, Any]:
     """Check health of all registered external system adapters."""
+    _ensure_default_adapters()
     results: dict[str, Any] = {}
     all_healthy = True
 
@@ -65,6 +68,23 @@ async def check_all_integrations() -> dict[str, Any]:
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "integrations": results,
     }
+
+
+def _ensure_default_adapters() -> None:
+    """Register built-in adapters lazily so the health endpoint is meaningful."""
+    global _default_adapters_loaded
+    if _default_adapters_loaded:
+        return
+    from app.adapters.erp_adapter import ERPAdapter
+    from app.adapters.iot_adapter import IoTAdapter
+    from app.adapters.mes_adapter import MESAdapter
+    from app.adapters.mock_adapter import MockAdapter
+
+    _adapters.setdefault("mock", MockAdapter())
+    _adapters.setdefault("erp_aps", ERPAdapter())
+    _adapters.setdefault("mes", MESAdapter())
+    _adapters.setdefault("iot", IoTAdapter())
+    _default_adapters_loaded = True
 
 
 # ── API endpoint (Req 18.6) ───────────────────────────────────────
