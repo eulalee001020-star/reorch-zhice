@@ -102,7 +102,7 @@ services:
     depends_on:
       backend:
         condition: service_started
-    command: ["arq", "app.core.scheduler.get_worker_settings"]
+    command: ["python", "-m", "app.core.worker_entrypoint"]
 
   frontend:
     build:

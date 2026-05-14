@@ -158,7 +158,7 @@ async def on_job_end(ctx: dict[str, Any]) -> None:
 def get_worker_settings() -> dict[str, Any]:
     """Return the full ARQ ``WorkerSettings``-compatible dict.
 
-    Called by the ARQ CLI:  ``arq app.core.scheduler.get_worker_settings``
+    Used by the worker entrypoint after resolving lazy task imports.
     """
     # Lazy import so tasks module can freely import from the rest of the app.
     from app.core.tasks import (  # noqa: WPS433
