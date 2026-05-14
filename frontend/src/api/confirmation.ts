@@ -4,7 +4,7 @@ import type {
   ConfirmResponse,
   DecisionRecord,
   ExecutionResult,
-  WritebackStatus,
+  WritebackStatusResponse,
 } from '@/types';
 
 export async function confirmPlan(data: ConfirmRequest): Promise<ConfirmResponse> {
@@ -22,8 +22,8 @@ export async function getDecisionRecord(incidentId: string): Promise<DecisionRec
   return res.data;
 }
 
-export async function getWritebackStatus(incidentId: string): Promise<WritebackStatus> {
-  const res = await apiClient.get<WritebackStatus>(
+export async function getWritebackStatus(incidentId: string): Promise<WritebackStatusResponse> {
+  const res = await apiClient.get<WritebackStatusResponse>(
     `/incidents/${incidentId}/writeback-status`,
   );
   return res.data;

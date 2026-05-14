@@ -42,8 +42,8 @@ import {
   useConfirmStore,
   useAuthStore,
 } from '@/stores';
-import { ConfirmAction } from '@/types';
-import { confirmPlan } from '@/api';
+import { ConfirmAction, WritebackStatus, type WritebackStatusResponse } from '@/types';
+import { confirmPlan, getWritebackStatus } from '@/api';
 import { exportDecisionPdf, exportDecisionExcel } from '@/api/exports';
 
 const { TextArea } = Input;
@@ -62,6 +62,7 @@ export const ConfirmationPanel: React.FC = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [writebackProgress, setWritebackProgress] = useState<number | null>(null);
+  const [writebackStatus, setWritebackStatus] = useState<WritebackStatusResponse | null>(null);
 
   // Adjustment draft state
   const [adjustments, setAdjustments] = useState<Record<string, unknown>[]>([]);
@@ -81,6 +82,25 @@ export const ConfirmationPanel: React.FC = () => {
   const canConfirm = currentUser
     ? ['Planner', 'IT_Admin', 'Management'].includes(currentUser.role)
     : false;
+
+  const refreshWritebackStatus = async () => {
+    if (!incidentContextId) return;
+    const status = await getWritebackStatus(incidentContextId);
+    setWritebackStatus(status);
+    const progress = status.total_instructions > 0
+      ? Math.round(((status.success_count + status.failed_count) / status.total_instructions) * 100)
+      : status.status === WritebackStatus.SUCCESS
+        ? 100
+        : 0;
+    setWritebackProgress(progress);
+  };
+
+  const pollWritebackStatus = async () => {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await refreshWritebackStatus();
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
 
   const handleConfirm = async (action: ConfirmAction) => {
     if (!incidentContextId || !activePlanId) return;
@@ -103,11 +123,11 @@ export const ConfirmationPanel: React.FC = () => {
         setDecisionRecordId(res.decision_record_id);
       });
       setMode('confirmed');
-      setWritebackProgress(30);
       message.success('方案已确认');
-      // Simulate writeback progress
-      setTimeout(() => setWritebackProgress(70), 2000);
-      setTimeout(() => setWritebackProgress(100), 4000);
+      pollWritebackStatus().catch(() => {
+        setWritebackProgress(null);
+        setWritebackStatus(null);
+      });
     } catch {
       message.error('确认失败，请重试');
     } finally {
@@ -145,7 +165,37 @@ export const ConfirmationPanel: React.FC = () => {
         {writebackProgress !== null && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ marginBottom: 8, fontSize: 13 }}>回写进度</div>
-            <Progress percent={writebackProgress} status={writebackProgress === 100 ? 'success' : 'active'} />
+            <Progress
+              percent={writebackProgress}
+              status={
+                writebackStatus?.status === WritebackStatus.FAILED
+                  ? 'exception'
+                  : writebackProgress === 100
+                    ? 'success'
+                    : 'active'
+              }
+            />
+            {writebackStatus && (
+              <Descriptions size="small" column={1} bordered>
+                <Descriptions.Item label="回写状态">
+                  <Tag
+                    color={
+                      writebackStatus.status === WritebackStatus.SUCCESS
+                        ? 'green'
+                        : writebackStatus.status === WritebackStatus.PARTIAL_SUCCESS
+                          ? 'orange'
+                          : 'red'
+                    }
+                  >
+                    {writebackStatus.status}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="指令统计">
+                  {writebackStatus.success_count}/{writebackStatus.total_instructions} 成功，
+                  {writebackStatus.failed_count} 失败
+                </Descriptions.Item>
+              </Descriptions>
+            )}
           </div>
         )}
         <Divider style={{ margin: '12px 0' }} />

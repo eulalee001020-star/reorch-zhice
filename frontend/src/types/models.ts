@@ -14,6 +14,7 @@ import type {
   RuleApplicableStage,
   RuleCategory,
   StrategyType,
+  WritebackStatus,
 } from './enums';
 
 export interface CurrentUser {
@@ -370,6 +371,16 @@ export interface ExecutionResult {
   actual_otd: number;
   actual_resource_utilization: number;
   deviation_percentage: number;
+}
+
+export interface WritebackStatusResponse {
+  incident_id: string;
+  status: WritebackStatus;
+  total_instructions: number;
+  success_count: number;
+  failed_count: number;
+  failed_instructions: Record<string, unknown>[];
+  timestamp: string;
 }
 
 export interface CaseRecord {

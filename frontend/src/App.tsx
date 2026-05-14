@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, ConfigProvider, Form, Input, Layout, Menu, Space, Tag, message } from 'antd';
+import { lazy, Suspense, useState } from 'react';
+import { Button, Card, ConfigProvider, Form, Input, Layout, Menu, Space, Spin, Tag, message } from 'antd';
 import {
   DashboardOutlined,
   DatabaseOutlined,
@@ -9,15 +9,16 @@ import {
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
-import DecisionWorkbench from '@/pages/DecisionWorkbench';
-import CaseLibraryPage from '@/pages/CaseLibraryPage';
-import InitialSchedulingPage from '@/pages/InitialSchedulingPage';
-import PocDashboardPage from '@/pages/PocDashboardPage';
 import { useAuthStore } from '@/stores';
 
 dayjs.locale('zh-cn');
 
 const { Header } = Layout;
+
+const DecisionWorkbench = lazy(() => import('@/pages/DecisionWorkbench'));
+const CaseLibraryPage = lazy(() => import('@/pages/CaseLibraryPage'));
+const InitialSchedulingPage = lazy(() => import('@/pages/InitialSchedulingPage'));
+const PocDashboardPage = lazy(() => import('@/pages/PocDashboardPage'));
 
 function App() {
   const [activeTab, setActiveTab] = useState<string>('workbench');
@@ -123,10 +124,18 @@ function App() {
             <Button size="small" onClick={logout}>退出</Button>
           </Space>
         </Header>
-        {activeTab === 'workbench' && <DecisionWorkbench />}
-        {activeTab === 'initial' && <InitialSchedulingPage />}
-        {activeTab === 'poc' && <PocDashboardPage />}
-        {activeTab === 'cases' && <CaseLibraryPage />}
+        <Suspense
+          fallback={
+            <div style={{ padding: 24 }}>
+              <Spin />
+            </div>
+          }
+        >
+          {activeTab === 'workbench' && <DecisionWorkbench />}
+          {activeTab === 'initial' && <InitialSchedulingPage />}
+          {activeTab === 'poc' && <PocDashboardPage />}
+          {activeTab === 'cases' && <CaseLibraryPage />}
+        </Suspense>
       </Layout>
       )}
     </ConfigProvider>

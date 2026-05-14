@@ -22,7 +22,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { usePlanStore, useWorkbenchStore } from '@/stores';
+import { useAuthStore, usePlanStore, useWorkbenchStore } from '@/stores';
 import { refreshRecommendation } from '@/stores';
 import type { CaseRecord, PreferenceProfile } from '@/types';
 import { listCases, getPreferenceProfile } from '@/api';
@@ -32,6 +32,7 @@ export const CaseReferencePanel: React.FC = () => {
   const planSelectionOutput = usePlanStore((s) => s.planSelectionOutput);
   const manualWeights = usePlanStore((s) => s.manualWeights);
   const setManualWeights = usePlanStore((s) => s.setManualWeights);
+  const currentUser = useAuthStore((s) => s.user);
 
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [profile, setProfile] = useState<PreferenceProfile | null>(null);
@@ -57,10 +58,15 @@ export const CaseReferencePanel: React.FC = () => {
 
   // Fetch preference profile
   useEffect(() => {
-    getPreferenceProfile('current_planner')
+    const plannerId = currentUser?.user_id;
+    if (!plannerId) {
+      setProfile(null);
+      return;
+    }
+    getPreferenceProfile(plannerId)
       .then(setProfile)
       .catch(() => setProfile(null));
-  }, []);
+  }, [currentUser?.user_id]);
 
   const caseColumns: ColumnsType<CaseRecord> = [
     {
