@@ -5,6 +5,9 @@ export { login, getMe } from './auth';
 
 export { understandIncidentText, runAgentDecisionFlow, structureFeedback } from './agents';
 
+export { resetSandboxDemo } from './demo';
+export type { DemoSandboxResponse } from './demo';
+
 export { getImpactReport, getStrategy, createScheduleSnapshot } from './analysis';
 
 export {

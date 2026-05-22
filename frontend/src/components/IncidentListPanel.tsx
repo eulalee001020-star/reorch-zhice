@@ -31,7 +31,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useIncidentStore, useWorkbenchStore } from '@/stores';
 import { switchIncident } from '@/stores';
-import { createIncident, understandIncidentText } from '@/api';
+import { createIncident, resetSandboxDemo, understandIncidentText } from '@/api';
 import type { Incident } from '@/types';
 import { IncidentSeverity, IncidentStatus, IncidentType } from '@/types';
 import { incidentStatusMap } from '@/utils/statusMapping';
@@ -71,6 +71,7 @@ export const IncidentListPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const [agentText, setAgentText] = useState('');
   const [agentLoading, setAgentLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const [agentHint, setAgentHint] = useState<string | null>(null);
 
   useEffect(() => {
@@ -153,6 +154,23 @@ export const IncidentListPanel: React.FC = () => {
     }
   };
 
+  const handleLoadDemo = async () => {
+    setDemoLoading(true);
+    setAgentHint(null);
+    try {
+      const demo = await resetSandboxDemo();
+      upsertIncident(demo.incident);
+      await switchIncident(demo.incident.incident_id);
+      message.success(
+        `演示场景已加载：影响 ${demo.affected_work_order_count} 个工单 / ${demo.affected_operation_count} 道工序`,
+      );
+    } catch {
+      message.error('演示场景加载失败');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   const columns: ColumnsType<Incident> = [
     {
       title: 'ID',
@@ -223,6 +241,15 @@ export const IncidentListPanel: React.FC = () => {
           AI 接入
         </Button>
       </Space.Compact>
+      <Button
+        block
+        size="small"
+        loading={demoLoading}
+        onClick={handleLoadDemo}
+        style={{ marginBottom: 8 }}
+      >
+        加载演示场景
+      </Button>
       {agentHint && (
         <Alert
           type="warning"
