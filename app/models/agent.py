@@ -12,6 +12,7 @@ from app.models.evaluation import ComparisonMatrix
 from app.models.explanation import RecommendationExplanation, SolverChainExplanation
 from app.models.impact import ImpactReport
 from app.models.incident import Incident, IncidentCreateRequest
+from app.models.planning import PlanQualityGateReport
 from app.models.recommendation import PlanSelectionOutput
 from app.models.solver import CandidatePlan
 from app.models.strategy import StrategyRecommendation
@@ -74,6 +75,7 @@ class AgentDecisionFlowResponse(ReOrchModel):
     impact_report: ImpactReport
     strategy: StrategyRecommendation
     candidate_plans: list[CandidatePlan] = Field(default_factory=list)
+    quality_gates: list[PlanQualityGateReport] = Field(default_factory=list)
     comparison_matrix: ComparisonMatrix | None = None
     recommendation: PlanSelectionOutput | None = None
     recommendation_explanation: RecommendationExplanation | None = None

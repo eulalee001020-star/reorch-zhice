@@ -89,6 +89,7 @@ export async function switchIncident(incidentId: string): Promise<void> {
     });
     usePlanStore.setState((s) => {
       s.candidatePlans = output.candidate_plans;
+      s.qualityGates = output.quality_gates;
       s.planSelectionOutput = output.recommendation ?? null;
       s.autoPreselected = output.recommendation?.auto_preselected ?? false;
       if (output.recommendation?.auto_preselected) {

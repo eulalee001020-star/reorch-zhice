@@ -208,6 +208,9 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
         "global_reschedule",
     }
     assert len(data["candidate_plans"]) >= 1
+    assert len(data["quality_gates"]) == len(data["candidate_plans"])
+    assert data["quality_gates"][0]["plan_id"] == data["candidate_plans"][0]["plan_id"]
+    assert "recommendation_policy" in data["quality_gates"][0]
     assert data["comparison_matrix"] is not None
     assert data["recommendation"] is not None
     assert data["requires_human_confirmation"] is True
@@ -216,6 +219,7 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
     assert "Impact Analysis Agent" in trace_names
     assert "Strategy Agent" in trace_names
     assert "Solver Tool / Solver Agent" in trace_names
+    assert "Quality Gate Agent" in trace_names
     assert "Evaluation Agent" in trace_names
     assert "Confirmation Agent" in trace_names
 

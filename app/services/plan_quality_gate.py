@@ -11,12 +11,13 @@ class PlanQualityGate:
 
     def evaluate(self, plan: CandidatePlan) -> PlanQualityGateReport:
         warnings: list[str] = []
-        hard_blockers = []
-
-        if plan.feasibility_status == "infeasible":
-            hard_blockers.extend(plan.constraint_report.violations)
-        if plan.constraint_report and not plan.constraint_report.is_feasible:
-            hard_blockers.extend(plan.constraint_report.violations)
+        hard_blockers = list(plan.constraint_report.violations) if (
+            plan.constraint_report
+            and (
+                plan.feasibility_status == "infeasible"
+                or not plan.constraint_report.is_feasible
+            )
+        ) else []
 
         if plan.feasibility_status == "timeout_partial":
             warnings.append("Solver timed out; plan is partial and requires planner review.")

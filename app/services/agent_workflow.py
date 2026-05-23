@@ -43,6 +43,7 @@ from app.services.persistence import (
     persist_plan_recommendation,
     persist_strategy_recommendation,
 )
+from app.services.plan_quality_gate import PlanQualityGate
 from app.services.plan_recommendation_engine import PlanRecommendationEngine
 from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
 from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
@@ -486,6 +487,7 @@ class AgentOrchestrator:
         trace.append(strategy_trace)
 
         candidates: list[CandidatePlan] = []
+        quality_gates = []
         comparison_matrix: ComparisonMatrix | None = None
         recommendation: PlanSelectionOutput | None = None
         recommendation_explanation: RecommendationExplanation | None = None
@@ -501,6 +503,27 @@ class AgentOrchestrator:
                 user_id=user_id,
             )
             trace.append(solver_trace)
+            gate = PlanQualityGate()
+            quality_gates = [gate.evaluate(plan) for plan in candidates]
+            blocked_count = sum(1 for report in quality_gates if not report.pass_gate)
+            warning_count = sum(1 for report in quality_gates if report.warnings)
+            trace.append(
+                _trace(
+                    agent_name="Quality Gate Agent",
+                    input_summary=f"candidate_plans={len(candidates)}",
+                    output_summary=(
+                        f"passed={len(quality_gates) - blocked_count}, "
+                        f"blocked={blocked_count}, warnings={warning_count}"
+                    ),
+                    freedom_level="none",
+                    llm_allowed=False,
+                    deterministic_tools=["PlanQualityGate", "ConstraintValidationReport"],
+                    guardrail=(
+                        "每个候选方案必须生成 pass/warning/block 结果；"
+                        "硬约束失败方案不能作为推荐方案进入确认。"
+                    ),
+                )
+            )
         elif request.auto_solve:
             trace.append(
                 _trace(
@@ -556,6 +579,7 @@ class AgentOrchestrator:
             impact_report=impact_report,
             strategy=strategy,
             candidate_plans=candidates,
+            quality_gates=quality_gates,
             comparison_matrix=comparison_matrix,
             recommendation=recommendation,
             recommendation_explanation=recommendation_explanation,

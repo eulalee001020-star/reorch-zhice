@@ -371,6 +371,7 @@ export interface AgentDecisionFlowResponse {
   impact_report: ImpactReport;
   strategy: StrategyRecommendation;
   candidate_plans: CandidatePlan[];
+  quality_gates: PlanQualityGateReport[];
   comparison_matrix?: ComparisonMatrix | null;
   recommendation?: PlanSelectionOutput | null;
   recommendation_explanation?: RecommendationExplanation | null;

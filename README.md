@@ -11,6 +11,7 @@ ReOrch 智策是一个面向离散制造车间的 AI 产品原型：当设备故
 | [产品作品集总览](docs/portfolio/product_portfolio.md) | 快速理解项目价值、产品判断和落地证据 |
 | [AI 工作流、Prompt 与输入输出示例](docs/portfolio/workflow_prompts_io.md) | 展示 Agent/Workflow 设计、结构化输出、解释与审计样例 |
 | [可信性质量门](docs/portfolio/trust_quality_gate.md) | 展示如何判断 LLM 输出是否可信、可行、可审计 |
+| [当前项目评审](docs/portfolio/current_project_review.md) | 对可信性、成本控制和商业价值做客观核查，标明已完成与提升空间 |
 | [市场需求与行业先进标准对标](docs/portfolio/market_benchmark.md) | 说明为什么不是伪需求，以及如何对标工业 AI/Agent 产品标准 |
 | [客户演示路径](docs/demo/customer_demo_walkthrough.md) | 录屏或现场 demo 的端到端讲解脚本 |
 | [系统蓝图](docs/product/poc_system_blueprint.md) | 展示 PoC 系统边界、AI 职责和工业现场安全闸门 |

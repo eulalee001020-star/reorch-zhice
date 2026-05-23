@@ -32,7 +32,7 @@ import {
 import { transitionView } from '@/stores';
 import { GoalMode } from '@/types';
 import { goalModeMap } from '@/utils/statusMapping';
-import type { ComparisonMatrixRow } from '@/types';
+import type { ComparisonMatrixRow, PlanQualityGateReport } from '@/types';
 import { GanttChart } from '@/components/GanttChart';
 
 const KPI_LABELS: Record<string, string> = {
@@ -53,6 +53,16 @@ function deltaColor(value: number, key: string): string {
   return value < 0 ? '#52c41a' : '#ff4d4f';
 }
 
+function gateTooltip(gate: PlanQualityGateReport): string {
+  if (!gate.pass_gate) {
+    return `阻断项 ${gate.hard_blockers.length} 个，策略：${gate.recommendation_policy}`;
+  }
+  if (gate.warnings.length > 0) {
+    return gate.warnings.join('；');
+  }
+  return `置信度 ${gate.confidence_level}，策略：${gate.recommendation_policy}`;
+}
+
 export const PlanComparisonPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const planSelectionOutput = usePlanStore((s) => s.planSelectionOutput);
@@ -61,6 +71,12 @@ export const PlanComparisonPanel: React.FC = () => {
   const goalMode = usePlanStore((s) => s.goalMode);
   const loadingRecommendation = usePlanStore((s) => s.loadingRecommendation);
   const candidatePlans = usePlanStore((s) => s.candidatePlans);
+  const qualityGates = usePlanStore((s) => s.qualityGates);
+  const matrix = planSelectionOutput?.comparison_matrix;
+  const qualityGateByPlan = React.useMemo(
+    () => new Map(qualityGates.map((gate) => [gate.plan_id, gate])),
+    [qualityGates],
+  );
 
   if (!incidentContextId) {
     return (
@@ -70,10 +86,42 @@ export const PlanComparisonPanel: React.FC = () => {
     );
   }
 
-  const matrix = planSelectionOutput?.comparison_matrix;
+  const qualityGateTag = (planId: string) => {
+    const gate = qualityGateByPlan.get(planId);
+    if (!gate) {
+      return <Tag color="default">质量门未校验</Tag>;
+    }
+
+    const tooltip = gateTooltip(gate);
+    if (!gate.pass_gate) {
+      return (
+        <Tooltip title={tooltip}>
+          <Tag color="red">质量门阻断</Tag>
+        </Tooltip>
+      );
+    }
+
+    const color = gate.confidence_level === 'high'
+      ? 'green'
+      : gate.confidence_level === 'medium'
+        ? 'orange'
+        : 'volcano';
+    const label = gate.confidence_level === 'high'
+      ? '质量门通过'
+      : gate.confidence_level === 'medium'
+        ? '质量门预警'
+        : '仅供参考';
+
+    return (
+      <Tooltip title={tooltip}>
+        <Tag color={color}>{label}</Tag>
+      </Tooltip>
+    );
+  };
 
   const planTag = (planId: string) => {
     const tags: React.ReactNode[] = [];
+    tags.push(<React.Fragment key="gate">{qualityGateTag(planId)}</React.Fragment>);
     if (planSelectionOutput) {
       if (planId === planSelectionOutput.top_scored_plan_id) {
         tags.push(<Tag key="top" color="gold">评分第一</Tag>);
@@ -88,7 +136,7 @@ export const PlanComparisonPanel: React.FC = () => {
     if (planId === selectedPlanId) {
       tags.push(<Tag key="sel" color="green">已选择</Tag>);
     }
-    return <Space size={2}>{tags}</Space>;
+    return <Space size={2} wrap>{tags}</Space>;
   };
 
   const columns: ColumnsType<ComparisonMatrixRow> = [

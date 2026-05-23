@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { CandidatePlan, PlanSelectionOutput } from '@/types';
+import type { CandidatePlan, PlanQualityGateReport, PlanSelectionOutput } from '@/types';
 import { GoalMode } from '@/types';
 import { listCandidatePlans, getRecommendation } from '@/api';
 
 interface PlanState {
   candidatePlans: CandidatePlan[];
+  qualityGates: PlanQualityGateReport[];
   planSelectionOutput: PlanSelectionOutput | null;
   selectedPlanId: string | null;
   goalMode: GoalMode;
@@ -25,6 +26,7 @@ interface PlanState {
 export const usePlanStore = create<PlanState>()(
   immer((set) => ({
     candidatePlans: [],
+    qualityGates: [],
     planSelectionOutput: null,
     selectedPlanId: null,
     goalMode: GoalMode.BALANCED,
@@ -37,7 +39,10 @@ export const usePlanStore = create<PlanState>()(
       set((s) => { s.loadingPlans = true; });
       try {
         const data = await listCandidatePlans(incidentId);
-        set((s) => { s.candidatePlans = data; });
+        set((s) => {
+          s.candidatePlans = data;
+          s.qualityGates = [];
+        });
       } finally {
         set((s) => { s.loadingPlans = false; });
       }
@@ -74,6 +79,7 @@ export const usePlanStore = create<PlanState>()(
     reset: () => {
       set((s) => {
         s.candidatePlans = [];
+        s.qualityGates = [];
         s.planSelectionOutput = null;
         s.selectedPlanId = null;
         s.goalMode = GoalMode.BALANCED;
