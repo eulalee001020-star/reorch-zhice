@@ -2,9 +2,9 @@
 
 ## 1. Validation Scope
 
-This note records the current internal engineering validation state for the ReOrch PoC. It covers backend tests, frontend build, and Docker Compose smoke validation in GitHub Actions.
+This note records the internal engineering validation baseline for the ReOrch MVP. It covers backend tests, frontend build, and Docker Compose smoke validation in GitHub Actions.
 
-It does not claim validation against a real customer ERP/MES/APS system. Customer integration remains a separate P0 workstream.
+It does not claim validation against a real customer ERP/MES/APS system. Digital-twin validation evidence covers the current lab-trial stage; customer integration remains a separate P0 workstream.
 
 ## 2. Commit Under Test
 
@@ -58,4 +58,4 @@ chore(ci): verify GitHub Actions Node 24 runtime compatibility
 
 ## 7. Conclusion
 
-Internal PoC validation is closed for the current commit. The primary remaining risk has moved from "system can run" to "system can ingest real industrial data, preserve auditability, and execute human-approved writeback safely."
+Internal MVP engineering validation is closed for the referenced commit. The primary remaining risk has moved from "system can run" to "system can ingest real industrial data, preserve auditability, and execute human-approved writeback safely."

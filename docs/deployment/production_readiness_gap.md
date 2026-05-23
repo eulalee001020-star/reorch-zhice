@@ -2,7 +2,7 @@
 
 ## Position
 
-The current system is an internally validated PoC. It has a deployable Compose stack and passing CI, but production use in a customer plant requires additional controls.
+The current system has completed MVP development and is in controlled lab-trial validation. It has a deployable Compose stack, passing CI, and digital-twin validation evidence, but production use in a customer plant requires additional controls.
 
 ## Gap Table
 
@@ -12,7 +12,7 @@ The current system is an internally validated PoC. It has a deployable Compose s
 | Database backup | PostgreSQL volume configured | Scheduled backups, restore drill, retention policy |
 | Migration rollback | Alembic migrations present | Versioned rollback plan and pre-deploy backup |
 | Identity | Login/API key/RBAC present | Enterprise SSO/OIDC/LDAP integration |
-| Audit | Decision/writeback records exist | Exportable audit package for customer IT and QA |
+| Audit | Decision/writeback records and digital-twin audit package proxy exist | Exportable audit package for customer IT and QA |
 | Rate limit | Basic API rate limiter exists | Customer-specific traffic policy and abuse protection |
 | Observability | Health endpoints and logs | Metrics dashboards, alerts, trace correlation |
 | Adapter security | Configurable adapters | Per-customer credentials, network allowlist, least privilege |
@@ -32,7 +32,7 @@ Do not add these until customer pilot requirements justify them:
 ## Required Before Production Pilot
 
 - Real customer read-only adapter validation.
-- Shadow-mode comparison report.
+- Digital-twin replay/shadow proxy reviewed with the lab team, followed by customer shadow-mode comparison report.
 - Staging writeback dry run.
 - Backup and restore evidence.
 - Customer-approved RBAC mapping.

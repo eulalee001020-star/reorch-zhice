@@ -17,6 +17,7 @@
 - 数字孪生风险评估。
 - MES 回写预览。
 - PoC ROI 估算。
+- 验证证据包：source refs、成本代理、replay/shadow 代理、阈值样本、审计包结构。
 
 ## 新增接口
 
@@ -73,6 +74,18 @@
 - 风险标记：`large_schedule_perturbation`。
 - Siemens 格式回写预览：5 条指令。
 - 单次异常价值估算：7385 元。
+
+## 验证证据包
+
+接口返回 `validation_evidence`，用于在客户现场验证完成前先补齐关键评审证据：
+
+| 字段 | 作用 |
+| --- | --- |
+| `source_refs` | 绑定 scenario、workshop、baseline snapshot、incident resource、affected work orders、affected operations 和 quality gate plan ids |
+| `model_cost_proxy` | 记录外部 LLM 调用数、估算 token、确定性步骤数、候选方案数、回写指令数 |
+| `replay_shadow_proxy` | 用数字孪生基线和系统输出对比决策时间、延期、换线、加班和估算价值 |
+| `threshold_calibration` | 输出策略置信度、质量门置信度、推荐策略、执行风险分和风险标记 |
+| `audit_package_proxy` | 列出输入、基准排程、异常、影响、策略、候选方案、质量门、仿真、回写预览和价值报告 |
 
 ## 结果解释
 

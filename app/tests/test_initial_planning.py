@@ -252,3 +252,6 @@ def test_digital_twin_sample_runs_end_to_end() -> None:
     assert len(response.reschedule_candidates) >= 1
     assert response.writeback_preview is not None
     assert response.value_report is not None
+    assert response.validation_evidence["model_cost_proxy"]["external_llm_calls"] == 0
+    assert response.validation_evidence["source_refs"]["affected_operation_ids"]
+    assert response.validation_evidence["audit_package_proxy"]["planner_confirmation_required"] is True

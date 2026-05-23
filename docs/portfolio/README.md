@@ -9,6 +9,7 @@
 | [trust_quality_gate.md](trust_quality_gate.md) | 可信性质量门、实现状态和 PoC 验收标准 |
 | [current_project_review.md](current_project_review.md) | 可信性、成本控制、商业化价值的当前项目评审 |
 | [market_benchmark.md](market_benchmark.md) | 市场需求、行业先进标准、竞争格局和 PoC 设计 |
+| [../validation/digital_twin_validation_pack.md](../validation/digital_twin_validation_pack.md) | 数字孪生验证包：source refs、成本代理、replay/shadow 代理、阈值和审计包 |
 
 推荐阅读顺序：
 
@@ -17,6 +18,7 @@ product_portfolio.md
 -> workflow_prompts_io.md
 -> trust_quality_gate.md
 -> current_project_review.md
+-> ../validation/digital_twin_validation_pack.md
 -> market_benchmark.md
 -> ../demo/customer_demo_walkthrough.md
 ```

@@ -697,5 +697,6 @@ export interface DigitalTwinRunResponse {
   simulation_results: Record<string, unknown>[];
   writeback_preview?: WritebackPreviewResponse | null;
   value_report?: ValueTrackingReport | null;
+  validation_evidence: Record<string, unknown>;
   runbook: string[];
 }

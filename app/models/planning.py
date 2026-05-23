@@ -273,4 +273,5 @@ class DigitalTwinRunResponse(ReOrchModel):
     simulation_results: list[dict] = Field(default_factory=list)
     writeback_preview: WritebackPreviewResponse | None = None
     value_report: ValueTrackingReport | None = None
+    validation_evidence: dict = Field(default_factory=dict)
     runbook: list[str] = Field(default_factory=list)

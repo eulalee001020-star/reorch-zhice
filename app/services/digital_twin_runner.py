@@ -140,6 +140,83 @@ class DigitalTwinRunner:
                 overtime_hourly_cost=220,
             )
         )
+        validation_evidence = {
+            "source_refs": {
+                "scenario_id": scenario_id,
+                "workshop_id": request.workshop_id,
+                "baseline_snapshot_id": str(snapshot.snapshot_id),
+                "selected_initial_plan_id": str(selected.candidate_plan.plan_id),
+                "incident_resource_id": resource_id,
+                "affected_work_order_ids": [
+                    item.work_order_id for item in impact.affected_work_orders
+                ],
+                "affected_operation_ids": [
+                    item.operation_id for item in impact.affected_operations
+                ],
+                "quality_gate_plan_ids": [
+                    str(report.plan_id) for report in quality_gates
+                ],
+            },
+            "model_cost_proxy": {
+                "external_llm_calls": 0,
+                "estimated_input_tokens": 0,
+                "estimated_output_tokens": 0,
+                "deterministic_workflow_steps": 8,
+                "solver_candidate_count": len(candidates),
+                "writeback_instruction_count": (
+                    writeback_preview.instruction_count if writeback_preview else 0
+                ),
+                "note": (
+                    "Digital twin MVP uses deterministic services and solvers; "
+                    "token telemetry starts when external LLM providers are enabled."
+                ),
+            },
+            "replay_shadow_proxy": {
+                "baseline_decision_minutes": 90,
+                "digital_twin_decision_minutes": 8,
+                "saved_decision_minutes": value_report.saved_decision_minutes,
+                "reduced_tardiness_minutes": value_report.reduced_tardiness_minutes,
+                "reduced_changeovers": value_report.reduced_changeovers,
+                "reduced_overtime_hours": value_report.reduced_overtime_hours,
+                "estimated_savings": value_report.estimated_savings,
+            },
+            "threshold_calibration": {
+                "strategy_confidence": strategy.confidence,
+                "quality_gate_confidence_levels": [
+                    report.confidence_level for report in quality_gates
+                ],
+                "quality_gate_policies": [
+                    report.recommendation_policy for report in quality_gates
+                ],
+                "execution_risk_scores": [
+                    item["execution_risk_score"] for item in simulation_results
+                ],
+                "risk_flags": sorted(
+                    {
+                        flag
+                        for item in simulation_results
+                        for flag in item.get("risk_flags", [])
+                    }
+                ),
+            },
+            "audit_package_proxy": {
+                "contains": [
+                    "input_request",
+                    "selected_initial_schedule",
+                    "baseline_snapshot",
+                    "incident",
+                    "impact_report",
+                    "strategy",
+                    "candidate_plans",
+                    "quality_gates",
+                    "simulation_results",
+                    "writeback_preview",
+                    "value_report",
+                ],
+                "planner_confirmation_required": True,
+                "production_writeback_enabled": False,
+            },
+        }
 
         return DigitalTwinRunResponse(
             scenario_id=scenario_id,
@@ -154,6 +231,7 @@ class DigitalTwinRunner:
             simulation_results=simulation_results,
             writeback_preview=writeback_preview,
             value_report=value_report,
+            validation_evidence=validation_evidence,
             runbook=[
                 "1. Import ERP/APS orders, operations, routings, resources, calendars, materials and changeover rules.",
                 "2. Generate initial schedule options and select the balanced baseline.",
