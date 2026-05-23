@@ -10,6 +10,7 @@ ReOrch 智策是一个面向离散制造车间的 AI 产品原型：当设备故
 | --- | --- |
 | [产品作品集总览](docs/portfolio/product_portfolio.md) | 快速理解项目价值、产品判断和落地证据 |
 | [AI 工作流、Prompt 与输入输出示例](docs/portfolio/workflow_prompts_io.md) | 展示 Agent/Workflow 设计、结构化输出、解释与审计样例 |
+| [可信性质量门](docs/portfolio/trust_quality_gate.md) | 展示如何判断 LLM 输出是否可信、可行、可审计 |
 | [市场需求与行业先进标准对标](docs/portfolio/market_benchmark.md) | 说明为什么不是伪需求，以及如何对标工业 AI/Agent 产品标准 |
 | [客户演示路径](docs/demo/customer_demo_walkthrough.md) | 录屏或现场 demo 的端到端讲解脚本 |
 | [系统蓝图](docs/product/poc_system_blueprint.md) | 展示 PoC 系统边界、AI 职责和工业现场安全闸门 |
@@ -79,7 +80,7 @@ flowchart LR
 | Agent/Workflow 设计 | 受控多 Agent 流程，所有高风险动作都有结构化输入输出、工具边界和人工确认 |
 | 工业数据建模 | WorkOrder、Operation、Machine、ScheduleSnapshot、Incident、DecisionRecord 等 canonical model |
 | 多目标决策 | 交付风险、扰动范围、换线、资源切换、可行性、置信度和执行复杂度统一评估 |
-| 安全与治理 | 只读接入、shadow mode、质量门、人工确认、幂等回写、审计记录 |
+| 安全与治理 | schema 校验、数据追溯、硬约束质量门、置信度降级、人工确认、幂等回写、审计记录 |
 | 商业化试点 | 离散制造 PoC 数据模板、验收指标、ROI 测算、4-6 周落地路径 |
 | 工程落地 | FastAPI、React、Ant Design、OR-Tools、Docker Compose、CI 与自动化测试 |
 
