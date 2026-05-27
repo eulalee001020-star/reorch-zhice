@@ -5,6 +5,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | [product_portfolio.md](product_portfolio.md) | 产品作品集总览 |
+| [ai_pm_portfolio_self_check.md](ai_pm_portfolio_self_check.md) | 按 AI PM 作品集标准做能力映射和避坑自查 |
 | [workflow_prompts_io.md](workflow_prompts_io.md) | AI 工作流、Prompt 模板、输入输出示例和安全边界 |
 | [trust_quality_gate.md](trust_quality_gate.md) | 可信性质量门、实现状态和 PoC 验收标准 |
 | [current_project_review.md](current_project_review.md) | 可信性、成本控制、商业化价值的当前项目评审 |
@@ -15,6 +16,7 @@
 
 ```text
 product_portfolio.md
+-> ai_pm_portfolio_self_check.md
 -> workflow_prompts_io.md
 -> trust_quality_gate.md
 -> current_project_review.md
