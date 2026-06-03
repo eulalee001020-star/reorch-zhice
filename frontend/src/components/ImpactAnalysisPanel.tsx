@@ -51,6 +51,38 @@ const riskText: Record<string, string> = {
   [DeliveryRiskLevel.BREACH]: '违约',
 };
 
+const severityColor: Record<string, string> = {
+  'P1-Critical': '#f5222d',
+  'P2-High': '#fa541c',
+  'P3-Medium': '#faad14',
+  'P4-Low': '#52c41a',
+};
+
+const severitySourceText: Record<string, string> = {
+  anomaly_intake_center: '接入中心',
+  incident_payload: '上游事件',
+};
+
+const severityFactorText: Record<string, string> = {
+  resource_id: '资源',
+  report_source: '来源',
+  classified_severity: '初始结果',
+  resource_criticality: '资源关键性',
+  is_bottleneck: '瓶颈',
+  has_redundancy: '冗余',
+  active_work_order_count: '活跃工单',
+};
+
+function formatSeverityFactor(value: unknown): string {
+  if (typeof value === 'boolean') {
+    return value ? '是' : '否';
+  }
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+  return String(value);
+}
+
 export const ImpactAnalysisPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const incidents = useIncidentStore((s) => s.incidents);
@@ -98,6 +130,12 @@ export const ImpactAnalysisPanel: React.FC = () => {
   ];
 
   const canSwitch = canEnterPlanSelection();
+  const severityExplanation = impactReport?.severity_explanation ?? null;
+  const severityFactors = severityExplanation
+    ? Object.entries(severityExplanation.factors).filter(
+        ([, value]) => value !== null && value !== undefined && value !== '',
+      )
+    : [];
 
   return (
     <Card
@@ -124,9 +162,7 @@ export const ImpactAnalysisPanel: React.FC = () => {
         </Descriptions.Item>
         <Descriptions.Item label="资源">{incident.resource_id}</Descriptions.Item>
         <Descriptions.Item label="严重等级">
-          <Tag color={incident.severity.startsWith('P1') ? '#f5222d' : '#faad14'}>
-            {incident.severity}
-          </Tag>
+          <Tag color={severityColor[incident.severity] ?? '#faad14'}>{incident.severity}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="状态">
           {statusMeta ? <Tag color={statusMeta.color}>{statusMeta.text}</Tag> : incident.status}
@@ -184,6 +220,60 @@ export const ImpactAnalysisPanel: React.FC = () => {
               showIcon
               style={{ marginBottom: 12 }}
             />
+          )}
+
+          {severityExplanation && (
+            <div
+              style={{
+                border: '1px solid #f0f0f0',
+                borderRadius: 6,
+                padding: 12,
+                marginBottom: 12,
+                background: '#fafafa',
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>严重等级依据</div>
+              <Descriptions size="small" column={2}>
+                <Descriptions.Item label="初始等级">
+                  <Tag color={severityColor[severityExplanation.initial_severity]}>
+                    {severityExplanation.initial_severity}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="生效等级">
+                  <Tag color={severityColor[severityExplanation.effective_severity]}>
+                    {severityExplanation.effective_severity}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="依据来源">
+                  {severitySourceText[severityExplanation.source] ?? severityExplanation.source}
+                </Descriptions.Item>
+                <Descriptions.Item label="Breach 工单">
+                  {severityExplanation.breach_work_order_count}
+                </Descriptions.Item>
+                <Descriptions.Item label="初始分级规则" span={2}>
+                  {severityExplanation.classification_rule}
+                </Descriptions.Item>
+                {severityExplanation.upgrade_rule && (
+                  <Descriptions.Item label="升级规则" span={2}>
+                    {severityExplanation.upgrade_rule}
+                  </Descriptions.Item>
+                )}
+                {severityExplanation.upgrade_reason && (
+                  <Descriptions.Item label="影响分析结论" span={2}>
+                    {severityExplanation.upgrade_reason}
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+              {severityFactors.length > 0 && (
+                <Space wrap size={[4, 4]} style={{ marginTop: 8 }}>
+                  {severityFactors.map(([key, value]) => (
+                    <Tag key={key}>
+                      {severityFactorText[key] ?? key}: {formatSeverityFactor(value)}
+                    </Tag>
+                  ))}
+                </Space>
+              )}
+            </div>
           )}
 
           <Table<AffectedWorkOrder>

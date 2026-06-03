@@ -16,7 +16,9 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Input,
+  InputNumber,
   Table,
   Tag,
   Select,
@@ -26,6 +28,7 @@ import {
   Space,
   DatePicker,
   message,
+  Tabs,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -33,7 +36,7 @@ import { useIncidentStore, useWorkbenchStore } from '@/stores';
 import { switchIncident } from '@/stores';
 import { createIncident, resetSandboxDemo, understandIncidentText } from '@/api';
 import type { Incident } from '@/types';
-import { IncidentSeverity, IncidentStatus, IncidentType } from '@/types';
+import { IncidentSeverity, IncidentStatus, IncidentType, ReportSource } from '@/types';
 import { incidentStatusMap } from '@/utils/statusMapping';
 
 const { RangePicker } = DatePicker;
@@ -71,8 +74,19 @@ export const IncidentListPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const [agentText, setAgentText] = useState('');
   const [agentLoading, setAgentLoading] = useState(false);
+  const [structuredLoading, setStructuredLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [agentHint, setAgentHint] = useState<string | null>(null);
+  const [structuredEvent, setStructuredEvent] = useState({
+    resource_id: '',
+    report_source: ReportSource.IOT,
+    source_system: 'MES',
+    criticality: 'general',
+    is_bottleneck: false,
+    has_redundancy: false,
+    active_work_order_count: 1,
+    description: '',
+  });
 
   useEffect(() => {
     fetchIncidents();
@@ -154,6 +168,44 @@ export const IncidentListPanel: React.FC = () => {
     }
   };
 
+  const handleStructuredIntake = async () => {
+    const resourceId = structuredEvent.resource_id.trim();
+    if (!resourceId) {
+      message.warning('请输入资源/设备 ID');
+      return;
+    }
+    setStructuredLoading(true);
+    setAgentHint(null);
+    try {
+      const incident = await createIncident({
+        incident_type: IncidentType.EQUIPMENT_FAILURE,
+        occurred_at: dayjs().toISOString(),
+        resource_id: resourceId,
+        report_source: structuredEvent.report_source,
+        source_system: structuredEvent.source_system || 'structured_frontend',
+        description: structuredEvent.description || `${resourceId} 设备异常`,
+        raw_payload: {
+          source_payload: {
+            input_mode: 'structured_event_form',
+          },
+          resource_info: {
+            criticality: structuredEvent.criticality,
+            is_bottleneck: structuredEvent.is_bottleneck,
+            has_redundancy: structuredEvent.has_redundancy,
+            active_work_order_count: structuredEvent.active_work_order_count,
+          },
+        },
+      });
+      upsertIncident(incident);
+      await switchIncident(incident.incident_id);
+      message.success('结构化异常已接入并进入 Agent 决策流');
+    } catch {
+      message.error('结构化异常接入失败');
+    } finally {
+      setStructuredLoading(false);
+    }
+  };
+
   const handleLoadDemo = async () => {
     setDemoLoading(true);
     setAgentHint(null);
@@ -230,17 +282,94 @@ export const IncidentListPanel: React.FC = () => {
         <Col span={6}><Statistic title="平均响应" value={`${stats.avgResponse}m`} valueStyle={{ fontSize: 16 }} /></Col>
       </Row>
 
-      <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
-        <TextArea
-          autoSize={{ minRows: 1, maxRows: 3 }}
-          value={agentText}
-          onChange={(e) => setAgentText(e.target.value)}
-          placeholder="M2 设备下午坏了，估计要修三个小时"
-        />
-        <Button type="primary" loading={agentLoading} onClick={handleAgentIntake}>
-          AI 接入
-        </Button>
-      </Space.Compact>
+      <Tabs
+        size="small"
+        items={[
+          {
+            key: 'agent_text',
+            label: 'AI 文本',
+            children: (
+              <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
+                <TextArea
+                  autoSize={{ minRows: 1, maxRows: 3 }}
+                  value={agentText}
+                  onChange={(e) => setAgentText(e.target.value)}
+                  placeholder="M2 设备下午坏了，估计要修三个小时"
+                />
+                <Button type="primary" loading={agentLoading} onClick={handleAgentIntake}>
+                  AI 接入
+                </Button>
+              </Space.Compact>
+            ),
+          },
+          {
+            key: 'structured_event',
+            label: 'MES/IoT',
+            children: (
+              <Space direction="vertical" size={6} style={{ width: '100%', marginBottom: 8 }}>
+                <Space.Compact style={{ width: '100%' }}>
+                  <Input
+                    value={structuredEvent.resource_id}
+                    onChange={(e) => setStructuredEvent((s) => ({ ...s, resource_id: e.target.value }))}
+                    placeholder="设备/资源 ID，如 CNC-02"
+                  />
+                  <Select
+                    value={structuredEvent.report_source}
+                    style={{ width: 96 }}
+                    onChange={(v) => setStructuredEvent((s) => ({ ...s, report_source: v }))}
+                    options={[
+                      { value: ReportSource.IOT, label: 'IoT' },
+                      { value: ReportSource.MES, label: 'MES' },
+                      { value: ReportSource.MANUAL, label: '人工' },
+                    ]}
+                  />
+                </Space.Compact>
+                <Input
+                  value={structuredEvent.description}
+                  onChange={(e) => setStructuredEvent((s) => ({ ...s, description: e.target.value }))}
+                  placeholder="异常说明，可来自 MES/IoT 告警正文"
+                />
+                <Space wrap size={6}>
+                  <Select
+                    value={structuredEvent.criticality}
+                    style={{ width: 120 }}
+                    onChange={(v) => setStructuredEvent((s) => ({ ...s, criticality: v }))}
+                    options={[
+                      { value: 'high_risk_config', label: '高风险配置' },
+                      { value: 'critical', label: '关键资源' },
+                      { value: 'general', label: '一般资源' },
+                      { value: 'non_critical', label: '非关键' },
+                    ]}
+                  />
+                  <InputNumber
+                    min={0}
+                    max={999}
+                    value={structuredEvent.active_work_order_count}
+                    placeholder="活跃工单"
+                    style={{ width: 110 }}
+                    onChange={(v) => setStructuredEvent((s) => ({ ...s, active_work_order_count: Number(v ?? 0) }))}
+                  />
+                  <Checkbox
+                    checked={structuredEvent.is_bottleneck}
+                    onChange={(e) => setStructuredEvent((s) => ({ ...s, is_bottleneck: e.target.checked }))}
+                  >
+                    瓶颈
+                  </Checkbox>
+                  <Checkbox
+                    checked={structuredEvent.has_redundancy}
+                    onChange={(e) => setStructuredEvent((s) => ({ ...s, has_redundancy: e.target.checked }))}
+                  >
+                    冗余
+                  </Checkbox>
+                  <Button type="primary" loading={structuredLoading} onClick={handleStructuredIntake}>
+                    事件接入
+                  </Button>
+                </Space>
+              </Space>
+            ),
+          },
+        ]}
+      />
       <Button
         block
         size="small"

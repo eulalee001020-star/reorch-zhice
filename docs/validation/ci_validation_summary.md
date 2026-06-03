@@ -21,7 +21,7 @@ It does not claim validation against a real customer ERP/MES/APS system. Digital
 
 | Validation item | Result | Evidence |
 | --- | --- | --- |
-| Backend test suite | Passed | Local `pytest -q`: `702 passed` |
+| Backend test suite | Passed | Local `pytest -q`: `717 passed` |
 | GitHub backend job | Passed | CI job `backend` |
 | Frontend build | Passed | CI job `frontend` |
 | Docker Compose smoke | Passed | CI job `compose-smoke` |

@@ -35,8 +35,12 @@ LLM/Agent 负责语义到结构、流程协同、解释和资产沉淀；
 | Strategy Agent | 影响分析、业务目标、资源状态 | 策略候选与理由 | 不跳过求解器 |
 | Solver Tool Agent | 结构化 snapshot、策略、目标权重 | 候选方案与 KPI | 不伪造 KPI |
 | Explanation Agent | Top-K 方案、KPI、质量门结果 | 面向计划员的解释 | 不隐藏失败原因 |
+| Feedback Structuring Agent | 人工拒绝、override、执行反馈 | 归因标签与规则候选 | 不直接修改生产约束 |
 | Case Memory Agent | 决策记录、执行反馈 | 可检索案例 | 不把未验证案例当规则 |
+| Preference Learning Agent | 案例库、override history、执行结果 | 偏好画像与排序辅助建议 | 不自动修改全局求解目标 |
 | Audit Agent | 全链路事件 | 审计记录 | 不允许无审计写回 |
+
+如果读者关心“AI 增量到底在哪里”，更细的拆分见 [ai_increment_agent_design.md](ai_increment_agent_design.md)。那份文档把异常理解、规则候选、推荐解释、案例沉淀和偏好学习分别设计成独立 Agent，并说明哪些环节仍必须由确定性工具、质量门和计划员负责。
 
 ## 3. Prompt 模板
 

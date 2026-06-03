@@ -43,8 +43,9 @@ import {
   useAuthStore,
 } from '@/stores';
 import { ConfirmAction, WritebackStatus, type WritebackStatusResponse } from '@/types';
-import { confirmPlan, getWritebackStatus } from '@/api';
+import { confirmPlan, getWritebackStatus, runPostDecisionLearning } from '@/api';
 import { exportDecisionPdf, exportDecisionExcel } from '@/api/exports';
+import type { PostDecisionLearningOutput } from '@/types';
 
 const { TextArea } = Input;
 
@@ -68,6 +69,8 @@ export const ConfirmationPanel: React.FC = () => {
   const [adjustments, setAdjustments] = useState<Record<string, unknown>[]>([]);
   const [exportLoading, setExportLoading] = useState<string | null>(null);
   const [decisionRecordId, setDecisionRecordId] = useState<string | null>(null);
+  const [learningLoading, setLearningLoading] = useState(false);
+  const [learningResult, setLearningResult] = useState<PostDecisionLearningOutput | null>(null);
 
   if (!incidentContextId) {
     return (
@@ -112,18 +115,37 @@ export const ConfirmationPanel: React.FC = () => {
 
     setConfirming(true);
     try {
-      await confirmPlan({
+      const confirmResponse = await confirmPlan({
         incident_id: incidentContextId,
         action,
         selected_plan_id: activePlanId,
         adjustments: action === ConfirmAction.ACCEPT_WITH_ADJUSTMENT ? adjustments : undefined,
         override_reason: action === ConfirmAction.REJECT_AND_RESELECT ? overrideReason : undefined,
         confirmed_by: currentUser?.user_id,
-      }).then((res) => {
-        setDecisionRecordId(res.decision_record_id);
       });
+      setDecisionRecordId(confirmResponse.decision_record_id);
       setMode('confirmed');
       message.success('方案已确认');
+      setLearningLoading(true);
+      runPostDecisionLearning({
+        decision_record_id: confirmResponse.decision_record_id,
+        incident_id: incidentContextId,
+        planner_id: currentUser?.user_id,
+        rule_text:
+          action === ConfirmAction.REJECT_AND_RESELECT
+            ? overrideReason
+            : undefined,
+        min_samples: 1,
+      })
+        .then((result) => {
+          setLearningResult(result);
+        })
+        .catch(() => {
+          message.warning('确认已完成，学习闭环证据暂未生成');
+        })
+        .finally(() => {
+          setLearningLoading(false);
+        });
       pollWritebackStatus().catch(() => {
         setWritebackProgress(null);
         setWritebackStatus(null);
@@ -198,6 +220,42 @@ export const ConfirmationPanel: React.FC = () => {
             )}
           </div>
         )}
+        <Divider style={{ margin: '12px 0' }} />
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 8, fontSize: 13 }}>学习闭环证据</div>
+          {learningLoading ? (
+            <Spin size="small" />
+          ) : learningResult ? (
+            <Space direction="vertical" size={6} style={{ width: '100%' }}>
+              <Space size={[4, 4]} wrap>
+                {learningResult.trace.map((step) => (
+                  <Tag key={step.agent_name} color="purple">
+                    {step.agent_name}
+                  </Tag>
+                ))}
+              </Space>
+              <Descriptions size="small" column={1} bordered>
+                <Descriptions.Item label="规则候选">
+                  {learningResult.rule_candidate_output.candidates.length} 条，
+                  {learningResult.rule_candidate_output.requires_human_review ? '需人工审核' : '无需审核'}
+                </Descriptions.Item>
+                <Descriptions.Item label="案例沉淀">
+                  {learningResult.case_memory_output.case_title}
+                </Descriptions.Item>
+                <Descriptions.Item label="偏好学习">
+                  {learningResult.preference_learning_output.recommended_use}，
+                  样本 {learningResult.preference_learning_output.sample_count}
+                </Descriptions.Item>
+              </Descriptions>
+            </Space>
+          ) : (
+            <Alert
+              message="等待 RuleCandidate → CaseMemory → PreferenceLearning 结果"
+              type="info"
+              showIcon
+            />
+          )}
+        </div>
         <Divider style={{ margin: '12px 0' }} />
         <Space>
           <Button

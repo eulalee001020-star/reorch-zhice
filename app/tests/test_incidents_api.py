@@ -19,7 +19,7 @@ from uuid import uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.api.incidents import _incident_store
+from app.api.incidents import _incident_store, _intake_dedup_store, _intake_stream_events
 from app.models.enums import (
     IncidentSeverity,
     IncidentStatus,
@@ -33,8 +33,12 @@ from app.models.incident import Incident
 def _clear_store():
     """Clear the in-memory incident store before each test."""
     _incident_store.clear()
+    _intake_dedup_store.clear()
+    _intake_stream_events.clear()
     yield
     _incident_store.clear()
+    _intake_dedup_store.clear()
+    _intake_stream_events.clear()
 
 
 def _make_app():
@@ -114,6 +118,42 @@ async def test_create_incident_success():
     assert data["severity"] == IncidentSeverity.P3_MEDIUM.value
     # Should be stored in the in-memory store
     assert str(created.incident_id) in _incident_store
+
+
+@pytest.mark.asyncio
+async def test_create_incident_uses_local_intake_in_development():
+    """Unpatched API intake should work for local frontend/demo mode."""
+    app = _make_app()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.post(
+            "/api/v1/incidents",
+            json={
+                "incident_type": "equipment_failure",
+                "occurred_at": "2024-06-15T08:00:00Z",
+                "resource_id": "CNC-LOCAL-001",
+                "report_source": "IoT",
+                "raw_payload": {
+                    "resource_info": {
+                        "criticality": "critical",
+                        "is_bottleneck": True,
+                        "has_redundancy": False,
+                        "active_work_order_count": 4,
+                    }
+                },
+            },
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["severity"] == IncidentSeverity.P1_CRITICAL.value
+    evidence = data["raw_payload"]["severity_evidence"]
+    assert evidence["is_bottleneck"] is True
+    assert "P1-Critical" in evidence["classification_rule"]
+    assert str(data["incident_id"]) in _incident_store
+    assert _intake_stream_events[0]["topic"] == "incidents.created"
 
 
 @pytest.mark.asyncio

@@ -131,13 +131,21 @@ class AnomalyIntakeCenter:
         self._validate_source(request.report_source)
 
         # --- Step 3: Classify severity ---
-        resource_info = await self._get_resource_info(request.resource_id)
+        resource_info = await self._get_resource_info(
+            request.resource_id,
+            request.raw_payload,
+        )
         severity = self._classifier.classify(
             resource_id=request.resource_id,
             resource_criticality=resource_info.get("criticality", "general"),
             is_bottleneck=resource_info.get("is_bottleneck", False),
             has_redundancy=resource_info.get("has_redundancy", False),
             active_work_order_count=resource_info.get("active_work_order_count", 0),
+        )
+        raw_payload = dict(request.raw_payload or {})
+        raw_payload["severity_evidence"] = _severity_evidence(
+            resource_info=resource_info,
+            severity=severity,
         )
 
         # --- Step 4: Create Incident with globally unique ID ---
@@ -154,7 +162,7 @@ class AnomalyIntakeCenter:
             status=IncidentStatus.PENDING_ANALYSIS,
             description=request.description,
             idempotency_key=request.idempotency_key,
-            raw_payload=request.raw_payload,
+            raw_payload=raw_payload,
             created_at=datetime.now(tz=timezone.utc),
         )
 
@@ -252,15 +260,21 @@ class AnomalyIntakeCenter:
             )
             raise SourceNotAllowedError(source_value)
 
-    async def _get_resource_info(self, resource_id: str) -> dict[str, Any]:
+    async def _get_resource_info(
+        self,
+        resource_id: str,
+        raw_payload: dict | None = None,
+    ) -> dict[str, Any]:
         """Retrieve resource metadata for severity classification.
 
         If a ``resource_info_provider`` callable was injected, delegate to it.
         Otherwise return sensible defaults so the service remains functional
         without an external resource registry.
         """
+        if raw_payload and isinstance(raw_payload.get("resource_info"), dict):
+            return _normalize_resource_info(raw_payload["resource_info"])
         if self._resource_info_provider is not None:
-            return await self._resource_info_provider(resource_id)
+            return _normalize_resource_info(await self._resource_info_provider(resource_id))
         # Default: general resource, no bottleneck, no redundancy, 0 work orders
         return {
             "criticality": "general",
@@ -268,3 +282,43 @@ class AnomalyIntakeCenter:
             "has_redundancy": False,
             "active_work_order_count": 0,
         }
+
+
+def _normalize_resource_info(resource_info: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "criticality": resource_info.get("criticality", "general"),
+        "is_bottleneck": bool(resource_info.get("is_bottleneck", False)),
+        "has_redundancy": bool(resource_info.get("has_redundancy", False)),
+        "active_work_order_count": int(resource_info.get("active_work_order_count", 0) or 0),
+    }
+
+
+def _severity_evidence(
+    *,
+    resource_info: dict[str, Any],
+    severity: IncidentSeverity,
+) -> dict[str, Any]:
+    criticality = resource_info.get("criticality", "general")
+    is_bottleneck = bool(resource_info.get("is_bottleneck", False))
+    has_redundancy = bool(resource_info.get("has_redundancy", False))
+    active_count = int(resource_info.get("active_work_order_count", 0) or 0)
+
+    if is_bottleneck or criticality == "high_risk_config":
+        rule = "瓶颈设备或高风险配置 -> P1-Critical"
+    elif criticality == "critical" and active_count >= 3:
+        rule = "关键资源且活跃工单数 >= 3 -> P2-High"
+    elif criticality == "general" and 1 <= active_count <= 2:
+        rule = "一般资源且活跃工单数为 1-2 -> P3-Medium"
+    elif criticality == "non_critical" and has_redundancy:
+        rule = "非关键资源且有冗余备份 -> P4-Low"
+    else:
+        rule = "资源信息不足或未命中特定规则 -> P3-Medium 默认兜底"
+
+    return {
+        "classified_severity": severity.value if hasattr(severity, "value") else str(severity),
+        "resource_criticality": criticality,
+        "is_bottleneck": is_bottleneck,
+        "has_redundancy": has_redundancy,
+        "active_work_order_count": active_count,
+        "classification_rule": rule,
+    }

@@ -3,7 +3,19 @@ export type { ListIncidentsParams } from './incidents';
 
 export { login, getMe } from './auth';
 
-export { understandIncidentText, runAgentDecisionFlow, structureFeedback } from './agents';
+export {
+  understandIncidentText,
+  runAgentDecisionFlow,
+  structureFeedback,
+  compileRuleCandidates,
+  listRuleCandidateReviews,
+  reviewRuleCandidate,
+  replayRuleCandidate,
+  publishRuleCandidate,
+  archiveCaseMemory,
+  learnPreference,
+  runPostDecisionLearning,
+} from './agents';
 
 export { resetSandboxDemo } from './demo';
 export type { DemoSandboxResponse } from './demo';
@@ -51,3 +63,6 @@ export {
   buildWritebackPreview,
   runDigitalTwinSample,
 } from './planning';
+
+export { runNgsLabDemo, runNgsLabBatchReplay, recordNgsPlannerDecision, listNgsPlannerDecisions } from './ngs';
+export { getEvidenceCenter } from './evidence';

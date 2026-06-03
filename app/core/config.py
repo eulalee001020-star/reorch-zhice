@@ -139,6 +139,19 @@ class IntegrationSettings(BaseSettings):
     request_timeout_seconds: float = 10.0
 
 
+class LLMSettings(BaseSettings):
+    """Optional OpenAI-compatible LLM settings for low-risk Agent steps."""
+
+    model_config = {"env_prefix": "LLM_"}
+
+    enabled: bool = False
+    provider: str = "openai_compatible"
+    base_url: str = "https://api.openai.com/v1"
+    api_key: str | None = None
+    model: str = "configured-small-agent-model"
+    request_timeout_seconds: float = 12.0
+
+
 class Settings(BaseSettings):
     """Aggregated settings — single entry point for all configuration."""
 
@@ -148,6 +161,7 @@ class Settings(BaseSettings):
     app: AppSettings = AppSettings()
     auth: AuthSettings = AuthSettings()
     integration: IntegrationSettings = IntegrationSettings()
+    llm: LLMSettings = LLMSettings()
 
 
 settings = Settings()

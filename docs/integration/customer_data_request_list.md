@@ -6,6 +6,8 @@ This list defines the minimum data needed to validate ReOrch against a real cust
 
 The request should be scoped as a sample data pack or sandbox API access first. Production writeback is explicitly out of scope until read-only and shadow-mode validation pass.
 
+Data readiness stop rules are defined in [data_readiness_stop_rules.md](data_readiness_stop_rules.md). If the minimum pack has blocking errors, ReOrch only provides a readiness gap report and must not promise replanning, ROI, or planner adoption metrics.
+
 ## Minimum Viable Data Pack
 
 | Data object | Source | Required | Use |

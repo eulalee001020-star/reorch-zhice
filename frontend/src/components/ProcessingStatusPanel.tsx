@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Card, Descriptions, Tag, Badge, Space } from 'antd';
+import { Card, Descriptions, Tag, Badge, Space, Collapse, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useWorkbenchStore, useIncidentStore, useAnalysisStore, usePlanStore } from '@/stores';
 import { incidentStatusMap } from '@/utils/statusMapping';
@@ -16,6 +16,7 @@ import type { IncidentStatus } from '@/types';
 
 export const ProcessingStatusPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
+  const agentTrace = useWorkbenchStore((s) => s.agentTrace);
   const incidents = useIncidentStore((s) => s.incidents);
   const strategyRecommendation = useAnalysisStore((s) => s.strategyRecommendation);
   const loadingImpact = useAnalysisStore((s) => s.loadingImpact);
@@ -62,7 +63,49 @@ export const ProcessingStatusPanel: React.FC = () => {
         <Descriptions.Item label="刷新时间">
           {dayjs().format('HH:mm:ss')}
         </Descriptions.Item>
+        <Descriptions.Item label="Agent">
+          {agentTrace.length > 0 ? (
+            <Tag color="purple">{agentTrace.length} 步</Tag>
+          ) : (
+            '-'
+          )}
+        </Descriptions.Item>
       </Descriptions>
+      {agentTrace.length > 0 && (
+        <Collapse
+          ghost
+          size="small"
+          style={{ marginTop: 4 }}
+          items={[
+            {
+              key: 'agent-trace',
+              label: `Agent 调用链：${agentTrace.map((step) => step.agent_name).join(' → ')}`,
+              children: (
+                <Space wrap size={[4, 4]}>
+                  {agentTrace.map((step, index) => (
+                    <Tooltip
+                      key={`${step.agent_name}-${index}`}
+                      title={`${step.output_summary}；${
+                        step.llm_used
+                          ? `模型：${step.model_name ?? step.llm_provider ?? 'LLM'}，token：${
+                              step.input_tokens ?? '-'
+                            }/${step.output_tokens ?? '-'}；`
+                          : step.fallback_reason
+                            ? `降级：${step.fallback_reason}；`
+                            : ''
+                      }边界：${step.guardrail}`}
+                    >
+                      <Tag color={step.llm_used ? 'magenta' : step.llm_allowed ? 'geekblue' : 'default'}>
+                        {step.agent_name}
+                      </Tag>
+                    </Tooltip>
+                  ))}
+                </Space>
+              ),
+            },
+          ]}
+        />
+      )}
     </Card>
   );
 };

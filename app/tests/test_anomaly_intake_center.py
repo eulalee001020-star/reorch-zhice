@@ -301,6 +301,37 @@ class TestReceiveEvent:
         )
 
     @pytest.mark.asyncio
+    async def test_raw_payload_resource_info_creates_severity_evidence(
+        self,
+        redis_client,
+        kafka_producer,
+    ):
+        """Structured frontend/MES input records why severity was assigned."""
+        center = _make_center(redis_client, kafka_producer)
+        incident = await center.receive_event(
+            _make_request(
+                raw_payload={
+                    "resource_info": {
+                        "criticality": "critical",
+                        "is_bottleneck": False,
+                        "has_redundancy": False,
+                        "active_work_order_count": 3,
+                    }
+                }
+            )
+        )
+
+        assert incident.severity in (
+            IncidentSeverity.P2_HIGH,
+            IncidentSeverity.P2_HIGH.value,
+        )
+        evidence = incident.raw_payload["severity_evidence"]
+        assert evidence["classified_severity"] == IncidentSeverity.P2_HIGH.value
+        assert evidence["resource_criticality"] == "critical"
+        assert evidence["active_work_order_count"] == 3
+        assert "P2-High" in evidence["classification_rule"]
+
+    @pytest.mark.asyncio
     async def test_incident_has_correct_fields(self, redis_client, kafka_producer):
         """Created Incident contains all standardized fields (Req 1.2)."""
         center = _make_center(redis_client, kafka_producer)

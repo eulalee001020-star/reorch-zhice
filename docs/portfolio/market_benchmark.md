@@ -80,6 +80,8 @@ ReOrch 对应材料：
 
 成熟 APS/MOM/MES 厂商已经具备详细排程、有限产能、what-if 和动态重排能力。ReOrch 不能宣称“只有我们能重排”。
 
+以金蝶作为参照时，这个边界需要讲得更清楚。金蝶云星空/星瀚制造云已经覆盖计划排程、生产执行、设备、仓储、质量和制造运营等主系统能力，金蝶 AI 苍穹也具备企业级 AI 平台、低代码、大模型和 Agent 架构能力。ReOrch 的机会不在替代这些底座，而是在客户已有 ERP/MES/APS 的情况下，把现场异常发生后的判断、解释、确认、审计和经验沉淀补成一个更轻的决策层。更完整的说明见 [kingdee_positioning_note.md](kingdee_positioning_note.md)。
+
 更合理的差异化：
 
 | 方向 | 成熟 APS/MOM | ReOrch 切口 |

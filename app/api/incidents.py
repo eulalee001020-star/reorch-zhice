@@ -12,12 +12,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.auth import CurrentUser, get_optional_current_user
+from app.core.config import settings
 from app.models.enums import IncidentSeverity, IncidentStatus, IncidentType
 from app.models.incident import Incident, IncidentCreateRequest
 from app.services.persistence import fetch_incident, list_incidents_from_db, persist_incident
@@ -35,15 +36,49 @@ router = APIRouter(prefix="/api/v1/incidents", tags=["incidents"])
 # Local fallback cache used only when PostgreSQL is unavailable in dev/test.
 # ---------------------------------------------------------------------------
 _incident_store: dict[str, Incident] = {}
+_intake_dedup_store: dict[str, Any] = {}
+_intake_stream_events: list[dict[str, Any]] = []
+
+
+class _LocalDedupClient:
+    """Small in-process Redis stand-in for local demo/API tests."""
+
+    async def get(self, key: str) -> Any | None:
+        return _intake_dedup_store.get(key)
+
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
+        _ = ttl
+        _intake_dedup_store[key] = value
+
+
+class _LocalEventPublisher:
+    """Records emitted stream events when Kafka is not part of the local demo."""
+
+    async def send(
+        self,
+        topic: str,
+        value: Any,
+        key: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        _intake_stream_events.append(
+            {"topic": topic, "value": value, "key": key, "headers": headers}
+        )
 
 
 def _get_intake_center() -> AnomalyIntakeCenter:
     """Build a lightweight AnomalyIntakeCenter for the API layer.
 
-    Uses a thin wrapper that skips Redis/Kafka so the endpoint can work
-    with the in-memory store.  A proper DI container will replace this
-    once the DB session layer is ready.
+    In local development and portfolio demos, this skips Redis/Kafka so the
+    frontend intake path works with only the FastAPI process running. In
+    production, use the configured infrastructure clients.
     """
+    if settings.app.env != "production":
+        return AnomalyIntakeCenter(
+            redis_client=_LocalDedupClient(),
+            kafka_producer=_LocalEventPublisher(),
+        )
+
     from app.core.kafka_producer import KafkaProducer
     from app.core.redis_client import redis_client
 

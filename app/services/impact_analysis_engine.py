@@ -15,6 +15,7 @@ from app.models.impact import (
     AffectedOperation,
     AffectedWorkOrder,
     ImpactReport,
+    SeverityExplanation,
 )
 from app.models.incident import Incident
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
@@ -63,7 +64,7 @@ class ImpactAnalysisEngine:
                 incident_id,
                 reason,
             )
-            return ImpactReport(
+            report = ImpactReport(
                 incident_id=incident_id,
                 schedule_snapshot_id=self._to_uuid(
                     snapshot.snapshot_id if snapshot else UUID(int=0)
@@ -72,6 +73,11 @@ class ImpactAnalysisEngine:
                 is_degraded_mode=True,
                 degraded_reason=reason,
             )
+            report.severity_explanation = self._build_severity_explanation(
+                incident,
+                report,
+            )
+            return report
 
         snapshot_id = self._to_uuid(snapshot.snapshot_id)
         analysis_reference_time: datetime = snapshot.captured_at
@@ -160,6 +166,10 @@ class ImpactAnalysisEngine:
 
         # --- Step 5: Maybe upgrade severity (Req 2.5 / design) ---
         report = self._maybe_upgrade_severity(incident, report)
+        report.severity_explanation = self._build_severity_explanation(
+            incident,
+            report,
+        )
 
         return report
 
@@ -255,9 +265,7 @@ class ImpactAnalysisEngine:
         Only upgrades, never downgrades:
         P4 → P3, P3 → P2, P2 → P1, P1 stays P1.
         """
-        has_breach = report.delivery_risk_distribution.get(
-            DeliveryRiskLevel.BREACH, 0
-        ) > 0
+        has_breach = self._risk_count(report, DeliveryRiskLevel.BREACH) > 0
 
         if not has_breach:
             return report
@@ -284,7 +292,104 @@ class ImpactAnalysisEngine:
 
         return report
 
+    def _build_severity_explanation(
+        self,
+        incident: Incident,
+        report: ImpactReport,
+    ) -> SeverityExplanation:
+        """Build the auditable rationale behind the effective severity."""
+        initial_severity = self._incident_severity(incident.severity)
+        effective_severity = (
+            self._incident_severity(report.upgraded_severity)
+            if report.severity_upgraded and report.upgraded_severity is not None
+            else initial_severity
+        )
+        evidence = self._severity_evidence_from_incident(incident)
+        source = "anomaly_intake_center" if evidence else "incident_payload"
+        classification_rule = str(
+            evidence.get(
+                "classification_rule",
+                (
+                    f"上游事件已提供严重等级 {initial_severity.value}；"
+                    "当前 payload 未携带接入分级特征。"
+                ),
+            )
+        )
+        factors = {
+            "resource_id": incident.resource_id,
+            "report_source": self._value(incident.report_source),
+        }
+        for key in (
+            "classified_severity",
+            "resource_criticality",
+            "is_bottleneck",
+            "has_redundancy",
+            "active_work_order_count",
+        ):
+            if key in evidence:
+                factors[key] = evidence[key]
+
+        breach_count = self._risk_count(report, DeliveryRiskLevel.BREACH)
+        upgrade_rule: str | None = None
+        upgrade_reason: str | None = None
+        if breach_count > 0:
+            upgrade_rule = (
+                "影响分析发现 Breach 交期风险时只上调一级："
+                "P4->P3 / P3->P2 / P2->P1，P1 保持 P1。"
+            )
+            if report.severity_upgraded:
+                upgrade_reason = (
+                    f"发现 {breach_count} 个 Breach 风险工单，"
+                    f"严重等级从 {initial_severity.value} 升级到 "
+                    f"{effective_severity.value}。"
+                )
+            else:
+                upgrade_reason = (
+                    f"发现 {breach_count} 个 Breach 风险工单，"
+                    f"但当前等级 {initial_severity.value} 已是最高或无需升级。"
+                )
+        else:
+            upgrade_reason = "未发现 Breach 交期风险，影响分析不升级严重等级。"
+
+        return SeverityExplanation(
+            initial_severity=initial_severity,
+            effective_severity=effective_severity,
+            source=source,
+            classification_rule=classification_rule,
+            factors=factors,
+            upgrade_applied=report.severity_upgraded,
+            upgrade_rule=upgrade_rule,
+            upgrade_reason=upgrade_reason,
+            breach_work_order_count=breach_count,
+        )
+
     # ── helpers ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _severity_evidence_from_incident(incident: Incident) -> dict:
+        raw_payload = incident.raw_payload or {}
+        evidence = raw_payload.get("severity_evidence")
+        return evidence if isinstance(evidence, dict) else {}
+
+    @staticmethod
+    def _incident_severity(value: IncidentSeverity | str | None) -> IncidentSeverity:
+        if isinstance(value, IncidentSeverity):
+            return value
+        return IncidentSeverity(str(value))
+
+    @staticmethod
+    def _risk_count(report: ImpactReport, level: DeliveryRiskLevel) -> int:
+        return int(
+            report.delivery_risk_distribution.get(
+                level,
+                report.delivery_risk_distribution.get(level.value, 0),
+            )
+            or 0
+        )
+
+    @staticmethod
+    def _value(value) -> str:
+        return value.value if hasattr(value, "value") else str(value)
 
     @staticmethod
     def _remaining_minutes(op: Operation, reference_time: datetime) -> float:

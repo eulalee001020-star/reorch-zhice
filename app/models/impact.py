@@ -6,6 +6,7 @@ severity of an anomaly event.
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -35,6 +36,20 @@ class AffectedWorkOrder(ReOrchModel):
     affected_operations: list[AffectedOperation] = Field(default_factory=list)
 
 
+class SeverityExplanation(ReOrchModel):
+    """Auditable severity rationale combining intake and impact evidence."""
+
+    initial_severity: IncidentSeverity
+    effective_severity: IncidentSeverity
+    source: str
+    classification_rule: str
+    factors: dict[str, Any] = Field(default_factory=dict)
+    upgrade_applied: bool = False
+    upgrade_rule: str | None = None
+    upgrade_reason: str | None = None
+    breach_work_order_count: int = 0
+
+
 class ImpactReport(ReOrchModel):
     """Structured impact report produced by Impact_Analysis_Engine.
 
@@ -56,3 +71,4 @@ class ImpactReport(ReOrchModel):
     degraded_reason: str | None = None
     severity_upgraded: bool = False
     upgraded_severity: IncidentSeverity | None = None
+    severity_explanation: SeverityExplanation | None = None

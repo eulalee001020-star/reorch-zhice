@@ -1,4 +1,9 @@
 export { default as DecisionWorkbench } from './DecisionWorkbench';
 export { default as CaseLibraryPage } from './CaseLibraryPage';
+export { default as DataReadinessPage } from './DataReadinessPage';
+export { default as EvidenceCenterPage } from './EvidenceCenterPage';
 export { default as InitialSchedulingPage } from './InitialSchedulingPage';
+export { default as NgsLabPage } from './NgsLabPage';
 export { default as PocDashboardPage } from './PocDashboardPage';
+export { default as PreferenceProfilePage } from './PreferenceProfilePage';
+export { default as RuleCandidateReviewPage } from './RuleCandidateReviewPage';

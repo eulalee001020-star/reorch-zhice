@@ -1,0 +1,106 @@
+{
+  "package_id": "ngs-lrsp-public-safe-batch-v1",
+  "version": "2026-05-28",
+  "description": "Public-safe synthetic NGS-LRSP replay package for ReOrch NGS lab scheduling validation.",
+  "cases": [
+    {
+      "case_id": "LAB_A",
+      "scenario_id": "ngs-lrsp-p0-urgent-reagent-downtime-qc",
+      "description": "Urgent sample, sequencer downtime, borderline QC, and reagent open-stability pressure.",
+      "modifiers": {
+        "snapshot_id": "ngs-snapshot-lab-a",
+        "sample_priority": {
+          "S-002": "urgent_clinical",
+          "S-003": "STAT"
+        },
+        "qc_status": {
+          "S-003": "borderline"
+        },
+        "reagents": {
+          "LIB-A": {
+            "quantity_available": 2,
+            "expires_after_hours": 8,
+            "open_stability_hours": 6
+          }
+        },
+        "resource_calendar": [
+          {
+            "resource_id": "SEQ-01",
+            "start_hour": 7,
+            "end_hour": 10,
+            "reason": "sequencer_downtime"
+          }
+        ]
+      },
+      "expected": {
+        "min_feasible": 3,
+        "min_rejected": 1,
+        "recommended_strategy": "reagent_repair"
+      }
+    },
+    {
+      "case_id": "LAB_B",
+      "scenario_id": "ngs-lrsp-stage-balance-after-run-risk",
+      "description": "Stage-first redistribution is expected to win after batch-level analysis pressure increases.",
+      "modifiers": {
+        "snapshot_id": "ngs-snapshot-lab-b",
+        "qc_status": {
+          "S-003": "borderline"
+        },
+        "resource_calendar": [
+          {
+            "resource_id": "SEQ-01",
+            "start_hour": 7,
+            "end_hour": 10,
+            "reason": "sequencer_downtime"
+          }
+        ]
+      },
+      "candidate_metric_overrides": {
+        "ngs-cand-stage-first": {
+          "weighted_tardiness_minutes": 42,
+          "urgent_tardiness_minutes": 15,
+          "rescue_burden": 3,
+          "schedule_stability": 0.78
+        }
+      },
+      "expected": {
+        "min_feasible": 3,
+        "min_rejected": 1,
+        "recommended_strategy": "stage_first_redistribution"
+      }
+    },
+    {
+      "case_id": "LAB_C",
+      "scenario_id": "ngs-lrsp-local-repair-low-disturbance",
+      "description": "Event-local repair is expected to win when low disturbance is preferred and resource risk is localized.",
+      "modifiers": {
+        "snapshot_id": "ngs-snapshot-lab-c",
+        "qc_status": {
+          "S-003": "borderline"
+        },
+        "resource_calendar": [
+          {
+            "resource_id": "SEQ-01",
+            "start_hour": 7,
+            "end_hour": 10,
+            "reason": "sequencer_downtime"
+          }
+        ]
+      },
+      "candidate_metric_overrides": {
+        "ngs-cand-event-local": {
+          "weighted_tardiness_minutes": 50,
+          "urgent_tardiness_minutes": 12,
+          "rescue_burden": 1,
+          "schedule_stability": 0.93
+        }
+      },
+      "expected": {
+        "min_feasible": 3,
+        "min_rejected": 1,
+        "recommended_strategy": "event_local_repair"
+      }
+    }
+  ]
+}

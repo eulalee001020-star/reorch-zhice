@@ -28,6 +28,7 @@ from app.services.impact_analysis_engine import ImpactAnalysisEngine
 def _make_incident(
     resource_id: str = "machine-A",
     severity: IncidentSeverity = IncidentSeverity.P3_MEDIUM,
+    raw_payload: dict | None = None,
 ) -> Incident:
     return Incident(
         incident_id=uuid4(),
@@ -36,6 +37,7 @@ def _make_incident(
         resource_id=resource_id,
         report_source=ReportSource.MES,
         severity=severity,
+        raw_payload=raw_payload,
     )
 
 
@@ -240,6 +242,13 @@ async def test_severity_upgrade_on_breach(engine):
 
     assert report.severity_upgraded is True
     assert report.upgraded_severity == IncidentSeverity.P2_HIGH
+    explanation = report.severity_explanation
+    assert explanation is not None
+    assert explanation.initial_severity == IncidentSeverity.P3_MEDIUM.value
+    assert explanation.effective_severity == IncidentSeverity.P2_HIGH.value
+    assert explanation.upgrade_applied is True
+    assert explanation.breach_work_order_count == 1
+    assert "Breach" in (explanation.upgrade_reason or "")
 
 
 @pytest.mark.asyncio
@@ -293,6 +302,54 @@ async def test_no_severity_upgrade_without_breach(engine):
 
     assert report.severity_upgraded is False
     assert report.upgraded_severity is None
+
+
+@pytest.mark.asyncio
+async def test_severity_explanation_uses_intake_evidence(engine):
+    """Severity explanation exposes the intake rule and impact upgrade rationale."""
+    ops = [
+        Operation(
+            operation_id="op-safe-evidence",
+            work_order_id="wo-safe-evidence",
+            resource_id="machine-A",
+            start_time=_ts(0),
+            end_time=_ts(1),
+        ),
+    ]
+    wo = WorkOrder(
+        work_order_id="wo-safe-evidence",
+        product_name="Evidence-Product",
+        due_date=_ts(24),
+        operations=ops,
+    )
+    snapshot = _make_snapshot(captured_at=_ts(0), work_orders=[wo])
+    incident = _make_incident(
+        resource_id="machine-A",
+        severity=IncidentSeverity.P2_HIGH,
+        raw_payload={
+            "severity_evidence": {
+                "classified_severity": "P2-High",
+                "resource_criticality": "critical",
+                "is_bottleneck": False,
+                "has_redundancy": False,
+                "active_work_order_count": 3,
+                "classification_rule": "关键资源且活跃工单数 >= 3 -> P2-High",
+            }
+        },
+    )
+    report = await engine.analyze(incident, snapshot)
+
+    explanation = report.severity_explanation
+    assert explanation is not None
+    assert explanation.initial_severity == IncidentSeverity.P2_HIGH.value
+    assert explanation.effective_severity == IncidentSeverity.P2_HIGH.value
+    assert explanation.source == "anomaly_intake_center"
+    assert explanation.classification_rule == "关键资源且活跃工单数 >= 3 -> P2-High"
+    assert explanation.factors["resource_criticality"] == "critical"
+    assert explanation.factors["active_work_order_count"] == 3
+    assert explanation.upgrade_applied is False
+    assert explanation.breach_work_order_count == 0
+    assert "未发现 Breach" in (explanation.upgrade_reason or "")
 
 
 # ── Tests: degraded mode (Req 2.7) ──────────────────────────────────

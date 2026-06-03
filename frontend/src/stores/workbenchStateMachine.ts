@@ -59,6 +59,7 @@ export async function switchIncident(incidentId: string): Promise<void> {
   planStore.reset();
   confirmStore.reset();
   analysisStore.reset();
+  workbenchStore.setAgentTrace([]);
 
   // 3. Return to default view
   workbenchStore.setCurrentView('incident_analysis');
@@ -87,6 +88,7 @@ export async function switchIncident(incidentId: string): Promise<void> {
       s.impactReport = output.impact_report;
       s.strategyRecommendation = output.strategy;
     });
+    workbenchStore.setAgentTrace(output.trace);
     usePlanStore.setState((s) => {
       s.candidatePlans = output.candidate_plans;
       s.qualityGates = output.quality_gates;
@@ -97,6 +99,7 @@ export async function switchIncident(incidentId: string): Promise<void> {
       }
     });
   } catch {
+    workbenchStore.setAgentTrace([]);
     await Promise.all([
       analysisStore.fetchImpactReport(incidentId),
       analysisStore.fetchStrategy(incidentId),

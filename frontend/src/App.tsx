@@ -1,9 +1,13 @@
 import { lazy, Suspense, useState } from 'react';
 import { Button, Card, ConfigProvider, Form, Input, Layout, Menu, Space, Spin, Tag, message } from 'antd';
 import {
+  AuditOutlined,
+  BranchesOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   ExperimentOutlined,
+  ProfileOutlined,
+  SafetyCertificateOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
@@ -17,8 +21,13 @@ const { Header } = Layout;
 
 const DecisionWorkbench = lazy(() => import('@/pages/DecisionWorkbench'));
 const CaseLibraryPage = lazy(() => import('@/pages/CaseLibraryPage'));
+const DataReadinessPage = lazy(() => import('@/pages/DataReadinessPage'));
+const EvidenceCenterPage = lazy(() => import('@/pages/EvidenceCenterPage'));
 const InitialSchedulingPage = lazy(() => import('@/pages/InitialSchedulingPage'));
+const NgsLabPage = lazy(() => import('@/pages/NgsLabPage'));
 const PocDashboardPage = lazy(() => import('@/pages/PocDashboardPage'));
+const PreferenceProfilePage = lazy(() => import('@/pages/PreferenceProfilePage'));
+const RuleCandidateReviewPage = lazy(() => import('@/pages/RuleCandidateReviewPage'));
 
 function App() {
   const [activeTab, setActiveTab] = useState<string>('workbench');
@@ -83,23 +92,55 @@ function App() {
               color: '#fff',
               fontWeight: 600,
               fontSize: 16,
-              marginRight: 24,
+              marginRight: 12,
               whiteSpace: 'nowrap',
             }}
           >
             ReOrch 智策
           </div>
+          <Tag
+            color="geekblue"
+            style={{ marginRight: 8 }}
+            title="异常决策层，不替代 ERP/MES/MOM"
+          >
+            异常决策层
+          </Tag>
           <Menu
             theme="dark"
             mode="horizontal"
             selectedKeys={[activeTab]}
             onClick={({ key }) => setActiveTab(key)}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 0 }}
             items={[
               {
                 key: 'workbench',
                 icon: <DashboardOutlined />,
                 label: '决策工作台',
+              },
+              {
+                key: 'rules',
+                icon: <BranchesOutlined />,
+                label: '规则审核',
+              },
+              {
+                key: 'preference',
+                icon: <ProfileOutlined />,
+                label: '偏好画像',
+              },
+              {
+                key: 'readiness',
+                icon: <SafetyCertificateOutlined />,
+                label: '数据就绪',
+              },
+              {
+                key: 'ngs',
+                icon: <ExperimentOutlined />,
+                label: 'NGS Lab',
+              },
+              {
+                key: 'evidence',
+                icon: <AuditOutlined />,
+                label: '证据中心',
               },
               {
                 key: 'initial',
@@ -132,8 +173,13 @@ function App() {
           }
         >
           {activeTab === 'workbench' && <DecisionWorkbench />}
+          {activeTab === 'rules' && <RuleCandidateReviewPage />}
+          {activeTab === 'preference' && <PreferenceProfilePage />}
+          {activeTab === 'readiness' && <DataReadinessPage />}
           {activeTab === 'initial' && <InitialSchedulingPage />}
           {activeTab === 'poc' && <PocDashboardPage />}
+          {activeTab === 'evidence' && <EvidenceCenterPage />}
+          {activeTab === 'ngs' && <NgsLabPage />}
           {activeTab === 'cases' && <CaseLibraryPage />}
         </Suspense>
       </Layout>

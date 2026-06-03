@@ -133,6 +133,18 @@ export interface AffectedWorkOrder {
   affected_operations: AffectedOperation[];
 }
 
+export interface SeverityExplanation {
+  initial_severity: IncidentSeverity;
+  effective_severity: IncidentSeverity;
+  source: string;
+  classification_rule: string;
+  factors: Record<string, unknown>;
+  upgrade_applied: boolean;
+  upgrade_rule?: string | null;
+  upgrade_reason?: string | null;
+  breach_work_order_count: number;
+}
+
 export interface ImpactReport {
   incident_id: string;
   schedule_snapshot_id: string;
@@ -146,6 +158,7 @@ export interface ImpactReport {
   degraded_reason?: string | null;
   severity_upgraded: boolean;
   upgraded_severity?: IncidentSeverity | null;
+  severity_explanation?: SeverityExplanation | null;
 }
 
 export interface StrategyRecommendation {
@@ -330,6 +343,13 @@ export interface AgentTraceStep {
   output_summary: string;
   freedom_level: string;
   llm_allowed: boolean;
+  llm_used?: boolean;
+  llm_provider?: string | null;
+  model_name?: string | null;
+  latency_ms?: number | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  fallback_reason?: string | null;
   deterministic_tools: string[];
   guardrail: string;
 }
@@ -391,11 +411,93 @@ export interface FeedbackStructuringOutput {
   override_reason: string;
   reason_detail: string;
   future_rule_candidate?: string | null;
+  rule_candidates: ConstraintCandidate[];
   confidence: number;
   requires_human_review: boolean;
   decision_record_id?: string | null;
   incident_id?: string | null;
   trace: AgentTraceStep[];
+}
+
+export interface ConstraintCandidate {
+  candidate_id: string;
+  constraint_type: string;
+  scope: Record<string, unknown>;
+  source_text: string;
+  compiled_rule: string;
+  confidence: number;
+  status: string;
+  risk_note?: string | null;
+  source_refs: string[];
+}
+
+export interface RuleCandidateRequest {
+  rule_text: string;
+  context?: Record<string, unknown>;
+  source?: string;
+  incident_id?: string | null;
+  decision_record_id?: string | null;
+}
+
+export interface RuleCandidateOutput {
+  candidates: ConstraintCandidate[];
+  requires_human_review: boolean;
+  lifecycle_status: string;
+  trace: AgentTraceStep[];
+}
+
+export interface RuleCandidateReplayResult {
+  pass_replay: boolean;
+  checked_at: string;
+  scenario_count: number;
+  blocked_reason?: string | null;
+  metrics: Record<string, unknown>;
+  notes: string[];
+}
+
+export interface RuleCandidatePublicationRecord {
+  release_id: string;
+  candidate_id: string;
+  published_at: string;
+  published_by: string;
+  release_note?: string | null;
+  readonly: boolean;
+  version: string;
+}
+
+export interface RuleCandidateReviewRecord {
+  candidate: ConstraintCandidate;
+  status: string;
+  reviewer_id?: string | null;
+  review_note?: string | null;
+  reject_reason?: string | null;
+  replay_result?: RuleCandidateReplayResult | null;
+  published_record?: RuleCandidatePublicationRecord | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RuleCandidateListResponse {
+  records: RuleCandidateReviewRecord[];
+  status_counts: Record<string, number>;
+}
+
+export interface RuleCandidateReviewRequest {
+  action: string;
+  reviewer_id?: string;
+  review_note?: string | null;
+  reject_reason?: string | null;
+}
+
+export interface RuleCandidateReplayRequest {
+  scenario_set?: string;
+  scenario_count?: number;
+  notes?: string[];
+}
+
+export interface RuleCandidatePublishRequest {
+  publisher_id?: string;
+  release_note?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -501,6 +603,56 @@ export interface PreferenceProfile {
   adjustment_patterns: Record<string, unknown>[];
   override_history: Record<string, unknown>[];
   updated_at: string;
+}
+
+export interface CaseMemoryRequest {
+  decision_record: DecisionRecord;
+  execution_result: ExecutionResult;
+  case_status?: string;
+  tags?: string[];
+}
+
+export interface CaseMemoryOutput {
+  case_record: CaseRecord;
+  case_title: string;
+  incident_signature: string;
+  reusability: string;
+  status: string;
+  trace: AgentTraceStep[];
+}
+
+export interface PreferenceLearningRequest {
+  planner_id: string;
+  case_records?: CaseRecord[];
+  existing_profile?: PreferenceProfile | null;
+  min_samples?: number;
+}
+
+export interface PreferenceLearningOutput {
+  preference_profile: PreferenceProfile;
+  evidence_summary: string[];
+  recommended_use: string;
+  confidence: number;
+  requires_replay_validation: boolean;
+  sample_count: number;
+  trace: AgentTraceStep[];
+}
+
+export interface PostDecisionLearningRequest {
+  decision_record_id?: string | null;
+  incident_id?: string | null;
+  decision_record?: DecisionRecord | null;
+  execution_result?: ExecutionResult | null;
+  planner_id?: string | null;
+  rule_text?: string | null;
+  min_samples?: number;
+}
+
+export interface PostDecisionLearningOutput {
+  rule_candidate_output: RuleCandidateOutput;
+  case_memory_output: CaseMemoryOutput;
+  preference_learning_output: PreferenceLearningOutput;
+  trace: AgentTraceStep[];
 }
 
 // ---------------------------------------------------------------------------
@@ -699,4 +851,269 @@ export interface DigitalTwinRunResponse {
   value_report?: ValueTrackingReport | null;
   validation_evidence: Record<string, unknown>;
   runbook: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Evidence Center
+// ---------------------------------------------------------------------------
+
+export interface EvidenceTable {
+  columns: string[];
+  rows: Record<string, string>[];
+}
+
+export interface EvidenceItem {
+  evidence_id: string;
+  category: string;
+  title: string;
+  status: string;
+  summary: string;
+  source_path?: string | null;
+  source_refs: string[];
+  metrics: Record<string, unknown>;
+  table?: EvidenceTable | null;
+  limitations: string[];
+  generated_at: string;
+}
+
+export interface EvidenceCenterResponse {
+  generated_at: string;
+  items: EvidenceItem[];
+  summary_counts: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// NGS Lab Protected Repair Portfolio
+// ---------------------------------------------------------------------------
+
+export interface NgsSample {
+  sample_id: string;
+  assay: string;
+  priority: string;
+  arrival_time: string;
+  due_time: string;
+  risk_class: string;
+  max_hold_minutes?: number | null;
+}
+
+export interface NgsEntity {
+  entity_id: string;
+  entity_type: string;
+  sample_id: string;
+  parent_entity_ids: string[];
+}
+
+export interface NgsOperation {
+  operation_id: string;
+  sample_id: string;
+  entity_id: string;
+  stage: string;
+  duration_minutes: number;
+  eligible_resource_ids: string[];
+  predecessor_ids: string[];
+  planned_start: string;
+  planned_end: string;
+  resource_id: string;
+  reagent_lot_id?: string | null;
+  pool_id?: string | null;
+  run_id?: string | null;
+  index_id?: string | null;
+  qc_status?: string | null;
+  zone?: string | null;
+  frozen_flag: boolean;
+}
+
+export interface NgsResourceWindow {
+  resource_id: string;
+  window_start: string;
+  window_end: string;
+  reason: string;
+}
+
+export interface NgsResource {
+  resource_id: string;
+  resource_type: string;
+  capabilities: string[];
+  capacity: number;
+  zone?: string | null;
+}
+
+export interface NgsReagentLot {
+  lot_id: string;
+  compatible_assays: string[];
+  quantity_available: number;
+  expires_at: string;
+  opened_at?: string | null;
+  open_stability_hours?: number | null;
+}
+
+export interface NgsPool {
+  pool_id: string;
+  sample_ids: string[];
+  index_ids: string[];
+  max_members: number;
+  run_id?: string | null;
+}
+
+export interface NgsRun {
+  run_id: string;
+  resource_id: string;
+  pool_ids: string[];
+  capacity_pools: number;
+  scheduled_start: string;
+  scheduled_end: string;
+  frozen_flag: boolean;
+}
+
+export interface NgsLabEvent {
+  event_id: string;
+  event_type: string;
+  observed_at: string;
+  target_id?: string | null;
+  description: string;
+  severity: string;
+}
+
+export interface NgsLabSnapshot {
+  snapshot_id: string;
+  captured_at: string;
+  lab_id: string;
+  samples: NgsSample[];
+  entities: NgsEntity[];
+  operations: NgsOperation[];
+  resources: NgsResource[];
+  resource_calendar: NgsResourceWindow[];
+  reagents: NgsReagentLot[];
+  pools: NgsPool[];
+  runs: NgsRun[];
+  events: NgsLabEvent[];
+}
+
+export interface NgsGateIssue {
+  gate: string;
+  severity: string;
+  entity_type: string;
+  entity_id: string;
+  message: string;
+  source_refs: string[];
+}
+
+export interface NgsQualityGateReport {
+  candidate_id: string;
+  pass_gate: boolean;
+  confidence_level: string;
+  hard_blockers: NgsGateIssue[];
+  warnings: NgsGateIssue[];
+  gate_summary: Record<string, string>;
+}
+
+export interface NgsRepairAction {
+  action_type: string;
+  target_id: string;
+  description: string;
+  source_refs: string[];
+}
+
+export interface NgsRepairCandidate {
+  candidate_id: string;
+  strategy_type: string;
+  label: string;
+  operations: NgsOperation[];
+  pools: NgsPool[];
+  runs: NgsRun[];
+  repair_actions: NgsRepairAction[];
+  hard_feasible: boolean;
+  weighted_tardiness_minutes: number;
+  urgent_tardiness_minutes: number;
+  rescue_burden: number;
+  schedule_stability: number;
+  soft_score: number;
+  gate_report?: NgsQualityGateReport | null;
+  explanation?: string | null;
+}
+
+export interface NgsImpactReport {
+  impacted_samples: string[];
+  impacted_entities: string[];
+  impacted_pools: string[];
+  impacted_runs: string[];
+  tat_risk_samples: string[];
+  event_summary: string[];
+}
+
+export interface NgsAgentTraceStep {
+  agent_name: string;
+  input_refs: string[];
+  output_refs: string[];
+  decision: string;
+  confidence: number;
+  boundary: string;
+}
+
+export interface NgsLabDemoResponse {
+  scenario_id: string;
+  replay_case_id?: string | null;
+  source_package_id?: string | null;
+  product_name: string;
+  snapshot: NgsLabSnapshot;
+  impact_report: NgsImpactReport;
+  feasible_candidates: NgsRepairCandidate[];
+  rejected_candidates: NgsRepairCandidate[];
+  recommended_candidate?: NgsRepairCandidate | null;
+  agent_trace: NgsAgentTraceStep[];
+  audit_package: Record<string, unknown>;
+  runbook: string[];
+}
+
+export interface NgsReplayCaseResult {
+  case_id: string;
+  scenario_id: string;
+  description?: string | null;
+  expected_recommended_strategy?: string | null;
+  pass_replay: boolean;
+  failure_reasons: string[];
+  response: NgsLabDemoResponse;
+}
+
+export interface NgsBatchReplayResponse {
+  package_id: string;
+  package_version: string;
+  source_path: string;
+  generated_at: string;
+  case_results: NgsReplayCaseResult[];
+  aggregate_metrics: Record<string, unknown>;
+}
+
+export interface NgsBatchReplayRequest {
+  package_payload?: Record<string, unknown> | null;
+  source_name?: string;
+}
+
+export interface NgsPlannerDecisionRequest {
+  package_id: string;
+  case_id: string;
+  action: string;
+  selected_candidate_id?: string | null;
+  planner_id?: string;
+  reason?: string | null;
+  override_reason?: string | null;
+}
+
+export interface NgsPlannerDecisionRecord {
+  decision_id: string;
+  package_id: string;
+  case_id: string;
+  action: string;
+  selected_candidate_id?: string | null;
+  planner_id: string;
+  reason?: string | null;
+  override_reason?: string | null;
+  created_at: string;
+  lims_writeback_executed: boolean;
+  audit_refs: string[];
+}
+
+export interface NgsPlannerDecisionResponse {
+  record: NgsPlannerDecisionRecord;
+  records: NgsPlannerDecisionRecord[];
 }

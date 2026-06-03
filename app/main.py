@@ -75,6 +75,8 @@ from app.api.solver import router as solver_router
 from app.api.confirmation import router as confirmation_router
 from app.api.cases import router as cases_router
 from app.api.demo import router as demo_router
+from app.api.evidence import router as evidence_router
+from app.api.ngs_lab import router as ngs_lab_router
 from app.api.planning import router as planning_router
 from app.api.health import router as health_router
 from app.api.ws import router as ws_router
@@ -88,6 +90,8 @@ app.include_router(solver_router)
 app.include_router(confirmation_router)
 app.include_router(cases_router)
 app.include_router(demo_router)
+app.include_router(evidence_router)
+app.include_router(ngs_lab_router)
 app.include_router(planning_router)
 app.include_router(health_router)
 app.include_router(ws_router)
