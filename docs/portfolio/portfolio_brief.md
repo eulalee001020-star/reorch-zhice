@@ -99,6 +99,10 @@ NGS 特化版路径：
 ```text
 README.md                                    项目首页与作品集入口
 docs/portfolio/product_portfolio.md          产品作品集总览
+docs/portfolio/service_ai_role_fit.md        服务领域 AI 产品能力映射
+docs/portfolio/service_ai_transfer_note.md   服务领域 AI 迁移说明
+docs/product/prd_decision_workbench.md       PRD：异常决策工作台
+docs/project/mvp_delivery_plan.md            MVP 交付计划与项目推进
 docs/portfolio/portfolio_proof_matrix.md     作品集证明材料矩阵
 docs/portfolio/ai_native_pm_capability_map.md AI Native 产品经理能力映射
 docs/portfolio/industrial_ai_copilot_solution.md 工业 AI Copilot 方案说明

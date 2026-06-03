@@ -7,6 +7,10 @@
 | 文档 | 证明重点 |
 | --- | --- |
 | [portfolio_brief.md](portfolio_brief.md) | 一页式项目概览：定位、业务问题、AI 能力证据、工作流、验证证据和边界 |
+| [service_ai_role_fit.md](service_ai_role_fit.md) | 服务领域 AI 产品能力映射：行业调研、用户需求、PRD、项目推进、上线指标和创新输入 |
+| [service_ai_transfer_note.md](service_ai_transfer_note.md) | 服务领域 AI 迁移说明：客服 Copilot、工单 Agent、服务质检等场景迁移 |
+| [../product/prd_decision_workbench.md](../product/prd_decision_workbench.md) | 标准 PRD 示例：背景、用户故事、范围、页面流程、输入输出、权限、埋点和验收标准 |
+| [../project/mvp_delivery_plan.md](../project/mvp_delivery_plan.md) | MVP 交付计划：需求调研、PRD、原型、开发、联调、灰度、指标看板和风险清单 |
 | [portfolio_proof_matrix.md](portfolio_proof_matrix.md) | 作品集证明材料矩阵：真实问题、流程重构、架构、评测、失败、成本、贡献 |
 | [ai_native_pm_capability_map.md](ai_native_pm_capability_map.md) | AI Native 产品经理能力映射：场景理解、Agent/RAG、Harness、ToB/SaaS、指标评测和跨团队沟通 |
 | [industrial_ai_copilot_solution.md](industrial_ai_copilot_solution.md) | 工业 AI Copilot 方案说明：方案定位、目标用户、系统架构、AI/确定性系统分工、数据边界和交付阶段 |
@@ -54,6 +58,10 @@
 
 ```text
 portfolio_brief.md
+-> service_ai_role_fit.md
+-> service_ai_transfer_note.md
+-> ../product/prd_decision_workbench.md
+-> ../project/mvp_delivery_plan.md
 -> portfolio_proof_matrix.md
 -> ai_native_pm_capability_map.md
 -> industrial_ai_copilot_solution.md
