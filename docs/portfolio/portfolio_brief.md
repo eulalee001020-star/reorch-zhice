@@ -99,11 +99,16 @@ NGS 特化版路径：
 ```text
 README.md                                    项目首页与作品集入口
 docs/portfolio/product_portfolio.md          产品作品集总览
+docs/portfolio/portfolio_proof_matrix.md     作品集证明材料矩阵
 docs/portfolio/ai_native_pm_capability_map.md AI Native 产品经理能力映射
 docs/portfolio/industrial_ai_copilot_solution.md 工业 AI Copilot 方案说明
 docs/portfolio/business_process_flow.md      业务流程图
 docs/portfolio/prototype_logic.md            原型逻辑
 docs/portfolio/metric_system.md              指标体系
+docs/portfolio/evaluation_guardrail_cases.md 评测与 Guardrail 用例
+docs/portfolio/failure_iteration_log.md      失败案例与迭代记录
+docs/portfolio/cost_latency_deployment_boundary.md 成本、延迟与部署边界
+docs/portfolio/personal_contribution.md      个人贡献说明
 docs/portfolio/project_report_materials.md   项目汇报材料
 docs/portfolio/workflow_prompts_io.md        工作流、Prompt 与输入输出示例
 docs/portfolio/ai_increment_agent_design.md  AI 增量 Agent 设计

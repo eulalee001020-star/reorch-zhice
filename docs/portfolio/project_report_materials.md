@@ -26,8 +26,8 @@
 | 6 | 原型逻辑 | 决策工作台、规则审核、偏好画像、数据就绪、Evidence Center、NGS Lab | `prototype_logic.md` |
 | 7 | 可信性控制 | schema、source refs、hard gate、人工确认、审计、失败样本库 | `trust_quality_gate.md` |
 | 8 | 指标体系 | 闭环率、time-to-candidate、Top-K feasible coverage、adoption、audit completeness | `metric_system.md` |
-| 9 | Demo 与工程落地 | FastAPI、React、OR-Tools、Docker Compose、mock integration、测试与 CI | README、`demo_validation_report.md` |
-| 10 | 当前边界与路线图 | MVP 可受控试用；生产上线需只读接入、shadow mode、回写演练和审计验收 | `project_status_assessment.md` |
+| 9 | 评测、失败与迭代 | Guardrail 用例、失败归因、修复方案和剩余风险 | `evaluation_guardrail_cases.md`、`failure_iteration_log.md` |
+| 10 | 结果、边界与贡献 | MVP 可受控试用；说明成本延迟边界、部署差距和个人贡献 | `cost_latency_deployment_boundary.md`、`personal_contribution.md` |
 
 ## 3. 三分钟汇报稿
 
@@ -75,6 +75,10 @@ AI 的作用不是替代求解器或计划员，
 | `business_process_flow.md` | 业务流程图、泳道图、状态机和关键决策节点 |
 | `prototype_logic.md` | 信息架构、页面逻辑、状态与异常处理 |
 | `metric_system.md` | North Star、分层指标、采集路径、失败样本指标 |
+| `evaluation_guardrail_cases.md` | Guardrail 用例、通过标准、失败用例和验证结果 |
+| `failure_iteration_log.md` | 失败现象、归因、修复方案、验证方式和剩余风险 |
+| `cost_latency_deployment_boundary.md` | 成本分层、延迟控制、Agent 边界和 SaaS 化差距 |
+| `personal_contribution.md` | 产品设计、AI 技术方案、工程实现和公开交付贡献 |
 | `workflow_prompts_io.md` | Prompt、Agent 分工和输入输出示例 |
 | `trust_quality_gate.md` | 可信性质量门、审计和兜底机制 |
 | `project_status_assessment.md` | 当前状态、上线边界和下一阶段计划 |

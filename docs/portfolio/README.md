@@ -7,11 +7,16 @@
 | 文档 | 证明重点 |
 | --- | --- |
 | [portfolio_brief.md](portfolio_brief.md) | 一页式项目概览：定位、业务问题、AI 能力证据、工作流、验证证据和边界 |
+| [portfolio_proof_matrix.md](portfolio_proof_matrix.md) | 作品集证明材料矩阵：真实问题、流程重构、架构、评测、失败、成本、贡献 |
 | [ai_native_pm_capability_map.md](ai_native_pm_capability_map.md) | AI Native 产品经理能力映射：场景理解、Agent/RAG、Harness、ToB/SaaS、指标评测和跨团队沟通 |
 | [industrial_ai_copilot_solution.md](industrial_ai_copilot_solution.md) | 工业 AI Copilot 方案说明：方案定位、目标用户、系统架构、AI/确定性系统分工、数据边界和交付阶段 |
 | [business_process_flow.md](business_process_flow.md) | 业务流程图：当前业务问题流、目标业务流、泳道图、关键决策节点和异常处理状态机 |
 | [prototype_logic.md](prototype_logic.md) | 原型逻辑：工作台信息架构、页面逻辑、状态处理、降级策略和验证重点 |
 | [metric_system.md](metric_system.md) | 指标体系：North Star、模型/方案/产品/业务/风险分层指标、采集路径和失败样本指标 |
+| [evaluation_guardrail_cases.md](evaluation_guardrail_cases.md) | 评测与 Guardrail 用例：数据缺失、证据不足、硬约束失败、越权回写、低置信解释等测试类型 |
+| [failure_iteration_log.md](failure_iteration_log.md) | 失败案例与迭代记录：失败现象、归因、修复方案、验证方式和剩余风险 |
+| [cost_latency_deployment_boundary.md](cost_latency_deployment_boundary.md) | 成本、延迟与部署边界：模型调用边界、延迟控制、Agent 执行范围和 SaaS 化差距 |
+| [personal_contribution.md](personal_contribution.md) | 个人贡献说明：问题定义、产品设计、AI 技术方案、工程实现、验证和公开交付 |
 | [project_report_materials.md](project_report_materials.md) | 项目汇报材料：10 页汇报结构、三分钟汇报稿、答辩问题和材料包索引 |
 | [product_portfolio.md](product_portfolio.md) | 项目总览：真实问题、用户场景、为什么使用 AI、方案设计、评测与结果 |
 | [../product/reorch_product_overview.md](../product/reorch_product_overview.md) | 产品说明书：定位、目标用户、端到端闭环、数据门槛、系统边界和上线条件 |
@@ -49,11 +54,16 @@
 
 ```text
 portfolio_brief.md
+-> portfolio_proof_matrix.md
 -> ai_native_pm_capability_map.md
 -> industrial_ai_copilot_solution.md
 -> business_process_flow.md
 -> prototype_logic.md
 -> metric_system.md
+-> evaluation_guardrail_cases.md
+-> failure_iteration_log.md
+-> cost_latency_deployment_boundary.md
+-> personal_contribution.md
 -> project_report_materials.md
 -> product_portfolio.md
 -> ../product/reorch_product_overview.md
