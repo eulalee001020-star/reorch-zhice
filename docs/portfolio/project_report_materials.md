@@ -27,7 +27,7 @@
 | 7 | 可信性控制 | schema、source refs、hard gate、人工确认、审计、失败样本库 | `trust_quality_gate.md` |
 | 8 | 指标体系 | 闭环率、time-to-candidate、Top-K feasible coverage、adoption、audit completeness | `metric_system.md` |
 | 9 | 项目推进、评测与迭代 | 从需求到灰度的里程碑、Guardrail 用例、失败归因和修复方案 | `mvp_delivery_plan.md`、`evaluation_guardrail_cases.md`、`failure_iteration_log.md` |
-| 10 | 结果、边界与迁移 | MVP 可受控试用；说明成本延迟边界、个人贡献和服务 AI 迁移 | `cost_latency_deployment_boundary.md`、`personal_contribution.md`、`service_ai_transfer_note.md` |
+| 10 | 结果、边界与迁移 | MVP 可受控试用；说明成本延迟边界、个人贡献和服务 AI 迁移 | `cost_latency_deployment_boundary.md`、`personal_contribution.md`、`service_ai_benchmark.md`、`service_ai_transfer_note.md` |
 
 ## 3. 三分钟汇报稿
 
@@ -72,6 +72,7 @@ AI 的作用不是替代求解器或计划员，
 | 材料 | 用途 |
 | --- | --- |
 | `service_ai_role_fit.md` | 服务领域 AI 产品能力映射、行业调研、用户需求、PRD、项目推进、上线指标和创新输入 |
+| `service_ai_benchmark.md` | 服务领域 AI 竞品与标杆能力分析 |
 | `service_ai_transfer_note.md` | 客服 Copilot、工单 Agent、服务质检等场景迁移说明 |
 | `prd_decision_workbench.md` | 标准 PRD 示例 |
 | `mvp_delivery_plan.md` | MVP 交付计划、里程碑、风险和指标看板 |

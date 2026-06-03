@@ -100,6 +100,7 @@ NGS 特化版路径：
 README.md                                    项目首页与作品集入口
 docs/portfolio/product_portfolio.md          产品作品集总览
 docs/portfolio/service_ai_role_fit.md        服务领域 AI 产品能力映射
+docs/portfolio/service_ai_benchmark.md       服务领域 AI 竞品与标杆能力分析
 docs/portfolio/service_ai_transfer_note.md   服务领域 AI 迁移说明
 docs/product/prd_decision_workbench.md       PRD：异常决策工作台
 docs/project/mvp_delivery_plan.md            MVP 交付计划与项目推进

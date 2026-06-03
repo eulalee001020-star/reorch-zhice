@@ -239,7 +239,7 @@ def build_docx() -> None:
     add_heading(doc, "7. 材料索引")
     add_paragraph(
         doc,
-        "关键入口为 README.md、service_ai_role_fit.md、prd_decision_workbench.md、mvp_delivery_plan.md、portfolio_proof_matrix.md、evaluation_guardrail_cases.md 和 failure_iteration_log.md。完整索引见 docs/portfolio/README.md。",
+        "关键入口为 README.md、service_ai_role_fit.md、service_ai_benchmark.md、prd_decision_workbench.md、mvp_delivery_plan.md、portfolio_proof_matrix.md、evaluation_guardrail_cases.md 和 failure_iteration_log.md。完整索引见 docs/portfolio/README.md。",
     )
 
     doc.save(DOCX_PATH)
@@ -446,7 +446,7 @@ def build_pdf() -> None:
     story.append(Paragraph("7. 材料索引", styles["h1"]))
     story.append(
         Paragraph(
-            "关键入口为 README.md、service_ai_role_fit.md、prd_decision_workbench.md、mvp_delivery_plan.md、portfolio_proof_matrix.md、evaluation_guardrail_cases.md 和 failure_iteration_log.md。完整索引见 docs/portfolio/README.md。",
+            "关键入口为 README.md、service_ai_role_fit.md、service_ai_benchmark.md、prd_decision_workbench.md、mvp_delivery_plan.md、portfolio_proof_matrix.md、evaluation_guardrail_cases.md 和 failure_iteration_log.md。完整索引见 docs/portfolio/README.md。",
             styles["body"],
         )
     )
@@ -501,6 +501,7 @@ ReOrch 智策是一个面向复杂离散制造异常重排的受控 AI 决策系
 - `README.md`：项目定位、作品集入口、demo 启动方式。
 - `docs/portfolio/portfolio_brief.md`：AI 产品作品集摘要。
 - `docs/portfolio/service_ai_role_fit.md`：服务领域 AI 产品能力映射。
+- `docs/portfolio/service_ai_benchmark.md`：服务领域 AI 竞品与标杆能力分析。
 - `docs/portfolio/service_ai_transfer_note.md`：服务领域 AI 迁移说明。
 - `docs/product/prd_decision_workbench.md`：标准 PRD 示例。
 - `docs/project/mvp_delivery_plan.md`：MVP 交付计划与项目推进。

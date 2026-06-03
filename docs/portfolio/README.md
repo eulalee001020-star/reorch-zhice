@@ -8,6 +8,7 @@
 | --- | --- |
 | [portfolio_brief.md](portfolio_brief.md) | 一页式项目概览：定位、业务问题、AI 能力证据、工作流、验证证据和边界 |
 | [service_ai_role_fit.md](service_ai_role_fit.md) | 服务领域 AI 产品能力映射：行业调研、用户需求、PRD、项目推进、上线指标和创新输入 |
+| [service_ai_benchmark.md](service_ai_benchmark.md) | 服务领域 AI 竞品与标杆能力分析：客服 Copilot、工单 Agent、服务质检和客户成功 Copilot 的可迁移设计点 |
 | [service_ai_transfer_note.md](service_ai_transfer_note.md) | 服务领域 AI 迁移说明：客服 Copilot、工单 Agent、服务质检等场景迁移 |
 | [../product/prd_decision_workbench.md](../product/prd_decision_workbench.md) | 标准 PRD 示例：背景、用户故事、范围、页面流程、输入输出、权限、埋点和验收标准 |
 | [../project/mvp_delivery_plan.md](../project/mvp_delivery_plan.md) | MVP 交付计划：需求调研、PRD、原型、开发、联调、灰度、指标看板和风险清单 |
@@ -59,6 +60,7 @@
 ```text
 portfolio_brief.md
 -> service_ai_role_fit.md
+-> service_ai_benchmark.md
 -> service_ai_transfer_note.md
 -> ../product/prd_decision_workbench.md
 -> ../project/mvp_delivery_plan.md

@@ -106,6 +106,16 @@
 | fallback_rate | LLM 或工具降级比例 | 监控稳定性和成本边界 |
 | blocked_candidate_rate | 被质量门阻断的候选比例 | 监控数据与约束问题 |
 
+### 9.1 埋点事件表
+
+| 事件名 | 触发时机 | 参数 | 用途 |
+| --- | --- | --- | --- |
+| incident_selected | 用户选择异常 | incident_id, user_role | 分析使用入口 |
+| candidate_generated | 候选生成完成 | latency, strategy_count | 评估效率 |
+| plan_confirmed | 用户确认方案 | plan_id, quality_gate | 采纳率 |
+| plan_rejected | 用户驳回方案 | reason_type | 失败归因 |
+| fallback_triggered | AI/工具降级 | fallback_reason | 稳定性监控 |
+
 ## 10. AI 输出约束
 
 - LLM 不判断最终可行性，候选方案可行性由 solver 和 quality gate 决定。
