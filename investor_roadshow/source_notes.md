@@ -18,11 +18,13 @@
 | Replay / Shadow 验证 | `docs/validation/replay_shadow_validation.md` |
 | Shadow case 只读采集 | `docs/validation/shadow_mode_capture.md` |
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
+| 数字孪生验证包 | `docs/validation/digital_twin_validation_pack.md` |
 | Constraint-to-Recovery 技术栈 | `docs/architecture/constraint_to_recovery_technical_stack.md` |
 | Constraint-to-Recovery 验证 | `docs/validation/constraint_to_recovery_kernel.md` |
 | 前端截图 | `docs/assets/screenshots/` |
 | 原始 BP | `investor_roadshow/source_materials/ReOrch_智策_原路演BP.pdf` |
 | 完整 APS 能力路线 | `investor_roadshow/ReOrch_从异常重决策到完整排产系统能力清单_20260704.md` |
+| 实验室采用与数字孪生复刻案例 | `investor_roadshow/ReOrch_智策_实验室采用与数字孪生复刻案例_20260704.md` |
 
 ## 市场和政策来源
 
