@@ -16,6 +16,8 @@ Reality Data Layer
 -> Replay / Shadow / Memory Loop
 ```
 
+[补充] 这套技术栈解决“如何从真实约束生成可控恢复候选”。更长期的护城河应上升为 Recovery Policy Graph：把每次异常的上下文、候选策略、硬约束结果、计划员选择、驳回原因和执行结果沉淀成企业自己的恢复策略资产。详见 [recovery_policy_graph.md](recovery_policy_graph.md)。
+
 ## 1. Reality Data Layer
 
 目标：先判断客户数据是否可排程，而不是脏数据下生成伪推荐。
