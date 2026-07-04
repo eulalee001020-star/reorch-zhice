@@ -6,15 +6,21 @@ import type {
   CompiledConstraintCalibration,
   ConstraintCalibrationPack,
   DataReadinessReport,
+  DecisionGraphBuildRequest,
+  DecisionGraphBuildResponse,
   DigitalTwinRunResponse,
   EnterpriseImportRequest,
   EnterpriseImportResponse,
+  EvidenceGateRequest,
+  EvidenceGateResponse,
   InitialScheduleRequest,
   InitialScheduleResponse,
   P0RealityHarnessResponse,
   PlanQualityGateResponse,
   ReplayValidationRequest,
   ReplayValidationResponse,
+  RecoveryOperatorRequest,
+  RecoveryOperatorResponse,
   ScheduleSnapshot,
   ShadowCaseCaptureRequest,
   ShadowCaseCaptureResponse,
@@ -88,6 +94,36 @@ export async function summarizeAgentObservability(
 ): Promise<AgentTraceCostSummary> {
   const { data } = await apiClient.post<AgentTraceCostSummary>(
     '/planning/agent-observability/summarize',
+    request,
+  );
+  return data;
+}
+
+export async function buildDecisionGraph(
+  request: DecisionGraphBuildRequest,
+): Promise<DecisionGraphBuildResponse> {
+  const { data } = await apiClient.post<DecisionGraphBuildResponse>(
+    '/planning/technical-kernel/decision-graph',
+    request,
+  );
+  return data;
+}
+
+export async function selectRecoveryOperators(
+  request: RecoveryOperatorRequest,
+): Promise<RecoveryOperatorResponse> {
+  const { data } = await apiClient.post<RecoveryOperatorResponse>(
+    '/planning/technical-kernel/recovery-operators',
+    request,
+  );
+  return data;
+}
+
+export async function evaluateEvidenceGates(
+  request: EvidenceGateRequest,
+): Promise<EvidenceGateResponse> {
+  const { data } = await apiClient.post<EvidenceGateResponse>(
+    '/planning/technical-kernel/evidence-gates',
     request,
   );
   return data;

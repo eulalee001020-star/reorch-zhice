@@ -16,6 +16,8 @@ ReOrch 智策已经完成 MVP 开发，具备异常接入、影响分析、策�
 
 新增 Shadow Mode Capture 和 Agent Observability 作为现场试点运行证据层，详见 [shadow_mode_capture.md](shadow_mode_capture.md) 和 [agent_observability_cost.md](agent_observability_cost.md)。前者确保 shadow case 只读记录、不产生回写；后者统计模型调用、token、latency、fallback 和成本建议。
 
+新增 Constraint-to-Recovery Kernel 作为技术实现主线，详见 [constraint_to_recovery_kernel.md](constraint_to_recovery_kernel.md) 和 [constraint_to_recovery_technical_stack.md](../architecture/constraint_to_recovery_technical_stack.md)。它把 ScheduleSnapshot 和 Incident 转成 Decision Graph，选择恢复算子，并用 Evidence Gates 决定能否求解、推荐、解释、shadow 或写回。
+
 ## 是否足够支持上线
 
 结论：当前足够支持受控试用和小范围验证，但不建议直接作为客户生产系统上线。

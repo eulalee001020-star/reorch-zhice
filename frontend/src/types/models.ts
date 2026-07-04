@@ -1028,6 +1028,100 @@ export interface AgentTraceCostSummary {
   decision_boundary: string;
 }
 
+export interface DecisionGraphNode {
+  node_id: string;
+  node_type: string;
+  label: string;
+  attributes: Record<string, unknown>;
+}
+
+export interface DecisionGraphEdge {
+  source_id: string;
+  target_id: string;
+  edge_type: string;
+  attributes: Record<string, unknown>;
+}
+
+export interface DecisionGraph {
+  snapshot_id: string;
+  workshop_id: string;
+  nodes: DecisionGraphNode[];
+  edges: DecisionGraphEdge[];
+}
+
+export interface DecisionGraphBuildRequest {
+  snapshot: ScheduleSnapshot;
+  incident?: Incident | null;
+  freeze_operation_ids: string[];
+}
+
+export interface DecisionGraphBuildResponse {
+  graph: DecisionGraph;
+  affected_operation_ids: string[];
+  downstream_operation_ids: string[];
+  repairable_frontier_ids: string[];
+  alternative_resources: Record<string, string[]>;
+  metrics: Record<string, number | string>;
+}
+
+export interface RecoveryOperatorRequest {
+  incident: Incident;
+  impact_report?: ImpactReport | null;
+  decision_graph: DecisionGraphBuildResponse;
+  allowed_operator_types: string[];
+  max_operator_count: number;
+}
+
+export interface RecoveryOperatorRecommendation {
+  operator_type: string;
+  label: string;
+  algorithm_family: string;
+  solver_backend: string;
+  scope: string;
+  rank: number;
+  why_selected: string[];
+  required_gates: string[];
+  expected_metrics: string[];
+  llm_role: string;
+}
+
+export interface RecoveryOperatorResponse {
+  incident_id: string;
+  repair_scope: string;
+  recommendations: RecoveryOperatorRecommendation[];
+  rejected_operator_types: string[];
+  claim_boundary: string;
+}
+
+export interface EvidenceGateFinding {
+  gate_name: string;
+  status: string;
+  severity: 'blocker' | 'warning' | 'info' | string;
+  message: string;
+  source_refs: string[];
+}
+
+export interface EvidenceGateRequest {
+  data_readiness?: DataReadinessReport | null;
+  candidate_plans: CandidatePlan[];
+  quality_gates: PlanQualityGateReport[];
+  source_refs: string[];
+  replay_validation?: ReplayValidationResponse | null;
+  shadow_capture?: ShadowCaseCaptureResponse | null;
+  planner_confirmed: boolean;
+}
+
+export interface EvidenceGateResponse {
+  allow_solve: boolean;
+  allow_recommendation: boolean;
+  allow_formal_explanation: boolean;
+  allow_shadow: boolean;
+  allow_writeback: boolean;
+  overall_status: string;
+  findings: EvidenceGateFinding[];
+  recommendation_policy: string;
+}
+
 export interface PlanQualityGateReport {
   plan_id: string;
   pass_gate: boolean;

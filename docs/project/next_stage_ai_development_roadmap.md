@@ -24,6 +24,7 @@
 | 6. Quality Gate & Evidence | DataGate、ConstraintGate、EvidenceGate、ReplayGate | 部分已有，仍需统一 gate 编排 |
 | 7. Sandbox Writeback | 人工确认 dry-run、幂等、失败审计 | 已有 mock/preview 基础，仍需 sandbox adapter |
 | 8. Agent Observability | 模型调用、token、latency、fallback、成本 | 已完成最小可运行版 |
+| 9. Constraint-to-Recovery Kernel | Decision Graph、恢复算子、Evidence Gates | 已完成最小可运行版 |
 
 ## 当前新增的 API
 
@@ -36,6 +37,9 @@
 | `POST /api/v1/planning/replay-validation/evaluate` | 评估历史 replay 与 shadow 可比性 |
 | `POST /api/v1/planning/shadow-mode/capture` | 记录只读 shadow mode 计划员反馈 |
 | `POST /api/v1/planning/agent-observability/summarize` | 汇总 Agent trace 成本和降级情况 |
+| `POST /api/v1/planning/technical-kernel/decision-graph` | 构建生产状态决策图和可修复子图 |
+| `POST /api/v1/planning/technical-kernel/recovery-operators` | 按异常影响选择恢复算子组合 |
+| `POST /api/v1/planning/technical-kernel/evidence-gates` | 执行 Data/Constraint/Evidence/Replay/Writeback 门控 |
 
 ## 下一步优先级
 

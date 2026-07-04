@@ -41,6 +41,14 @@ from app.models.shadow_mode import (
     ShadowCaseCaptureRequest,
     ShadowCaseCaptureResponse,
 )
+from app.models.technical_kernel import (
+    DecisionGraphBuildRequest,
+    DecisionGraphBuildResponse,
+    EvidenceGateRequest,
+    EvidenceGateResponse,
+    RecoveryOperatorRequest,
+    RecoveryOperatorResponse,
+)
 from app.services.agent_observability import AgentObservabilityService
 from app.services.constraint_calibration import ConstraintCalibrationService
 from app.services.data_readiness import DataReadinessService
@@ -52,6 +60,11 @@ from app.services.plan_quality_gate import PlanQualityGate
 from app.services.reality_harness import P0RealityHarnessService
 from app.services.replay_validation import ReplayValidationService
 from app.services.shadow_mode import ShadowModeService
+from app.services.technical_kernel import (
+    DecisionGraphService,
+    EvidenceGateService,
+    RecoveryOperatorPortfolioService,
+)
 from app.services.value_tracking import ValueTrackingService
 
 router = APIRouter(prefix="/api/v1/planning", tags=["planning"])
@@ -207,6 +220,39 @@ async def summarize_agent_observability(
     body: AgentTraceObserveRequest,
 ) -> AgentTraceCostSummary:
     return AgentObservabilityService().summarize(body)
+
+
+@router.post(
+    "/technical-kernel/decision-graph",
+    response_model=DecisionGraphBuildResponse,
+    summary="构建生产状态决策图",
+)
+async def build_decision_graph(
+    body: DecisionGraphBuildRequest,
+) -> DecisionGraphBuildResponse:
+    return DecisionGraphService().build(body)
+
+
+@router.post(
+    "/technical-kernel/recovery-operators",
+    response_model=RecoveryOperatorResponse,
+    summary="选择异常恢复算子组合",
+)
+async def select_recovery_operators(
+    body: RecoveryOperatorRequest,
+) -> RecoveryOperatorResponse:
+    return RecoveryOperatorPortfolioService().select(body)
+
+
+@router.post(
+    "/technical-kernel/evidence-gates",
+    response_model=EvidenceGateResponse,
+    summary="执行证据门控求解策略",
+)
+async def evaluate_evidence_gates(
+    body: EvidenceGateRequest,
+) -> EvidenceGateResponse:
+    return EvidenceGateService().evaluate(body)
 
 
 @router.post(
