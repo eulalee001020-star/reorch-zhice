@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalExecutionFeedback",
+  "type": "object",
+  "required": ["work_order_id", "operation_id", "status"],
+  "properties": {
+    "work_order_id": { "type": "string" },
+    "operation_id": { "type": "string" },
+    "machine_id": { "type": ["string", "null"] },
+    "status": { "type": "string" },
+    "actual_start": { "type": ["string", "null"], "format": "date-time" },
+    "actual_end": { "type": ["string", "null"], "format": "date-time" },
+    "completion_pct": { "type": "number", "minimum": 0, "maximum": 1 },
+    "deviation_reason": { "type": ["string", "null"] }
+  }
+}
+

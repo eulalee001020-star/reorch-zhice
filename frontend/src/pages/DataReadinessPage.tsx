@@ -19,11 +19,12 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { CheckCircleOutlined, StopOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { assessInitialScheduleReadiness, normalizeEnterpriseImport } from '@/api';
+import { assessInitialScheduleReadiness, normalizeEnterpriseImport, runP0RealitySamplePack } from '@/api';
 import type {
   DataReadinessReport,
   EnterpriseFieldMapping,
   InitialScheduleRequest,
+  P0RealityHarnessResponse,
   ReadinessIssue,
 } from '@/types';
 
@@ -384,6 +385,7 @@ const DataReadinessPage: React.FC = () => {
   );
   const [mapping, setMapping] = useState<EnterpriseFieldMapping>(() => defaultMapping());
   const [mappingIssues, setMappingIssues] = useState<ReadinessIssue[]>([]);
+  const [realityHarness, setRealityHarness] = useState<P0RealityHarnessResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const policy = readinessPolicy(report);
   const issues = report ? [...report.blockers, ...report.warnings, ...report.infos] : [];
@@ -424,6 +426,18 @@ const DataReadinessPage: React.FC = () => {
     }
   };
 
+  const runRealityHarness = async () => {
+    setLoading(true);
+    try {
+      const response = await runP0RealitySamplePack();
+      setRealityHarness(response);
+      setReport(response.readiness_report);
+      message.success(`P0 Reality Harness 完成：${response.permission.level}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
@@ -434,6 +448,9 @@ const DataReadinessPage: React.FC = () => {
             <Space>
               <Button icon={<WarningOutlined />} onClick={() => run(blockedRequest)}>
                 评估缺字段样本
+              </Button>
+              <Button onClick={runRealityHarness}>
+                运行 P0 样例包
               </Button>
               <Button type="primary" icon={<CheckCircleOutlined />} onClick={() => run(readyRequest)}>
                 评估可运行样本
@@ -533,6 +550,57 @@ const DataReadinessPage: React.FC = () => {
               />
             )}
           </Space>
+        </Card>
+
+        <Card size="small" title="P0 Reality Harness 权限闸门">
+          {realityHarness ? (
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <Row gutter={[12, 12]}>
+                <Col xs={12} md={4}>
+                  <Statistic title="权限等级" value={realityHarness.permission.level} />
+                </Col>
+                <Col xs={12} md={5}>
+                  <Statistic title="Mapping Blocker" value={realityHarness.mapping_report.blocking_errors} />
+                </Col>
+                <Col xs={12} md={5}>
+                  <Statistic title="Reference Errors" value={realityHarness.mapping_report.reference_integrity_errors} />
+                </Col>
+                <Col xs={12} md={5}>
+                  <Statistic
+                    title="Replay"
+                    value={realityHarness.permission.allow_historical_replay ? '允许' : '禁止'}
+                  />
+                </Col>
+                <Col xs={12} md={5}>
+                  <Statistic
+                    title="Shadow"
+                    value={realityHarness.permission.allow_shadow_mode ? '允许' : '禁止'}
+                  />
+                </Col>
+              </Row>
+              <Alert
+                showIcon
+                type={realityHarness.permission.allow_writeback ? 'warning' : 'info'}
+                message="Writeback 默认关闭"
+                description={`allow_writeback=${String(realityHarness.permission.allow_writeback)}。P0 阶段只允许 replay / shadow，不允许生产写回。`}
+              />
+              <Space direction="vertical">
+                {realityHarness.permission.reasons.map((item) => (
+                  <Text key={item}>{item}</Text>
+                ))}
+                {realityHarness.permission.required_next_actions.map((item) => (
+                  <Text key={item} type="secondary">{item}</Text>
+                ))}
+              </Space>
+            </Space>
+          ) : (
+            <Alert
+              showIcon
+              type="info"
+              message="尚未运行 P0 Reality Harness"
+              description="该闸门会把客户原始数据映射为 canonical dataset，再决定是否允许 historical replay 或 shadow mode。"
+            />
+          )}
         </Card>
 
         <Card size="small" title="停损规则">

@@ -1,14 +1,23 @@
 import apiClient from './client';
 import type {
+  AgentTraceCostSummary,
+  AgentTraceObserveRequest,
   CandidatePlan,
+  CompiledConstraintCalibration,
+  ConstraintCalibrationPack,
   DataReadinessReport,
   DigitalTwinRunResponse,
   EnterpriseImportRequest,
   EnterpriseImportResponse,
   InitialScheduleRequest,
   InitialScheduleResponse,
+  P0RealityHarnessResponse,
   PlanQualityGateResponse,
+  ReplayValidationRequest,
+  ReplayValidationResponse,
   ScheduleSnapshot,
+  ShadowCaseCaptureRequest,
+  ShadowCaseCaptureResponse,
   ValueTrackingInput,
   ValueTrackingReport,
   WritebackPreviewResponse,
@@ -54,11 +63,58 @@ export async function runPlanQualityGate(
   return data;
 }
 
+export async function evaluateReplayValidation(
+  request: ReplayValidationRequest,
+): Promise<ReplayValidationResponse> {
+  const { data } = await apiClient.post<ReplayValidationResponse>(
+    '/planning/replay-validation/evaluate',
+    request,
+  );
+  return data;
+}
+
+export async function captureShadowModeCase(
+  request: ShadowCaseCaptureRequest,
+): Promise<ShadowCaseCaptureResponse> {
+  const { data } = await apiClient.post<ShadowCaseCaptureResponse>(
+    '/planning/shadow-mode/capture',
+    request,
+  );
+  return data;
+}
+
+export async function summarizeAgentObservability(
+  request: AgentTraceObserveRequest,
+): Promise<AgentTraceCostSummary> {
+  const { data } = await apiClient.post<AgentTraceCostSummary>(
+    '/planning/agent-observability/summarize',
+    request,
+  );
+  return data;
+}
+
 export async function normalizeEnterpriseImport(
   request: EnterpriseImportRequest,
 ): Promise<EnterpriseImportResponse> {
   const { data } = await apiClient.post<EnterpriseImportResponse>(
     '/planning/import/erp-aps',
+    request,
+  );
+  return data;
+}
+
+export async function runP0RealitySamplePack(): Promise<P0RealityHarnessResponse> {
+  const { data } = await apiClient.post<P0RealityHarnessResponse>(
+    '/planning/reality-harness/sample-pack',
+  );
+  return data;
+}
+
+export async function compileConstraintCalibration(
+  request: ConstraintCalibrationPack,
+): Promise<CompiledConstraintCalibration> {
+  const { data } = await apiClient.post<CompiledConstraintCalibration>(
+    '/planning/constraint-calibration/compile',
     request,
   );
   return data;

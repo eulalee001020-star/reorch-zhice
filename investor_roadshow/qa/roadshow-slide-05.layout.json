@@ -1,0 +1,1545 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/tgbu2b",
+    "id": "tgbu2b",
+    "slide": 5,
+    "layoutId": "d01b254c-0c26-49b9-a67b-228fe7b75a3f",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "e837e703-1529-4427-a997-a8e5922c24fc",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#0B1220",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "+mn-lt"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "d01b254c-0c26-49b9-a67b-228fe7b75a3f",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "e837e703-1529-4427-a997-a8e5922c24fc",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "e837e703-1529-4427-a997-a8e5922c24fc",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/epkzupwb",
+      "id": "1",
+      "bbox": [
+        64,
+        36,
+        520,
+        24
+      ],
+      "geometry": "rect",
+      "text": "ReOrch 智策 | Investor Roadshow 2026",
+      "textPreview": "ReOrch 智策 | Investor Roadshow 2026",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "fontSize": 13,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ReOrch 智策 | Investor Roadshow 2026"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ReOrch 智策 | Investor Roadshow 2026",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ReOrch 智策 | Investor Roadshow 2026",
+              "fontSize": 13,
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pg3ex0nu",
+      "id": "2",
+      "bbox": [
+        64,
+        76,
+        930,
+        52
+      ],
+      "geometry": "rect",
+      "text": "第一性原理下的优势：我们降低的是计划失效后的四类成本",
+      "textPreview": "第一性原理下的优势：我们降低的是计划失效后的四类成本",
+      "resolvedFontSize": 38,
+      "resolvedTextStyle": {
+        "fontSize": 38,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "第一性原理下的优势：我们降低的是计划失效后的四"
+          },
+          {
+            "index": 2,
+            "text": "类成本"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "第一性原理下的优势：我们降低的是计划失效后的四类成本",
+          "resolvedTextStyle": {
+            "fontSize": 38,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "第一性原理下的优势：我们降低的是计划失效后的四类成本",
+              "fontSize": 38,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wval87ed",
+      "id": "3",
+      "bbox": [
+        64,
+        142,
+        1152,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#243244",
+      "lineColor": "#243244",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7mp0bi9s",
+      "id": "4",
+      "bbox": [
+        80,
+        184,
+        236,
+        138
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#243244",
+      "lineWidth": 1
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/e1w7mp0b",
+      "id": "5",
+      "bbox": [
+        100,
+        208,
+        190,
+        30
+      ],
+      "geometry": "rect",
+      "text": "时间成本",
+      "textPreview": "时间成本",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "+mn-lt",
+        "color": "#38BDF8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "时间成本"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "时间成本",
+          "resolvedTextStyle": {
+            "fontSize": 25,
+            "color": "#38BDF8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "时间成本",
+              "fontSize": 25,
+              "color": "#38BDF8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/psfil0rq",
+      "id": "6",
+      "bbox": [
+        100,
+        254,
+        190,
+        42
+      ],
+      "geometry": "rect",
+      "text": "异常后从发现到候选方案的等待时间",
+      "textPreview": "异常后从发现到候选方案的等待时间",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "异常后从发现到候选方"
+          },
+          {
+            "index": 2,
+            "text": "案的等待时间"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "异常后从发现到候选方案的等待时间",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "异常后从发现到候选方案的等待时间",
+              "fontSize": 16,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7mp0bi9",
+      "id": "7",
+      "bbox": [
+        366,
+        184,
+        236,
+        138
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#243244",
+      "lineWidth": 1
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7u54zido",
+      "id": "8",
+      "bbox": [
+        386,
+        208,
+        190,
+        30
+      ],
+      "geometry": "rect",
+      "text": "协调成本",
+      "textPreview": "协调成本",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "+mn-lt",
+        "color": "#38BDF8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "协调成本"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "协调成本",
+          "resolvedTextStyle": {
+            "fontSize": 25,
+            "color": "#38BDF8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "协调成本",
+              "fontSize": 25,
+              "color": "#38BDF8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ed8bat47",
+      "id": "9",
+      "bbox": [
+        386,
+        254,
+        190,
+        42
+      ],
+      "geometry": "rect",
+      "text": "计划、车间、设备、物料、销售反复确认",
+      "textPreview": "计划、车间、设备、物料、销售反复确认",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "计划、车间、设备、物"
+          },
+          {
+            "index": 2,
+            "text": "料、销售反复确认"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "计划、车间、设备、物料、销售反复确认",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "计划、车间、设备、物料、销售反复确认",
+              "fontSize": 16,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/onyd0z61",
+      "id": "10",
+      "bbox": [
+        652,
+        184,
+        236,
+        138
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#F97316",
+      "lineWidth": 1
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d8v6psfi",
+      "id": "11",
+      "bbox": [
+        672,
+        208,
+        190,
+        30
+      ],
+      "geometry": "rect",
+      "text": "决策成本",
+      "textPreview": "决策成本",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "+mn-lt",
+        "color": "#F97316",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "决策成本"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "决策成本",
+          "resolvedTextStyle": {
+            "fontSize": 25,
+            "color": "#F97316",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "决策成本",
+              "fontSize": 25,
+              "color": "#F97316",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6hcrmhk3",
+      "id": "12",
+      "bbox": [
+        672,
+        254,
+        190,
+        42
+      ],
+      "geometry": "rect",
+      "text": "交期、换线、加班、瓶颈之间的取舍",
+      "textPreview": "交期、换线、加班、瓶颈之间的取舍",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "交期、换线、加班、瓶"
+          },
+          {
+            "index": 2,
+            "text": "颈之间的取舍"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "交期、换线、加班、瓶颈之间的取舍",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "交期、换线、加班、瓶颈之间的取舍",
+              "fontSize": 16,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/z25kb6xk",
+      "id": "13",
+      "bbox": [
+        938,
+        184,
+        236,
+        138
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#243244",
+      "lineWidth": 1
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ovahoza1",
+      "id": "14",
+      "bbox": [
+        958,
+        208,
+        190,
+        30
+      ],
+      "geometry": "rect",
+      "text": "组织成本",
+      "textPreview": "组织成本",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "+mn-lt",
+        "color": "#38BDF8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "组织成本"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "组织成本",
+          "resolvedTextStyle": {
+            "fontSize": 25,
+            "color": "#38BDF8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "组织成本",
+              "fontSize": 25,
+              "color": "#38BDF8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dg7adsji",
+      "id": "15",
+      "bbox": [
+        958,
+        254,
+        190,
+        42
+      ],
+      "geometry": "rect",
+      "text": "老师傅经验无法沉淀，新人难接手",
+      "textPreview": "老师傅经验无法沉淀，新人难接手",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "老师傅经验无法沉淀，"
+          },
+          {
+            "index": 2,
+            "text": "新人难接手"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "老师傅经验无法沉淀，新人难接手",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "老师傅经验无法沉淀，新人难接手",
+              "fontSize": 16,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6tovahoz",
+      "id": "16",
+      "bbox": [
+        86,
+        386,
+        520,
+        34
+      ],
+      "geometry": "rect",
+      "text": "为什么不用金蝶、用友，而是 ReOrch？",
+      "textPreview": "为什么不用金蝶、用友，而是 ReOrch？",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "fontSize": 28,
+        "typeface": "+mn-lt",
+        "color": "#F97316",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "为什么不用金蝶、用友，而是 ReOrch？"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "为什么不用金蝶、用友，而是 ReOrch？",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "color": "#F97316",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "为什么不用金蝶、用友，而是 ReOrch？",
+              "fontSize": 28,
+              "color": "#F97316",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vahoza1g",
+      "id": "17",
+      "bbox": [
+        94,
+        447,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o7qpg3ex",
+      "id": "18",
+      "bbox": [
+        118,
+        438,
+        566,
+        42
+      ],
+      "geometry": "rect",
+      "text": "金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。",
+      "textPreview": "金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "金蝶、用友强在"
+          },
+          {
+            "index": 2,
+            "text": "ERP、财务、供应链、制造执行、主数据和企业生态。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。",
+          "resolvedTextStyle": {
+            "fontSize": 19,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。",
+              "fontSize": 19,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dsji5sne",
+      "id": "19",
+      "bbox": [
+        94,
+        489,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hk3q5o7q",
+      "id": "20",
+      "bbox": [
+        118,
+        480,
+        566,
+        42
+      ],
+      "geometry": "rect",
+      "text": "ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。",
+      "textPreview": "ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ReOrch"
+          },
+          {
+            "index": 2,
+            "text": "不正面替换主系统，先占住异常发生后的判断、比较、确认和复"
+          },
+          {
+            "index": 3,
+            "text": "盘入口。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。",
+          "resolvedTextStyle": {
+            "fontSize": 19,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。",
+              "fontSize": 19,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oza1gvy9",
+      "id": "21",
+      "bbox": [
+        94,
+        531,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zed8v6ps",
+      "id": "22",
+      "bbox": [
+        118,
+        522,
+        566,
+        42
+      ],
+      "geometry": "rect",
+      "text": "短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。",
+      "textPreview": "短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "短期更窄、更快、更贴异常现场；长期通过补齐 APS"
+          },
+          {
+            "index": 2,
+            "text": "能力逐步减少客户对传统排产系统依赖。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。",
+          "resolvedTextStyle": {
+            "fontSize": 19,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。",
+              "fontSize": 19,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6xkf6dcb",
+      "id": "23",
+      "bbox": [
+        760,
+        382,
+        380,
+        180
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#121B2D",
+      "lineColor": "#F97316",
+      "lineWidth": 1
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hwfyxobm",
+      "id": "24",
+      "bbox": [
+        790,
+        410,
+        320,
+        30
+      ],
+      "geometry": "rect",
+      "text": "核心差异",
+      "textPreview": "核心差异",
+      "resolvedFontSize": 27,
+      "resolvedTextStyle": {
+        "fontSize": 27,
+        "typeface": "+mn-lt",
+        "color": "#F97316",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "核心差异"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "核心差异",
+          "resolvedTextStyle": {
+            "fontSize": 27,
+            "color": "#F97316",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "核心差异",
+              "fontSize": 27,
+              "color": "#F97316",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/obm58z25",
+      "id": "25",
+      "bbox": [
+        794,
+        471,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zqtcj6to",
+      "id": "26",
+      "bbox": [
+        818,
+        462,
+        281,
+        34
+      ],
+      "geometry": "rect",
+      "text": "低侵入：只读接入 -> replay -> shadow mode",
+      "textPreview": "低侵入：只读接入 -> replay -> shadow mode",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "低侵入：只读接入 -> replay ->"
+          },
+          {
+            "index": 2,
+            "text": "shadow mode"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "低侵入：只读接入 -> replay -> shadow mode",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "低侵入：只读接入 -> replay -> shadow mode",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/65wjudg7",
+      "id": "27",
+      "bbox": [
+        794,
+        505,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 28,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h0fepkzu",
+      "id": "28",
+      "bbox": [
+        818,
+        496,
+        281,
+        34
+      ],
+      "geometry": "rect",
+      "text": "AI 不拍板：求解器、质量门、人确认兜底",
+      "textPreview": "AI 不拍板：求解器、质量门、人确认兜底",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "AI"
+          },
+          {
+            "index": 2,
+            "text": "不拍板：求解器、质量门、人确认"
+          },
+          {
+            "index": 3,
+            "text": "兜底"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "AI 不拍板：求解器、质量门、人确认兜底",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "AI 不拍板：求解器、质量门、人确认兜底",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 29,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sfil0rqd",
+      "id": "29",
+      "bbox": [
+        794,
+        539,
+        10,
+        10
+      ],
+      "geometry": "ellipse",
+      "fillColor": "#F97316",
+      "lineColor": "#F97316",
+      "lineWidth": 0
+    },
+    {
+      "order": 30,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ixczed8v",
+      "id": "30",
+      "bbox": [
+        818,
+        530,
+        281,
+        34
+      ],
+      "geometry": "rect",
+      "text": "经验资产化：override 进入案例库和偏好画像",
+      "textPreview": "经验资产化：override 进入案例库和偏好画像",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "经验资产化：override"
+          },
+          {
+            "index": 2,
+            "text": "进入案例库和偏好画像"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "经验资产化：override 进入案例库和偏好画像",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "经验资产化：override 进入案例库和偏好画像",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 31,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bi9s36hc",
+      "id": "31",
+      "bbox": [
+        64,
+        674,
+        980,
+        20
+      ],
+      "geometry": "rect",
+      "text": "这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路",
+      "textPreview": "这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "color": "#94A3B8",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路",
+              "fontSize": 12,
+              "color": "#94A3B8",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 32,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/032lszqt",
+      "id": "32",
+      "bbox": [
+        1100,
+        674,
+        116,
+        20
+      ],
+      "geometry": "rect",
+      "text": "2026-07-04",
+      "textPreview": "2026-07-04",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "alignment": "right",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2026-07-04"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2026-07-04",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "color": "#94A3B8",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2026-07-04",
+              "fontSize": 12,
+              "color": "#94A3B8",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

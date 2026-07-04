@@ -1,0 +1,1065 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/p9odjn",
+    "id": "p9odjn",
+    "slide": 9,
+    "layoutId": "d01b254c-0c26-49b9-a67b-228fe7b75a3f",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "e837e703-1529-4427-a997-a8e5922c24fc",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#0B1220",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "+mn-lt"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "d01b254c-0c26-49b9-a67b-228fe7b75a3f",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "e837e703-1529-4427-a997-a8e5922c24fc",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "e837e703-1529-4427-a997-a8e5922c24fc",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ahoza1gv",
+      "id": "1",
+      "bbox": [
+        64,
+        36,
+        520,
+        24
+      ],
+      "geometry": "rect",
+      "text": "ReOrch 智策 | Investor Roadshow 2026",
+      "textPreview": "ReOrch 智策 | Investor Roadshow 2026",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "fontSize": 13,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ReOrch 智策 | Investor Roadshow 2026"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ReOrch 智策 | Investor Roadshow 2026",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#94A3B8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ReOrch 智策 | Investor Roadshow 2026",
+              "fontSize": 13,
+              "color": "#94A3B8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l87ed8ba",
+      "id": "2",
+      "bbox": [
+        64,
+        76,
+        930,
+        52
+      ],
+      "geometry": "rect",
+      "text": "商业模式从单车间付费 PoC 切入，再转年费和场景扩展",
+      "textPreview": "商业模式从单车间付费 PoC 切入，再转年费和场景扩展",
+      "resolvedFontSize": 38,
+      "resolvedTextStyle": {
+        "fontSize": 38,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "商业模式从单车间付费 PoC"
+          },
+          {
+            "index": 2,
+            "text": "切入，再转年费和场景扩展"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "商业模式从单车间付费 PoC 切入，再转年费和场景扩展",
+          "resolvedTextStyle": {
+            "fontSize": 38,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "商业模式从单车间付费 PoC 切入，再转年费和场景扩展",
+              "fontSize": 38,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sneloj2t",
+      "id": "3",
+      "bbox": [
+        64,
+        142,
+        1152,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#243244",
+      "lineColor": "#243244",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3ex0nuxc",
+      "id": "4",
+      "bbox": [
+        90,
+        190,
+        320,
+        280
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#F97316",
+      "lineWidth": 1
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/at47y1kr",
+      "id": "5",
+      "bbox": [
+        114,
+        216,
+        260,
+        34
+      ],
+      "geometry": "rect",
+      "text": "Land",
+      "textPreview": "Land",
+      "resolvedFontSize": 30,
+      "resolvedTextStyle": {
+        "fontSize": 30,
+        "typeface": "+mn-lt",
+        "color": "#F97316",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Land"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Land",
+          "resolvedTextStyle": {
+            "fontSize": 30,
+            "color": "#F97316",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Land",
+              "fontSize": 30,
+              "color": "#F97316",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lkjm1cfa",
+      "id": "6",
+      "bbox": [
+        114,
+        268,
+        260,
+        64
+      ],
+      "geometry": "rect",
+      "text": "20-30 万元\n4-6 周付费 PoC",
+      "textPreview": "20-30 万元 | 4-6 周付费 PoC",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "fontSize": 28,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "20-30 万元"
+          },
+          {
+            "index": 2,
+            "text": "4-6 周付费 PoC"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "20-30 万元",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "20-30 万元",
+              "fontSize": 28,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "4-6 周付费 PoC",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "4-6 周付费 PoC",
+              "fontSize": 28,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/szqtcj6t",
+      "id": "7",
+      "bbox": [
+        114,
+        356,
+        260,
+        86
+      ],
+      "geometry": "rect",
+      "text": "1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。",
+      "textPreview": "1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1 个车间、1 个高频异常、1"
+          },
+          {
+            "index": 2,
+            "text": "个数据源；交付数据就绪、历史"
+          },
+          {
+            "index": 3,
+            "text": "replay、Top-K 候选和 ROI"
+          },
+          {
+            "index": 4,
+            "text": "复盘。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3itgfmlk",
+      "id": "8",
+      "bbox": [
+        476,
+        190,
+        320,
+        280
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#14B8A6",
+      "lineWidth": 1
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ex0nuxc3",
+      "id": "9",
+      "bbox": [
+        500,
+        216,
+        260,
+        34
+      ],
+      "geometry": "rect",
+      "text": "Convert",
+      "textPreview": "Convert",
+      "resolvedFontSize": 30,
+      "resolvedTextStyle": {
+        "fontSize": 30,
+        "typeface": "+mn-lt",
+        "color": "#14B8A6",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Convert"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Convert",
+          "resolvedTextStyle": {
+            "fontSize": 30,
+            "color": "#14B8A6",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Convert",
+              "fontSize": 30,
+              "color": "#14B8A6",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wfyxobm5",
+      "id": "10",
+      "bbox": [
+        500,
+        268,
+        260,
+        64
+      ],
+      "geometry": "rect",
+      "text": "30-50 万元/车间/年",
+      "textPreview": "30-50 万元/车间/年",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "fontSize": 28,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "30-50 万元/车间/年"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "30-50 万元/车间/年",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "30-50 万元/车间/年",
+              "fontSize": 28,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l0rqd4vm",
+      "id": "11",
+      "bbox": [
+        500,
+        356,
+        260,
+        86
+      ],
+      "geometry": "rect",
+      "text": "PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。",
+      "textPreview": "PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "PoC"
+          },
+          {
+            "index": 2,
+            "text": "证明使用频率、方案采纳和价值"
+          },
+          {
+            "index": 3,
+            "text": "闭环后转订阅或 license。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ed8bat47",
+      "id": "12",
+      "bbox": [
+        862,
+        190,
+        320,
+        280
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#162235",
+      "lineColor": "#38BDF8",
+      "lineWidth": 1
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7u54zido",
+      "id": "13",
+      "bbox": [
+        886,
+        216,
+        260,
+        34
+      ],
+      "geometry": "rect",
+      "text": "Expand",
+      "textPreview": "Expand",
+      "resolvedFontSize": 30,
+      "resolvedTextStyle": {
+        "fontSize": 30,
+        "typeface": "+mn-lt",
+        "color": "#38BDF8",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Expand"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Expand",
+          "resolvedTextStyle": {
+            "fontSize": 30,
+            "color": "#38BDF8",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Expand",
+              "fontSize": 30,
+              "color": "#38BDF8",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wra5gbq1",
+      "id": "14",
+      "bbox": [
+        886,
+        268,
+        260,
+        64
+      ],
+      "geometry": "rect",
+      "text": "场景/车间/私有化扩展",
+      "textPreview": "场景/车间/私有化扩展",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "fontSize": 28,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "场景/车间/私有化"
+          },
+          {
+            "index": 2,
+            "text": "扩展"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "场景/车间/私有化扩展",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "场景/车间/私有化扩展",
+              "fontSize": 28,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lc7u54zi",
+      "id": "15",
+      "bbox": [
+        886,
+        356,
+        260,
+        86
+      ],
+      "geometry": "rect",
+      "text": "插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。",
+      "textPreview": "插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "+mn-lt",
+        "color": "#CBD5E1",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "插单、缺料、返工、人员日历、"
+          },
+          {
+            "index": 2,
+            "text": "工装夹具、MES/APS"
+          },
+          {
+            "index": 3,
+            "text": "深度集成和仿真包。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "color": "#CBD5E1",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。",
+              "fontSize": 17,
+              "color": "#CBD5E1",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/eloj2t83",
+      "id": "16",
+      "bbox": [
+        96,
+        548,
+        1080,
+        58
+      ],
+      "geometry": "rect",
+      "text": "PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。",
+      "textPreview": "PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "+mn-lt",
+        "color": "#F8FAFC",
+        "bold": true,
+        "alignment": "center",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "PoC 验收指标：异常到方案时间、硬约束可行率、Top-K"
+          },
+          {
+            "index": 2,
+            "text": "覆盖、计划员确认记录、延期/换线/协调成本复盘。"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。",
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "color": "#F8FAFC",
+            "bold": true,
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。",
+              "fontSize": 24,
+              "color": "#F8FAFC",
+              "bold": true,
+              "alignment": "center"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/36hcrmhk",
+      "id": "17",
+      "bbox": [
+        64,
+        674,
+        980,
+        20
+      ],
+      "geometry": "rect",
+      "text": "当前口径：MVP + 受控验证，不宣称客户生产无人值守上线",
+      "textPreview": "当前口径：MVP + 受控验证，不宣称客户生产无人值守上线",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "alignment": "left",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "当前口径：MVP + 受控验证，不宣称客户生产无人值守上线"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "当前口径：MVP + 受控验证，不宣称客户生产无人值守上线",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "color": "#94A3B8",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "当前口径：MVP + 受控验证，不宣称客户生产无人值守上线",
+              "fontSize": 12,
+              "color": "#94A3B8",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wval87ed",
+      "id": "18",
+      "bbox": [
+        1100,
+        674,
+        116,
+        20
+      ],
+      "geometry": "rect",
+      "text": "2026-07-04",
+      "textPreview": "2026-07-04",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "+mn-lt",
+        "color": "#94A3B8",
+        "alignment": "right",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2026-07-04"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2026-07-04",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "color": "#94A3B8",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2026-07-04",
+              "fontSize": 12,
+              "color": "#94A3B8",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

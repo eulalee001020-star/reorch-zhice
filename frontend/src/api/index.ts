@@ -58,8 +58,13 @@ export {
   assessSnapshotReadiness,
   generateInitialSchedules,
   runPlanQualityGate,
+  evaluateReplayValidation,
+  captureShadowModeCase,
+  summarizeAgentObservability,
   estimatePocValue,
   normalizeEnterpriseImport,
+  runP0RealitySamplePack,
+  compileConstraintCalibration,
   buildWritebackPreview,
   runDigitalTwinSample,
 } from './planning';

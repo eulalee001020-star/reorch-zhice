@@ -1,0 +1,372 @@
+{"kind":"deck","id":"pr/10al81","name":"Deck"}
+{"kind":"layout","layoutId":"e837e703-1529-4427-a997-a8e5922c24fc","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"d01b254c-0c26-49b9-a67b-228fe7b75a3f","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/3ptebw","slide":1,"title":"ReOrch 智策","textShapes":14}
+{"kind":"textbox","id":"sh/7y1kre1w","slide":1,"text":"ReOrch 智策","textPreview":"ReOrch 智策","textChars":9,"textLines":1,"bbox":[64,70,620,76]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":1,"text":"从异常重决策切入的 AI 排产操作系统","textPreview":"从异常重决策切入的 AI 排产操作系统","textChars":19,"textLines":1,"bbox":[64,154,760,52]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":1,"text":"第一性原理：排产不是画甘特图，而是在有限资源、复杂约束和现场扰动下持续回答做什么、何时做、用什么做、为什么这样排、计划变了怎么办。","textPreview":"第一性原理：排产不是画甘特图，而是在有限资源、复杂约束和现场扰动下持续回答做什么、何时做、用什么做、为什么这样排、计划变了怎么办。","textChars":65,"textLines":1,"bbox":[64,230,700,118]}
+{"kind":"shape","id":"sh/i5sneloj","slide":1,"bbox":[64,378,128,34]}
+{"kind":"textbox","id":"sh/7qpg3ex0","slide":1,"text":"轻量接入","textPreview":"轻量接入","textChars":4,"textLines":1,"bbox":[78,385,100,20]}
+{"kind":"shape","id":"sh/0bi9s36h","slide":1,"bbox":[210,378,164,34]}
+{"kind":"textbox","id":"sh/pwb2hwfy","slide":1,"text":"分钟级重决策","textPreview":"分钟级重决策","textChars":6,"textLines":1,"bbox":[224,385,136,20]}
+{"kind":"shape","id":"sh/itgfmlkj","slide":1,"bbox":[392,378,150,34]}
+{"kind":"textbox","id":"sh/7ed8bat4","slide":1,"text":"经验资产化","textPreview":"经验资产化","textChars":5,"textLines":1,"bbox":[406,385,122,20]}
+{"kind":"shape","id":"sh/r2p8nqxs","slide":1,"bbox":[810,84,330,92]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":1,"text":"Base Layer","textPreview":"Base Layer","textChars":10,"textLines":1,"bbox":[836,106,280,20]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":1,"text":"ERP / MES / APS","textPreview":"ERP / MES / APS","textChars":15,"textLines":1,"bbox":[836,134,280,28]}
+{"kind":"shape","id":"sh/kjm1cfa9","slide":1,"bbox":[770,256,410,142]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":1,"text":"Decision Orchestration Layer","textPreview":"Decision Orchestration Layer","textChars":28,"textLines":1,"bbox":[798,282,356,24]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":1,"text":"异常重决策\n编排与确认","textPreview":"异常重决策 | 编排与确认","textChars":11,"textLines":2,"bbox":[798,315,356,62]}
+{"kind":"shape","id":"sh/9gr2p8nq","slide":1,"bbox":[810,480,330,90]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":1,"text":"Execution Layer","textPreview":"Execution Layer","textChars":15,"textLines":1,"bbox":[836,500,280,20]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":1,"text":"计划员 / 车间 / 反馈","textPreview":"计划员 / 车间 / 反馈","textChars":13,"textLines":1,"bbox":[836,528,280,28]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":1,"text":"当前切口：异常重决策层；长期路线：补齐完整 APS 能力后走向企业 AI 排产操作系统","textPreview":"当前切口：异常重决策层；长期路线：补齐完整 APS 能力后走向企业 AI 排产操作系统","textChars":43,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":1,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/3ptebw","slide":1,"text":""}
+{"kind":"slide","id":"sl/ly26u7","slide":2,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":19}
+{"kind":"textbox","id":"sh/bat47y1k","slide":2,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":2,"text":"市场窗口从“建系统”转向“用现有系统做在线决策”","textPreview":"市场窗口从“建系统”转向“用现有系统做在线决策”","textChars":24,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/tgfmlkjm","slide":2,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/m1cfa9w3","slide":2,"bbox":[70,178,250,132]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":2,"text":"1000+","textPreview":"1000+","textChars":5,"textLines":1,"bbox":[90,196,210,44]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":2,"text":"政策目标","textPreview":"政策目标","textChars":4,"textLines":1,"bbox":[90,244,210,24]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":2,"text":"到 2027 年推出高水平工业智能体","textPreview":"到 2027 年推出高水平工业智能体","textChars":18,"textLines":1,"bbox":[90,272,210,24]}
+{"kind":"shape","id":"sh/m58z25kb","slide":2,"bbox":[350,178,260,132]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":2,"text":">40%","textPreview":">40%","textChars":4,"textLines":1,"bbox":[370,196,220,44]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":2,"text":"AI APS","textPreview":"AI APS","textChars":6,"textLines":1,"bbox":[370,244,220,24]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":2,"text":"IDC 预测已部署 APS 的中国制造商将在 2026 年升级","textPreview":"IDC 预测已部署 APS 的中国制造商将在 2026 年升级","textChars":31,"textLines":1,"bbox":[370,272,220,24]}
+{"kind":"shape","id":"sh/lkjm1cfa","slide":2,"bbox":[640,178,260,132]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":2,"text":"$446B","textPreview":"$446B","textChars":5,"textLines":1,"bbox":[660,196,220,44]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":2,"text":"智能制造市场","textPreview":"智能制造市场","textChars":6,"textLines":1,"bbox":[660,244,220,24]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":2,"text":"2026 年全球宽口径智能制造市场背景","textPreview":"2026 年全球宽口径智能制造市场背景","textChars":19,"textLines":1,"bbox":[660,272,220,24]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":2,"bbox":[930,178,260,132]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":2,"text":"ROI","textPreview":"ROI","textChars":3,"textLines":1,"bbox":[950,196,220,44]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":2,"text":"客户采购逻辑","textPreview":"客户采购逻辑","textChars":6,"textLines":1,"bbox":[950,244,220,24]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":2,"text":"从扩张建设转向价值优化和持续交付","textPreview":"从扩张建设转向价值优化和持续交付","textChars":16,"textLines":1,"bbox":[950,272,220,24]}
+{"kind":"shape","id":"sh/m58z25kb","slide":2,"bbox":[78,387,10,10]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":2,"text":"国家专项行动明确覆盖排产调度、工业智能体、供应链管理、数据治理和安全治理。","textPreview":"国家专项行动明确覆盖排产调度、工业智能体、供应链管理、数据治理和安全治理。","textChars":37,"textLines":1,"bbox":[102,378,1056,46]}
+{"kind":"shape","id":"sh/4byhgn29","slide":2,"bbox":[78,433,10,10]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":2,"text":"制造企业已不满足于记录和看板，开始追求 AI 驱动的计划、控制和人机协同。","textPreview":"制造企业已不满足于记录和看板，开始追求 AI 驱动的计划、控制和人机协同。","textChars":37,"textLines":1,"bbox":[102,424,1056,46]}
+{"kind":"shape","id":"sh/mhk3q5o7","slide":2,"bbox":[78,479,10,10]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":2,"text":"ReOrch 的近期市场不是宽口径智能制造，而是复杂离散制造里的异常重排和 AI APS 插件。","textPreview":"ReOrch 的近期市场不是宽口径智能制造，而是复杂离散制造里的异常重排和 AI APS 插件。","textChars":48,"textLines":1,"bbox":[102,470,1056,46]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":2,"text":"来源：工信部等八部门、IDC FutureScape 2026、深圳行动计划、Fortune Business Insights","textPreview":"来源：工信部等八部门、IDC FutureScape 2026、深圳行动计划、Fortune Business Insights","textChars":64,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":2,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/ly26u7","slide":2,"text":""}
+{"kind":"slide","id":"sl/3blh9h","slide":3,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":23}
+{"kind":"textbox","id":"sh/il0rqd4v","slide":3,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/tcj6tova","slide":3,"text":"客户真正付费的痛点是计划被打断后的组织失速","textPreview":"客户真正付费的痛点是计划被打断后的组织失速","textChars":21,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/0rqd4vmt","slide":3,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/byhgn29g","slide":3,"bbox":[76,194,244,210]}
+{"kind":"textbox","id":"sh/idonyd0z","slide":3,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[96,214,60,34]}
+{"kind":"textbox","id":"sh/t47y1kre","slide":3,"text":"异常发生","textPreview":"异常发生","textChars":4,"textLines":1,"bbox":[96,262,200,32]}
+{"kind":"textbox","id":"sh/0je9cvix","slide":3,"text":"设备故障、插单、缺料、返工打断基准计划","textPreview":"设备故障、插单、缺料、返工打断基准计划","textChars":19,"textLines":1,"bbox":[96,314,200,70]}
+{"kind":"textbox","id":"sh/bulwval8","slide":3,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[330,278,28,30]}
+{"kind":"shape","id":"sh/i9s36hcr","slide":3,"bbox":[368,194,244,210]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":3,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[388,214,60,34]}
+{"kind":"textbox","id":"sh/p0bi9s36","slide":3,"text":"影响扩散","textPreview":"影响扩散","textChars":4,"textLines":1,"bbox":[388,262,200,32]}
+{"kind":"textbox","id":"sh/i9s36hcr","slide":3,"text":"交期、换线、瓶颈资源和下游工序相互牵连","textPreview":"交期、换线、瓶颈资源和下游工序相互牵连","textChars":19,"textLines":1,"bbox":[388,314,200,70]}
+{"kind":"textbox","id":"sh/bulwval8","slide":3,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[622,278,28,30]}
+{"kind":"shape","id":"sh/032lszqt","slide":3,"bbox":[660,194,244,210]}
+{"kind":"textbox","id":"sh/tovahoza","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[680,214,60,34]}
+{"kind":"textbox","id":"sh/ixczed8v","slide":3,"text":"反复协调","textPreview":"反复协调","textChars":4,"textLines":1,"bbox":[680,262,200,32]}
+{"kind":"textbox","id":"sh/bi9s36hc","slide":3,"text":"计划、车间、设备、物料、销售反复确认","textPreview":"计划、车间、设备、物料、销售反复确认","textChars":18,"textLines":1,"bbox":[680,314,200,70]}
+{"kind":"textbox","id":"sh/0rqd4vmt","slide":3,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[914,278,28,30]}
+{"kind":"shape","id":"sh/tcj6tova","slide":3,"bbox":[952,194,244,210]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":3,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[972,214,60,34]}
+{"kind":"textbox","id":"sh/4fu18jqh","slide":3,"text":"执行失速","textPreview":"执行失速","textChars":4,"textLines":1,"bbox":[972,262,200,32]}
+{"kind":"textbox","id":"sh/fu18jqh0","slide":3,"text":"方案难追溯，经验留在人身上而非系统里","textPreview":"方案难追溯，经验留在人身上而非系统里","textChars":18,"textLines":1,"bbox":[972,314,200,70]}
+{"kind":"shape","id":"sh/m94fu18j","slide":3,"bbox":[92,470,5,120]}
+{"kind":"textbox","id":"sh/xobm58z2","slide":3,"text":"首批客户画像","textPreview":"首批客户画像","textChars":6,"textLines":1,"bbox":[114,472,478,30]}
+{"kind":"textbox","id":"sh/83itgfml","slide":3,"text":"多品种小批量、工艺路径复杂、每周多次异常影响排程；已有 ERP/MES/APS 或至少能导出关键字段；计划员仍大量依赖 Excel、电话和个人经验。","textPreview":"多品种小批量、工艺路径复杂、每周多次异常影响排程；已有 ERP/MES/APS 或至少能导出关键字段；计划员仍大量依赖 Excel、电话和个人经验。","textChars":74,"textLines":1,"bbox":[114,514,478,76]}
+{"kind":"shape","id":"sh/fil0rqd4","slide":3,"bbox":[688,470,5,120]}
+{"kind":"textbox","id":"sh/qxs72x4n","slide":3,"text":"不优先客户","textPreview":"不优先客户","textChars":5,"textLines":1,"bbox":[710,472,458,30]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":3,"text":"异常频率低、生产节拍稳定、基础数据缺失严重，或要求首期替换全厂 ERP/MES/APS 的客户。","textPreview":"异常频率低、生产节拍稳定、基础数据缺失严重，或要求首期替换全厂 ERP/MES/APS 的客户。","textChars":48,"textLines":1,"bbox":[710,514,458,76]}
+{"kind":"textbox","id":"sh/4zidonyd","slide":3,"text":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textPreview":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textChars":29,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/itgfmlkj","slide":3,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/3blh9h","slide":3,"text":""}
+{"kind":"slide","id":"sl/r15ryb","slide":4,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":17}
+{"kind":"textbox","id":"sh/xobm58z2","slide":4,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/qxs72x4n","slide":4,"text":"ReOrch 补的是 ERP/MES/APS 之上的异常重决策层","textPreview":"ReOrch 补的是 ERP/MES/APS 之上的异常重决策层","textChars":32,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/fil0rqd4","slide":4,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/4fu18jqh","slide":4,"bbox":[92,178,270,64]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":4,"text":"ERP","textPreview":"ERP","textChars":3,"textLines":1,"bbox":[114,193,226,28]}
+{"kind":"shape","id":"sh/m94fu18j","slide":4,"bbox":[400,190,4,40]}
+{"kind":"textbox","id":"sh/fu18jqh0","slide":4,"text":"订单、客户、物料、交期、主数据","textPreview":"订单、客户、物料、交期、主数据","textChars":15,"textLines":1,"bbox":[430,190,670,40]}
+{"kind":"shape","id":"sh/4r65wjud","slide":4,"bbox":[92,278,270,64]}
+{"kind":"textbox","id":"sh/xc3ylc7u","slide":4,"text":"MES","textPreview":"MES","textChars":3,"textLines":1,"bbox":[114,293,226,28]}
+{"kind":"shape","id":"sh/9cvixcze","slide":4,"bbox":[400,290,4,40]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":4,"text":"执行反馈、设备状态、工序报工、现场事件","textPreview":"执行反馈、设备状态、工序报工、现场事件","textChars":19,"textLines":1,"bbox":[430,290,670,40]}
+{"kind":"shape","id":"sh/r65wjudg","slide":4,"bbox":[92,378,270,64]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":4,"text":"APS","textPreview":"APS","textChars":3,"textLines":1,"bbox":[114,393,226,28]}
+{"kind":"shape","id":"sh/5o7qpg3e","slide":4,"bbox":[400,390,4,40]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":4,"text":"基准排程、有限产能计划、排程快照","textPreview":"基准排程、有限产能计划、排程快照","textChars":16,"textLines":1,"bbox":[430,390,670,40]}
+{"kind":"shape","id":"sh/nih4byhg","slide":4,"bbox":[92,478,270,64]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":4,"text":"ReOrch","textPreview":"ReOrch","textChars":6,"textLines":1,"bbox":[114,493,226,28]}
+{"kind":"shape","id":"sh/9s36hcrm","slide":4,"bbox":[400,490,4,40]}
+{"kind":"textbox","id":"sh/g7adsji5","slide":4,"text":"影响分析、候选比较、人工确认、审计和经验沉淀","textPreview":"影响分析、候选比较、人工确认、审计和经验沉淀","textChars":22,"textLines":1,"bbox":[430,490,670,40]}
+{"kind":"shape","id":"sh/gbq1oryt","slide":4,"bbox":[806,208,346,248]}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":4,"text":"产品边界","textPreview":"产品边界","textChars":4,"textLines":1,"bbox":[834,234,290,30]}
+{"kind":"shape","id":"sh/y90je9cv","slide":4,"bbox":[836,297,10,10]}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":4,"text":"不替代主数据和生产执行底座","textPreview":"不替代主数据和生产执行底座","textChars":13,"textLines":1,"bbox":[860,288,256,39]}
+{"kind":"shape","id":"sh/gn29gr2p","slide":4,"bbox":[836,336,10,10]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":4,"text":"不承诺无人值守自动调度","textPreview":"不承诺无人值守自动调度","textChars":11,"textLines":1,"bbox":[860,327,256,39]}
+{"kind":"shape","id":"sh/yhgn29gr","slide":4,"bbox":[836,375,10,10]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":4,"text":"不让 LLM 直接生成最终排程","textPreview":"不让 LLM 直接生成最终排程","textChars":15,"textLines":1,"bbox":[860,366,256,39]}
+{"kind":"shape","id":"sh/czed8v6p","slide":4,"bbox":[836,414,10,10]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":4,"text":"通过质量门与人工确认控制风险","textPreview":"通过质量门与人工确认控制风险","textChars":14,"textLines":1,"bbox":[860,405,256,39]}
+{"kind":"textbox","id":"sh/vixczed8","slide":4,"text":"当前是主系统上方的异常层；长期要替代排产系统，必须补齐基础排程、全约束、生产发布和 SLA","textPreview":"当前是主系统上方的异常层；长期要替代排产系统，必须补齐基础排程、全约束、生产发布和 SLA","textChars":45,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/2x4nap4r","slide":4,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/r15ryb","slide":4,"text":""}
+{"kind":"slide","id":"sl/tgbu2b","slide":5,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":20}
+{"kind":"textbox","id":"sh/epkzupwb","slide":5,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":5,"text":"第一性原理下的优势：我们降低的是计划失效后的四类成本","textPreview":"第一性原理下的优势：我们降低的是计划失效后的四类成本","textChars":26,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/wval87ed","slide":5,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/7mp0bi9s","slide":5,"bbox":[80,184,236,138]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":5,"text":"时间成本","textPreview":"时间成本","textChars":4,"textLines":1,"bbox":[100,208,190,30]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":5,"text":"异常后从发现到候选方案的等待时间","textPreview":"异常后从发现到候选方案的等待时间","textChars":16,"textLines":1,"bbox":[100,254,190,42]}
+{"kind":"shape","id":"sh/w7mp0bi9","slide":5,"bbox":[366,184,236,138]}
+{"kind":"textbox","id":"sh/7u54zido","slide":5,"text":"协调成本","textPreview":"协调成本","textChars":4,"textLines":1,"bbox":[386,208,190,30]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":5,"text":"计划、车间、设备、物料、销售反复确认","textPreview":"计划、车间、设备、物料、销售反复确认","textChars":18,"textLines":1,"bbox":[386,254,190,42]}
+{"kind":"shape","id":"sh/onyd0z61","slide":5,"bbox":[652,184,236,138]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":5,"text":"决策成本","textPreview":"决策成本","textChars":4,"textLines":1,"bbox":[672,208,190,30]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":5,"text":"交期、换线、加班、瓶颈之间的取舍","textPreview":"交期、换线、加班、瓶颈之间的取舍","textChars":16,"textLines":1,"bbox":[672,254,190,42]}
+{"kind":"shape","id":"sh/z25kb6xk","slide":5,"bbox":[938,184,236,138]}
+{"kind":"textbox","id":"sh/ovahoza1","slide":5,"text":"组织成本","textPreview":"组织成本","textChars":4,"textLines":1,"bbox":[958,208,190,30]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":5,"text":"老师傅经验无法沉淀，新人难接手","textPreview":"老师傅经验无法沉淀，新人难接手","textChars":15,"textLines":1,"bbox":[958,254,190,42]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":5,"text":"为什么不用金蝶、用友，而是 ReOrch？","textPreview":"为什么不用金蝶、用友，而是 ReOrch？","textChars":21,"textLines":1,"bbox":[86,386,520,34]}
+{"kind":"shape","id":"sh/vahoza1g","slide":5,"bbox":[94,447,10,10]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":5,"text":"金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。","textPreview":"金蝶、用友强在 ERP、财务、供应链、制造执行、主数据和企业生态。","textChars":33,"textLines":1,"bbox":[118,438,566,42]}
+{"kind":"shape","id":"sh/dsji5sne","slide":5,"bbox":[94,489,10,10]}
+{"kind":"textbox","id":"sh/hk3q5o7q","slide":5,"text":"ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。","textPreview":"ReOrch 不正面替换主系统，先占住异常发生后的判断、比较、确认和复盘入口。","textChars":39,"textLines":1,"bbox":[118,480,566,42]}
+{"kind":"shape","id":"sh/oza1gvy9","slide":5,"bbox":[94,531,10,10]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":5,"text":"短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。","textPreview":"短期更窄、更快、更贴异常现场；长期通过补齐 APS 能力逐步减少客户对传统排产系统依赖。","textChars":44,"textLines":1,"bbox":[118,522,566,42]}
+{"kind":"shape","id":"sh/6xkf6dcb","slide":5,"bbox":[760,382,380,180]}
+{"kind":"textbox","id":"sh/hwfyxobm","slide":5,"text":"核心差异","textPreview":"核心差异","textChars":4,"textLines":1,"bbox":[790,410,320,30]}
+{"kind":"shape","id":"sh/obm58z25","slide":5,"bbox":[794,471,10,10]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":5,"text":"低侵入：只读接入 -> replay -> shadow mode","textPreview":"低侵入：只读接入 -> replay -> shadow mode","textChars":33,"textLines":1,"bbox":[818,462,281,34]}
+{"kind":"shape","id":"sh/65wjudg7","slide":5,"bbox":[794,505,10,10]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":5,"text":"AI 不拍板：求解器、质量门、人确认兜底","textPreview":"AI 不拍板：求解器、质量门、人确认兜底","textChars":20,"textLines":1,"bbox":[818,496,281,34]}
+{"kind":"shape","id":"sh/sfil0rqd","slide":5,"bbox":[794,539,10,10]}
+{"kind":"textbox","id":"sh/ixczed8v","slide":5,"text":"经验资产化：override 进入案例库和偏好画像","textPreview":"经验资产化：override 进入案例库和偏好画像","textChars":25,"textLines":1,"bbox":[818,530,281,34]}
+{"kind":"textbox","id":"sh/bi9s36hc","slide":5,"text":"这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路","textPreview":"这页回应投资人最常问的问题：不是比巨头大，而是先切巨头系统之间未闭合的异常决策链路","textChars":41,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/032lszqt","slide":5,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/tgbu2b","slide":5,"text":""}
+{"kind":"slide","id":"sl/dso479","slide":6,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":9}
+{"kind":"textbox","id":"sh/0je9cvix","slide":6,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":6,"text":"当前不是 BP 阶段，MVP 已经形成可运行闭环","textPreview":"当前不是 BP 阶段，MVP 已经形成可运行闭环","textChars":24,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/idonyd0z","slide":6,"bbox":[64,142,1152,1]}
+{"kind":"textbox","id":"sh/tcj6tova","slide":6,"text":"已完成","textPreview":"已完成","textChars":3,"textLines":1,"bbox":[78,178,220,34]}
+{"kind":"shape","id":"sh/0rqd4vmt","slide":6,"bbox":[86,239,10,10]}
+{"kind":"textbox","id":"sh/b6xkf6dc","slide":6,"text":"后端 API、前端工作台、demo 数据和 Docker Compose 演示环境。","textPreview":"后端 API、前端工作台、demo 数据和 Docker Compose 演示环境。","textChars":42,"textLines":1,"bbox":[110,230,586,46]}
+{"kind":"shape","id":"sh/il0rqd4v","slide":6,"bbox":[86,285,10,10]}
+{"kind":"textbox","id":"sh/tovahoza","slide":6,"text":"异常接入、影响分析、策略选择、Top-K 候选、质量门、人工确认、mock 回写、案例沉淀。","textPreview":"异常接入、影响分析、策略选择、Top-K 候选、质量门、人工确认、mock 回写、案例沉淀。","textChars":46,"textLines":1,"bbox":[110,276,586,46]}
+{"kind":"shape","id":"sh/032lszqt","slide":6,"bbox":[86,331,10,10]}
+{"kind":"textbox","id":"sh/61032lsz","slide":6,"text":"Data Readiness、Evidence Center、规则审核、偏好画像、NGS Lab 等验证入口。","textPreview":"Data Readiness、Evidence Center、规则审核、偏好画像、NGS Lab 等验证入口。","textChars":55,"textLines":1,"bbox":[110,322,586,46]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":6,"bbox":[86,377,10,10]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":6,"text":"上线就绪评估、失败样本库、LLM Agent 离线评测、shadow mode 计划和客户数据合同。","textPreview":"上线就绪评估、失败样本库、LLM Agent 离线评测、shadow mode 计划和客户数据合同。","textChars":50,"textLines":1,"bbox":[110,368,586,46]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":6,"text":"证据来自本仓库 README、产品说明、上线就绪评估和前端截图","textPreview":"证据来自本仓库 README、产品说明、上线就绪评估和前端截图","textChars":31,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":6,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"image","id":"im/y90je9cv","slide":6,"name":"","geometry":"roundRect","alt":"ReOrch decision workbench screenshot","bbox":[760,174,420,236]}
+{"kind":"image","id":"im/58z25kb6","slide":6,"name":"","geometry":"roundRect","alt":"Evidence Center screenshot","bbox":[760,434,420,150]}
+{"kind":"notes","id":"nt/dso479","slide":6,"text":""}
+{"kind":"slide","id":"sl/wjqgt5","slide":7,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":27}
+{"kind":"textbox","id":"sh/sneloj2t","slide":7,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":7,"text":"工作流围绕“可用方案 + 人工确认 + 审计追溯”设计","textPreview":"工作流围绕“可用方案 + 人工确认 + 审计追溯”设计","textChars":27,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/ahoza1gv","slide":7,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/lkjm1cfa","slide":7,"bbox":[70,182,220,100]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":7,"text":"异常接入","textPreview":"异常接入","textChars":4,"textLines":1,"bbox":[88,202,180,28]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":7,"text":"文本/MES/IoT/CSV","textPreview":"文本/MES/IoT/CSV","textChars":14,"textLines":1,"bbox":[88,238,180,28]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[306,216,28,28]}
+{"kind":"shape","id":"sh/loj2t83i","slide":7,"bbox":[356,182,220,100]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":7,"text":"影响分析","textPreview":"影响分析","textChars":4,"textLines":1,"bbox":[374,202,180,28]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":7,"text":"工单、资源、交期风险","textPreview":"工单、资源、交期风险","textChars":10,"textLines":1,"bbox":[374,238,180,28]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[592,216,28,28]}
+{"kind":"shape","id":"sh/cj6tovah","slide":7,"bbox":[642,182,220,100]}
+{"kind":"textbox","id":"sh/54zidony","slide":7,"text":"策略路由","textPreview":"策略路由","textChars":4,"textLines":1,"bbox":[660,202,180,28]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":7,"text":"等待/局部/全局/人工","textPreview":"等待/局部/全局/人工","textChars":11,"textLines":1,"bbox":[660,238,180,28]}
+{"kind":"textbox","id":"sh/nap4r65w","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[878,216,28,28]}
+{"kind":"shape","id":"sh/cvixczed","slide":7,"bbox":[928,182,220,100]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":7,"text":"候选生成","textPreview":"候选生成","textChars":4,"textLines":1,"bbox":[946,202,180,28]}
+{"kind":"textbox","id":"sh/u18jqh0f","slide":7,"text":"Top-K 可执行方案","textPreview":"Top-K 可执行方案","textChars":11,"textLines":1,"bbox":[946,238,180,28]}
+{"kind":"shape","id":"sh/jm1cfa9w","slide":7,"bbox":[70,390,220,100]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":7,"text":"质量门","textPreview":"质量门","textChars":3,"textLines":1,"bbox":[88,410,180,28]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":7,"text":"硬约束、缺字段、权限","textPreview":"硬约束、缺字段、权限","textChars":10,"textLines":1,"bbox":[88,446,180,28]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[306,424,28,28]}
+{"kind":"shape","id":"sh/47y1kre1","slide":7,"bbox":[356,390,220,100]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":7,"text":"人工确认","textPreview":"人工确认","textChars":4,"textLines":1,"bbox":[374,410,180,28]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":7,"text":"接受、微调、驳回","textPreview":"接受、微调、驳回","textChars":8,"textLines":1,"bbox":[374,446,180,28]}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[592,424,28,28]}
+{"kind":"shape","id":"sh/4vmtwra5","slide":7,"bbox":[642,390,220,100]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":7,"text":"受控回写","textPreview":"受控回写","textChars":4,"textLines":1,"bbox":[660,410,180,28]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":7,"text":"预览、幂等、回滚","textPreview":"预览、幂等、回滚","textChars":8,"textLines":1,"bbox":[660,446,180,28]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":7,"text":">","textPreview":">","textChars":1,"textLines":1,"bbox":[878,424,28,28]}
+{"kind":"shape","id":"sh/l0rqd4vm","slide":7,"bbox":[928,390,220,100]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":7,"text":"案例沉淀","textPreview":"案例沉淀","textChars":4,"textLines":1,"bbox":[946,410,180,28]}
+{"kind":"textbox","id":"sh/7u54zido","slide":7,"text":"override 与执行反馈","textPreview":"override 与执行反馈","textChars":14,"textLines":1,"bbox":[946,446,180,28]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":7,"text":"系统不让模型绕过质量门。数据缺失、硬约束失败、权限不足或解释不可追溯时，输出降级为人工复核或 readiness 修复。","textPreview":"系统不让模型绕过质量门。数据缺失、硬约束失败、权限不足或解释不可追溯时，输出降级为人工复核或 readiness 修复。","textChars":60,"textLines":1,"bbox":[98,560,1060,58]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":7,"text":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textPreview":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textChars":29,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":7,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/wjqgt5","slide":7,"text":""}
+{"kind":"slide","id":"sl/4bgu8d","slide":8,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":20}
+{"kind":"textbox","id":"sh/k3q5o7qp","slide":8,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/vixczed8","slide":8,"text":"验证证据已经出现，但必须守住生产口径边界","textPreview":"验证证据已经出现，但必须守住生产口径边界","textChars":20,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/2x4nap4r","slide":8,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/dcbulwva","slide":8,"bbox":[88,188,250,132]}
+{"kind":"textbox","id":"sh/kre1w7mp","slide":8,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[108,206,210,44]}
+{"kind":"textbox","id":"sh/val87ed8","slide":8,"text":"Replay case","textPreview":"Replay case","textChars":11,"textLines":1,"bbox":[108,254,210,24]}
+{"kind":"textbox","id":"sh/6psfil0r","slide":8,"text":"受控实验室 / 数字孪生样本","textPreview":"受控实验室 / 数字孪生样本","textChars":14,"textLines":1,"bbox":[108,282,210,24]}
+{"kind":"shape","id":"sh/d8bat47y","slide":8,"bbox":[368,188,250,132]}
+{"kind":"textbox","id":"sh/knih4byh","slide":8,"text":"7","textPreview":"7","textChars":1,"textLines":1,"bbox":[388,206,210,44]}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":8,"text":"Top-1 采纳","textPreview":"Top-1 采纳","textChars":8,"textLines":1,"bbox":[388,254,210,24]}
+{"kind":"textbox","id":"sh/ji5snelo","slide":8,"text":"严格 Top-1 直接采纳","textPreview":"严格 Top-1 直接采纳","textChars":13,"textLines":1,"bbox":[388,282,210,24]}
+{"kind":"shape","id":"sh/c3ylc7u5","slide":8,"bbox":[648,188,250,132]}
+{"kind":"textbox","id":"sh/1kre1w7m","slide":8,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[668,206,210,44]}
+{"kind":"textbox","id":"sh/ulwval87","slide":8,"text":"Top-K 微调采纳","textPreview":"Top-K 微调采纳","textChars":10,"textLines":1,"bbox":[668,254,210,24]}
+{"kind":"textbox","id":"sh/j6tovaho","slide":8,"text":"计划员偏好微调后采纳","textPreview":"计划员偏好微调后采纳","textChars":10,"textLines":1,"bbox":[668,282,210,24]}
+{"kind":"shape","id":"sh/crmhk3q5","slide":8,"bbox":[928,188,250,132]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":8,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[948,206,210,44]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":8,"text":"驳回 / 退回人工","textPreview":"驳回 / 退回人工","textChars":9,"textLines":1,"bbox":[948,254,210,24]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":8,"text":"数据或质量状态不足","textPreview":"数据或质量状态不足","textChars":9,"textLines":1,"bbox":[948,282,210,24]}
+{"kind":"shape","id":"sh/bq1oryts","slide":8,"bbox":[104,410,5,132]}
+{"kind":"textbox","id":"sh/m58z25kb","slide":8,"text":"可以证明","textPreview":"可以证明","textChars":4,"textLines":1,"bbox":[126,412,438,30]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":8,"text":"系统能记录推荐、采纳、微调、驳回和原因归因；质量门和停损规则能阻断不可审计方案；MVP 具备受控 replay 的闭环基础。","textPreview":"系统能记录推荐、采纳、微调、驳回和原因归因；质量门和停损规则能阻断不可审计方案；MVP 具备受控 replay 的闭环基础。","textChars":62,"textLines":1,"bbox":[126,454,438,88]}
+{"kind":"shape","id":"sh/4byhgn29","slide":8,"bbox":[704,410,5,132]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":8,"text":"不能证明","textPreview":"不能证明","textChars":4,"textLines":1,"bbox":[726,412,438,30]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":8,"text":"不能证明客户现场一定达到同样 ROI、采纳率或延期改善；不能证明已经完成生产上线；不能承诺无人值守自动调度。","textPreview":"不能证明客户现场一定达到同样 ROI、采纳率或延期改善；不能证明已经完成生产上线；不能承诺无人值守自动调度。","textChars":54,"textLines":1,"bbox":[726,454,438,88]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":8,"text":"这是路演可信度关键：主动给边界，比过度包装更容易通过尽调","textPreview":"这是路演可信度关键：主动给边界，比过度包装更容易通过尽调","textChars":28,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":8,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/4bgu8d","slide":8,"text":""}
+{"kind":"slide","id":"sl/p9odjn","slide":9,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":14}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":9,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":9,"text":"商业模式从单车间付费 PoC 切入，再转年费和场景扩展","textPreview":"商业模式从单车间付费 PoC 切入，再转年费和场景扩展","textChars":27,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/sneloj2t","slide":9,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/3ex0nuxc","slide":9,"bbox":[90,190,320,280]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":9,"text":"Land","textPreview":"Land","textChars":4,"textLines":1,"bbox":[114,216,260,34]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":9,"text":"20-30 万元\n4-6 周付费 PoC","textPreview":"20-30 万元 | 4-6 周付费 PoC","textChars":20,"textLines":2,"bbox":[114,268,260,64]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":9,"text":"1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。","textPreview":"1 个车间、1 个高频异常、1 个数据源；交付数据就绪、历史 replay、Top-K 候选和 ROI 复盘。","textChars":55,"textLines":1,"bbox":[114,356,260,86]}
+{"kind":"shape","id":"sh/3itgfmlk","slide":9,"bbox":[476,190,320,280]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":9,"text":"Convert","textPreview":"Convert","textChars":7,"textLines":1,"bbox":[500,216,260,34]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":9,"text":"30-50 万元/车间/年","textPreview":"30-50 万元/车间/年","textChars":13,"textLines":1,"bbox":[500,268,260,64]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":9,"text":"PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。","textPreview":"PoC 证明使用频率、方案采纳和价值闭环后转订阅或 license。","textChars":34,"textLines":1,"bbox":[500,356,260,86]}
+{"kind":"shape","id":"sh/ed8bat47","slide":9,"bbox":[862,190,320,280]}
+{"kind":"textbox","id":"sh/7u54zido","slide":9,"text":"Expand","textPreview":"Expand","textChars":6,"textLines":1,"bbox":[886,216,260,34]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":9,"text":"场景/车间/私有化扩展","textPreview":"场景/车间/私有化扩展","textChars":11,"textLines":1,"bbox":[886,268,260,64]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":9,"text":"插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。","textPreview":"插单、缺料、返工、人员日历、工装夹具、MES/APS 深度集成和仿真包。","textChars":36,"textLines":1,"bbox":[886,356,260,86]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":9,"text":"PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。","textPreview":"PoC 验收指标：异常到方案时间、硬约束可行率、Top-K 覆盖、计划员确认记录、延期/换线/协调成本复盘。","textChars":54,"textLines":1,"bbox":[96,548,1080,58]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":9,"text":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textPreview":"当前口径：MVP + 受控验证，不宣称客户生产无人值守上线","textChars":29,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/wval87ed","slide":9,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/p9odjn","slide":9,"text":""}
+{"kind":"slide","id":"sl/hjj8y8","slide":10,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":16}
+{"kind":"textbox","id":"sh/9cvixcze","slide":10,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":10,"text":"竞争不是“谁会算”，而是谁占住异常决策入口","textPreview":"竞争不是“谁会算”，而是谁占住异常决策入口","textChars":21,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/r65wjudg","slide":10,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/g3ex0nux","slide":10,"bbox":[86,192,420,76]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":10,"text":"ERP/MES","textPreview":"ERP/MES","textChars":7,"textLines":1,"bbox":[112,210,120,28]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":10,"text":"强在记录和执行；异常重决策通常不是核心。","textPreview":"强在记录和执行；异常重决策通常不是核心。","textChars":20,"textLines":1,"bbox":[252,208,220,42]}
+{"kind":"shape","id":"sh/nih4byhg","slide":10,"bbox":[86,304,420,76]}
+{"kind":"textbox","id":"sh/g7adsji5","slide":10,"text":"成熟 APS","textPreview":"成熟 APS","textChars":6,"textLines":1,"bbox":[112,322,120,28]}
+{"kind":"textbox","id":"sh/9s36hcrm","slide":10,"text":"具备排程和重排；但解释、确认、override 沉淀和轻量异常入口仍可补位。","textPreview":"具备排程和重排；但解释、确认、override 沉淀和轻量异常入口仍可补位。","textChars":38,"textLines":1,"bbox":[252,320,220,42]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":10,"bbox":[86,416,420,76]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":10,"text":"通用 AI","textPreview":"通用 AI","textChars":5,"textLines":1,"bbox":[112,434,120,28]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":10,"text":"强在理解表达；缺少工业约束、质量门、回写和审计。","textPreview":"强在理解表达；缺少工业约束、质量门、回写和审计。","textChars":24,"textLines":1,"bbox":[252,432,220,42]}
+{"kind":"shape","id":"sh/6hcrmhk3","slide":10,"bbox":[646,188,490,310]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":10,"text":"ReOrch 的中期壁垒","textPreview":"ReOrch 的中期壁垒","textChars":12,"textLines":1,"bbox":[678,218,420,34]}
+{"kind":"shape","id":"sh/ovahoza1","slide":10,"bbox":[682,289,10,10]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":10,"text":"高频异常入口和状态机","textPreview":"高频异常入口和状态机","textChars":10,"textLines":1,"bbox":[706,280,366,42]}
+{"kind":"shape","id":"sh/6tovahoz","slide":10,"bbox":[682,331,10,10]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":10,"text":"客户约束模板和数据合同","textPreview":"客户约束模板和数据合同","textChars":11,"textLines":1,"bbox":[706,322,366,42]}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":10,"bbox":[682,373,10,10]}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":10,"text":"人工 override 与偏好画像","textPreview":"人工 override 与偏好画像","textChars":17,"textLines":1,"bbox":[706,364,366,42]}
+{"kind":"shape","id":"sh/94fu18jq","slide":10,"bbox":[682,415,10,10]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":10,"text":"案例图谱和执行反馈闭环","textPreview":"案例图谱和执行反馈闭环","textChars":11,"textLines":1,"bbox":[706,406,366,42]}
+{"kind":"shape","id":"sh/r2p8nqxs","slide":10,"bbox":[682,457,10,10]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":10,"text":"ERP/MES/APS 上方的低侵入集成位置","textPreview":"ERP/MES/APS 上方的低侵入集成位置","textChars":22,"textLines":1,"bbox":[706,448,366,42]}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":10,"text":"更稳表述：不否定主系统，而是在主系统之上补异常响应、确认和经验资产层","textPreview":"更稳表述：不否定主系统，而是在主系统之上补异常响应、确认和经验资产层","textChars":34,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":10,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/hjj8y8","slide":10,"text":""}
+{"kind":"slide","id":"sl/vddeob","slide":11,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":17}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":11,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":11,"text":"若要让客户不再用其他排产系统，必须补齐完整 APS 能力","textPreview":"若要让客户不再用其他排产系统，必须补齐完整 APS 能力","textChars":28,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/gvy90je9","slide":11,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/r2p8nqxs","slide":11,"bbox":[74,180,320,142]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":11,"text":"基础排程","textPreview":"基础排程","textChars":4,"textLines":1,"bbox":[96,202,260,28]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":11,"text":"初始排程、日/周/滚动计划、冻结窗口、版本、发布与回滚","textPreview":"初始排程、日/周/滚动计划、冻结窗口、版本、发布与回滚","textChars":27,"textLines":1,"bbox":[96,244,262,48]}
+{"kind":"shape","id":"sh/kjm1cfa9","slide":11,"bbox":[456,180,320,142]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":11,"text":"全约束库","textPreview":"全约束库","textChars":4,"textLines":1,"bbox":[478,202,260,28]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":11,"text":"工艺路线、设备能力、物料齐套、人员技能、工装、外协、质量返工","textPreview":"工艺路线、设备能力、物料齐套、人员技能、工装、外协、质量返工","textChars":30,"textLines":1,"bbox":[478,244,262,48]}
+{"kind":"shape","id":"sh/4fu18jqh","slide":11,"bbox":[838,180,320,142]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":11,"text":"系统集成","textPreview":"系统集成","textChars":4,"textLines":1,"bbox":[860,202,260,28]}
+{"kind":"textbox","id":"sh/m94fu18j","slide":11,"text":"ERP/MES/WMS/QMS/IoT 双向接口、字段映射、增量同步、数据血缘","textPreview":"ERP/MES/WMS/QMS/IoT 双向接口、字段映射、增量同步、数据血缘","textChars":39,"textLines":1,"bbox":[860,244,262,48]}
+{"kind":"shape","id":"sh/fu18jqh0","slide":11,"bbox":[74,386,320,142]}
+{"kind":"textbox","id":"sh/83itgfml","slide":11,"text":"求解性能","textPreview":"求解性能","textChars":4,"textLines":1,"bbox":[96,408,260,28]}
+{"kind":"textbox","id":"sh/xobm58z2","slide":11,"text":"CP-SAT、启发式、仿真、超时可行解、最优性 gap、大规模压测","textPreview":"CP-SAT、启发式、仿真、超时可行解、最优性 gap、大规模压测","textChars":33,"textLines":1,"bbox":[96,450,262,48]}
+{"kind":"shape","id":"sh/qxs72x4n","slide":11,"bbox":[456,386,320,142]}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":11,"text":"AI 治理","textPreview":"AI 治理","textChars":5,"textLines":1,"bbox":[478,408,260,28]}
+{"kind":"textbox","id":"sh/4zidonyd","slide":11,"text":"Agent 分级、schema、source refs、质量门、fallback、成本和 latency","textPreview":"Agent 分级、schema、source refs、质量门、fallback、成本和 latency","textChars":52,"textLines":1,"bbox":[478,450,262,48]}
+{"kind":"shape","id":"sh/xkf6dcbu","slide":11,"bbox":[838,386,320,142]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":11,"text":"企业级运行","textPreview":"企业级运行","textChars":5,"textLines":1,"bbox":[860,408,260,28]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":11,"text":"甘特图编辑、协同审批、权限审计、SLA、监控告警、私有化部署","textPreview":"甘特图编辑、协同审批、权限审计、SLA、监控告警、私有化部署","textChars":30,"textLines":1,"bbox":[860,450,262,48]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":11,"text":"结论：当前可以讲“从异常层进入排产系统”，不能讲“接入后立即替代所有排产系统”。替代必须靠真实生产发布样板证明。","textPreview":"结论：当前可以讲“从异常层进入排产系统”，不能讲“接入后立即替代所有排产系统”。替代必须靠真实生产发布样板证明。","textChars":56,"textLines":1,"bbox":[90,568,1080,50]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":11,"text":"新增能力清单见 investor_roadshow/ReOrch_从异常重决策到完整排产系统能力清单_20260704.md","textPreview":"新增能力清单见 investor_roadshow/ReOrch_从异常重决策到完整排产系统能力清单_20260704.md","textChars":62,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":11,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/vddeob","slide":11,"text":""}
+{"kind":"slide","id":"sl/vfd64b","slide":12,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":13}
+{"kind":"textbox","id":"sh/61032lsz","slide":12,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":12,"text":"路线：异常层是 wedge，完整排产系统是分阶段结果","textPreview":"路线：异常层是 wedge，完整排产系统是分阶段结果","textChars":26,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":12,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/vy90je9c","slide":12,"bbox":[70,198,244,300]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":12,"text":"0-3 个月","textPreview":"0-3 个月","textChars":6,"textLines":1,"bbox":[92,226,200,34]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":12,"text":"客户访谈、数据合同、真实历史 replay、Agent 评测集和 PoC 交付包。","textPreview":"客户访谈、数据合同、真实历史 replay、Agent 评测集和 PoC 交付包。","textChars":41,"textLines":1,"bbox":[92,292,190,148]}
+{"kind":"shape","id":"sh/oj2t83it","slide":12,"bbox":[362,198,244,300]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":12,"text":"3-6 个月","textPreview":"3-6 个月","textChars":6,"textLines":1,"bbox":[384,226,200,34]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":12,"text":"付费 PoC、shadow mode、sandbox 人工确认回写、单车间设备故障和插单模板。","textPreview":"付费 PoC、shadow mode、sandbox 人工确认回写、单车间设备故障和插单模板。","textChars":47,"textLines":1,"bbox":[384,292,190,148]}
+{"kind":"shape","id":"sh/gr2p8nqx","slide":12,"bbox":[654,198,244,300]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":12,"text":"6-18 个月","textPreview":"6-18 个月","textChars":7,"textLines":1,"bbox":[676,226,200,34]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":12,"text":"行业标杆客户、MES/APS 适配器、车间年费、更多约束和滚动排程能力。","textPreview":"行业标杆客户、MES/APS 适配器、车间年费、更多约束和滚动排程能力。","textChars":36,"textLines":1,"bbox":[676,292,190,148]}
+{"kind":"shape","id":"sh/r65wjudg","slide":12,"bbox":[946,198,244,300]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":12,"text":"18-36 个月","textPreview":"18-36 个月","textChars":8,"textLines":1,"bbox":[968,226,200,34]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":12,"text":"真实生产发布样板，覆盖初始排程、滚动排程、异常重排和发布回写。","textPreview":"真实生产发布样板，覆盖初始排程、滚动排程、异常重排和发布回写。","textChars":31,"textLines":1,"bbox":[968,292,190,148]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":12,"text":"关键判断：第二个客户定制成本下降，且至少一个客户用 ReOrch 发布真实生产计划，才有资格谈替代传统排产系统。","textPreview":"关键判断：第二个客户定制成本下降，且至少一个客户用 ReOrch 发布真实生产计划，才有资格谈替代传统排产系统。","textChars":56,"textLines":1,"bbox":[96,550,1080,58]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":12,"text":"从异常层到完整 APS，不是文案升级，而是能力、验证、运维和客户成功体系升级","textPreview":"从异常层到完整 APS，不是文案升级，而是能力、验证、运维和客户成功体系升级","textChars":38,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/g7adsji5","slide":12,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/vfd64b","slide":12,"text":""}
+{"kind":"slide","id":"sl/olvsnq","slide":13,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":15}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":13,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":13,"text":"天使轮建议融资 600 万元，买 18 个月验证窗口","textPreview":"天使轮建议融资 600 万元，买 18 个月验证窗口","textChars":26,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/bat47y1k","slide":13,"bbox":[64,142,1152,1]}
+{"kind":"shape","id":"sh/47y1kre1","slide":13,"bbox":[110,200,300,132]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":13,"text":"45%","textPreview":"45%","textChars":3,"textLines":1,"bbox":[130,218,260,44]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":13,"text":"产品与算法","textPreview":"产品与算法","textChars":5,"textLines":1,"bbox":[130,266,260,24]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":13,"text":"异常重决策、求解器组合、质量门、AI Agent 评测","textPreview":"异常重决策、求解器组合、质量门、AI Agent 评测","textChars":27,"textLines":1,"bbox":[130,294,260,24]}
+{"kind":"shape","id":"sh/4byhgn29","slide":13,"bbox":[490,200,300,132]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":13,"text":"35%","textPreview":"35%","textChars":3,"textLines":1,"bbox":[510,218,260,44]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":13,"text":"试点交付与集成","textPreview":"试点交付与集成","textChars":7,"textLines":1,"bbox":[510,266,260,24]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":13,"text":"客户驻场、只读接入、适配器、sandbox 回写演练","textPreview":"客户驻场、只读接入、适配器、sandbox 回写演练","textChars":26,"textLines":1,"bbox":[510,294,260,24]}
+{"kind":"shape","id":"sh/j6tovaho","slide":13,"bbox":[870,200,300,132]}
+{"kind":"textbox","id":"sh/ulwval87","slide":13,"text":"20%","textPreview":"20%","textChars":3,"textLines":1,"bbox":[890,218,260,44]}
+{"kind":"textbox","id":"sh/1kre1w7m","slide":13,"text":"商务与客户成功","textPreview":"商务与客户成功","textChars":7,"textLines":1,"bbox":[890,266,260,24]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":13,"text":"标杆客户、渠道伙伴、PoC 交付包、售前资料","textPreview":"标杆客户、渠道伙伴、PoC 交付包、售前资料","textChars":22,"textLines":1,"bbox":[890,294,260,24]}
+{"kind":"shape","id":"sh/ji5snelo","slide":13,"bbox":[140,432,5,120]}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":13,"text":"资金之外最需要的资源","textPreview":"资金之外最需要的资源","textChars":10,"textLines":1,"bbox":[162,434,958,30]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":13,"text":"2-3 家愿意提供真实排程数据、异常日志和执行反馈的试点工厂；MES/APS/工业互联网集成伙伴；制造业计划、IE、设备、供应链顾问。","textPreview":"2-3 家愿意提供真实排程数据、异常日志和执行反馈的试点工厂；MES/APS/工业互联网集成伙伴；制造业计划、IE、设备、供应链顾问。","textChars":67,"textLines":1,"bbox":[162,476,958,76]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":13,"text":"若目标升级为完整 APS，后续融资需增加算法、实施、集成、SLA 和客户成功资源","textPreview":"若目标升级为完整 APS，后续融资需增加算法、实施、集成、SLA 和客户成功资源","textChars":40,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":13,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/olvsnq","slide":13,"text":""}
+{"kind":"slide","id":"sl/us8gbb","slide":14,"title":"ReOrch 智策 | Investor Roadshow 2026","textShapes":11}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":14,"text":"ReOrch 智策 | Investor Roadshow 2026","textPreview":"ReOrch 智策 | Investor Roadshow 2026","textChars":34,"textLines":1,"bbox":[64,36,520,24]}
+{"kind":"textbox","id":"sh/mtwra5gb","slide":14,"text":"投资判断：一个小切口，验证的是工业 AI 操作层大机会","textPreview":"投资判断：一个小切口，验证的是工业 AI 操作层大机会","textChars":27,"textLines":1,"bbox":[64,76,930,52]}
+{"kind":"shape","id":"sh/fepkzupw","slide":14,"bbox":[64,142,1152,1]}
+{"kind":"textbox","id":"sh/4r65wjud","slide":14,"text":"值得投资的前提","textPreview":"值得投资的前提","textChars":7,"textLines":1,"bbox":[86,180,360,34]}
+{"kind":"shape","id":"sh/xc3ylc7u","slide":14,"bbox":[96,247,10,10]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":14,"text":"异常重决策能用客户数据证明节省时间、降低延期或减少协调成本。","textPreview":"异常重决策能用客户数据证明节省时间、降低延期或减少协调成本。","textChars":30,"textLines":1,"bbox":[120,238,576,48]}
+{"kind":"shape","id":"sh/f6dcbulw","slide":14,"bbox":[96,295,10,10]}
+{"kind":"textbox","id":"sh/4fu18jqh","slide":14,"text":"计划员愿意在系统内确认、微调、驳回并记录原因。","textPreview":"计划员愿意在系统内确认、微调、驳回并记录原因。","textChars":23,"textLines":1,"bbox":[120,286,576,48]}
+{"kind":"shape","id":"sh/x0nuxc3y","slide":14,"bbox":[96,343,10,10]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":14,"text":"PoC 能转年费，第二个客户交付成本显著下降。","textPreview":"PoC 能转年费，第二个客户交付成本显著下降。","textChars":23,"textLines":1,"bbox":[120,334,576,48]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":14,"text":"核心结论","textPreview":"核心结论","textChars":4,"textLines":1,"bbox":[760,180,340,34]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":14,"text":"ReOrch 不押注“AI 自动接管工厂”，而是从异常重决策切入，逐步补齐完整 APS 能力，最终让 AI、OR、质量门和人工确认共同构成企业自己的排产操作系统。","textPreview":"ReOrch 不押注“AI 自动接管工厂”，而是从异常重决策切入，逐步补齐完整 APS 能力，最终让 AI、OR、质量门和人工确认共同构成企业自己的排产操作系统。","textChars":81,"textLines":1,"bbox":[760,238,360,170]}
+{"kind":"shape","id":"sh/at47y1kr","slide":14,"bbox":[136,492,1008,74]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":14,"text":"下一步要证明：真实客户 replay -> shadow mode -> 付费 PoC -> 生产发布样板","textPreview":"下一步要证明：真实客户 replay -> shadow mode -> 付费 PoC -> 生产发布样板","textChars":53,"textLines":1,"bbox":[172,516,936,32]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":14,"text":"详细来源和 claim boundary 见 investor_roadshow/source_notes.md","textPreview":"详细来源和 claim boundary 见 investor_roadshow/source_notes.md","textChars":56,"textLines":1,"bbox":[64,674,980,20]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":14,"text":"2026-07-04","textPreview":"2026-07-04","textChars":10,"textLines":1,"bbox":[1100,674,116,20]}
+{"kind":"notes","id":"nt/us8gbb","slide":14,"text":""}

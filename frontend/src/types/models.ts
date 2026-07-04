@@ -791,6 +791,243 @@ export interface EnterpriseImportResponse {
   initial_schedule_request: InitialScheduleRequest;
 }
 
+export interface MappingValidationIssue {
+  code: string;
+  category: string;
+  severity: 'error' | 'warning' | string;
+  entity_type: string;
+  entity_id?: string | null;
+  field?: string | null;
+  message: string;
+}
+
+export interface MappingValidationReport {
+  total_records: number;
+  valid_records: number;
+  invalid_records: number;
+  missing_required_fields: number;
+  enum_errors: number;
+  time_parse_errors: number;
+  reference_integrity_errors: number;
+  blocking_errors: number;
+  warnings: number;
+  issues: MappingValidationIssue[];
+}
+
+export interface RealityHarnessPermission {
+  level: 'stop' | 'repair_only' | 'replay_only' | 'shadow_ready' | string;
+  allow_candidate_generation: boolean;
+  allow_historical_replay: boolean;
+  allow_shadow_mode: boolean;
+  allow_writeback: boolean;
+  reasons: string[];
+  required_next_actions: string[];
+}
+
+export interface RealityHarnessAuditStep {
+  step: string;
+  status: string;
+  evidence: Record<string, unknown>;
+}
+
+export interface P0RealityHarnessResponse {
+  source_system: string;
+  workshop_id: string;
+  mapping_report: MappingValidationReport;
+  readiness_report: DataReadinessReport;
+  permission: RealityHarnessPermission;
+  snapshot?: ScheduleSnapshot | null;
+  audit_steps: RealityHarnessAuditStep[];
+}
+
+export interface MachineCapabilityCalibration {
+  resource_id: string;
+  capabilities: string[];
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ResourceCalendarCalibration {
+  resource_id: string;
+  window_start: string;
+  window_end: string;
+  availability_type: string;
+  reason?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface FreezeWindowCalibration {
+  window_start: string;
+  window_end: string;
+  resource_id?: string | null;
+  operation_id?: string | null;
+  reason?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ChangeoverCalibration {
+  from_product_family: string;
+  to_product_family: string;
+  setup_minutes: number;
+  cost: number;
+  resource_id?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ReviewedConstraintCandidateInput {
+  candidate: ConstraintCandidate;
+  review_status: string;
+  replay_passed: boolean;
+  reviewer_id?: string | null;
+  source_refs: string[];
+}
+
+export interface ConstraintCalibrationPack {
+  workshop_id: string;
+  base_request?: InitialScheduleRequest | null;
+  machine_capabilities: MachineCapabilityCalibration[];
+  resource_calendars: ResourceCalendarCalibration[];
+  freeze_windows: FreezeWindowCalibration[];
+  changeovers: ChangeoverCalibration[];
+  rule_candidates: ReviewedConstraintCandidateInput[];
+}
+
+export interface ConstraintCalibrationConflict {
+  code: string;
+  severity: 'blocker' | 'warning' | 'info' | string;
+  message: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
+  source_refs: string[];
+}
+
+export interface CompiledConstraintCalibration {
+  workshop_id: string;
+  blocked: boolean;
+  applied_constraint_count: number;
+  omitted_candidate_count: number;
+  resource_capabilities: Record<string, string[]>;
+  resource_calendar: ResourceCalendarWindowInput[];
+  changeover_rules: ChangeoverRuleInput[];
+  freeze_windows: Record<string, unknown>[];
+  raw_data_patch: Record<string, unknown>;
+  conflicts: ConstraintCalibrationConflict[];
+  initial_schedule_request?: InitialScheduleRequest | null;
+}
+
+export interface ReplayValidationRequest {
+  historical_case_id: string;
+  accepted_schedule: ScheduleDetail;
+  candidate_plans: CandidatePlan[];
+  top_n: number;
+  time_tolerance_minutes: number;
+  acceptance_threshold: number;
+}
+
+export interface ReplayCandidateScore {
+  plan_id: string;
+  rank: number;
+  pass_quality_gate: boolean;
+  recommendation_policy: string;
+  operation_count: number;
+  matched_operation_count: number;
+  resource_match_rate: number;
+  within_time_tolerance_rate: number;
+  average_start_deviation_minutes: number;
+  average_end_deviation_minutes: number;
+  schedule_similarity_score: number;
+  reasons: string[];
+  quality_gate: PlanQualityGateReport;
+}
+
+export interface ReplayValidationResponse {
+  historical_case_id: string;
+  evaluated_plan_count: number;
+  top_n: number;
+  top_n_hit: boolean;
+  best_plan_id?: string | null;
+  best_similarity_score: number;
+  shadow_readiness_level: string;
+  decision: string;
+  candidate_scores: ReplayCandidateScore[];
+  required_next_actions: string[];
+}
+
+export interface PlannerShadowDecision {
+  decision_status: string;
+  selected_plan_id?: string | null;
+  decided_by: string;
+  decided_at: string;
+  override_reason?: string | null;
+  tweak_summary?: string | null;
+}
+
+export interface ShadowCaseCaptureRequest {
+  incident_payload: Record<string, unknown>;
+  schedule_snapshot_id: string;
+  candidate_plans: CandidatePlan[];
+  planner_decision: PlannerShadowDecision;
+  impact_report?: Record<string, unknown> | null;
+  recommendation_explanation?: Record<string, unknown> | null;
+  execution_outcome?: Record<string, unknown> | null;
+  source_refs: string[];
+  advisory_only: boolean;
+}
+
+export interface ShadowCaseCaptureResponse {
+  shadow_case_id: string;
+  captured_at: string;
+  advisory_only: boolean;
+  writeback_blocked: boolean;
+  feedback_capture_complete: boolean;
+  rule_candidate_recommended: boolean;
+  decision_status: string;
+  selected_plan_id?: string | null;
+  missing_fields: string[];
+  audit_bundle: Record<string, unknown>;
+}
+
+export interface AgentCostProfile {
+  provider: string;
+  model_name: string;
+  input_cost_per_million_tokens: number;
+  output_cost_per_million_tokens: number;
+}
+
+export interface AgentTraceObserveRequest {
+  run_id: string;
+  workflow_name: string;
+  trace: AgentTraceStep[];
+  cost_profiles: AgentCostProfile[];
+  cache_hit_count: number;
+}
+
+export interface AgentTraceCostSummary {
+  run_id: string;
+  workflow_name: string;
+  total_steps: number;
+  llm_steps: number;
+  deterministic_steps: number;
+  fallback_steps: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  estimated_cost_usd: number;
+  average_latency_ms: number;
+  p95_latency_ms: number;
+  cache_hit_count: number;
+  guardrails: string[];
+  fallback_reasons: string[];
+  cost_reduction_recommendations: string[];
+  decision_boundary: string;
+}
+
 export interface PlanQualityGateReport {
   plan_id: string;
   pass_gate: boolean;
