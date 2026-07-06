@@ -65,6 +65,73 @@ to ReOrch incident categories, the pack produced:
 | Synthetic routing/gating P95 proxy | routing 25.81 ms, gate 29.31 ms |
 | CP-SAT local repair sample | feasible, `OPTIMAL`, 517-operation snapshot, 0.0238 s wall time |
 
+## Multi-Strategy Rescheduling Rerun
+
+The follow-up run added a reusable large-FJSP replay service and API:
+
+`POST /api/v1/planning/flexible-shop/large-fjsp/replay`
+
+The service accepts the same class of anonymized large-FJSP packs and runs
+each incident through multiple solver-backed policies. It uses the P0 Reality
+Harness, reconstructed schedule snapshot, preserved eligible resources, frozen
+operation gates, and the CP-SAT FJSP backend.
+
+Final rerun on all 30 incidents:
+
+| Metric | Result |
+| --- | --- |
+| Incidents attempted | 30 |
+| Incidents with at least one feasible executable option | 30 |
+| Feasible solver-backed options | 71 |
+| Infeasible options retained as evidence | 43 |
+| Recommended local repair | 11 |
+| Recommended controlled frozen-zone release | 11 |
+| Recommended controlled global reschedule | 3 |
+| Recommended keep-plan warning | 1 |
+| Recommended alternative-machine repair | 1 |
+| Recommended wait-and-shift | 1 |
+| Recommended partial reassignment | 1 |
+| Recommended priority swap | 1 |
+
+The first direct run solved 19 / 30 incidents. The remaining 11 failed because
+hard frozen operations made downstream precedence infeasible after the affected
+operation was delayed. The implementation now adds an explicit
+`controlled_frozen_zone_release` policy: it relaxes frozen operations only within
+the affected work order and reports frozen changes in the KPI. This is not an
+autonomous-writeback path; it is an approval-gated planner option.
+
+## Strategy Trade-Offs
+
+| Strategy | Strength | Weakness / Gate |
+| --- | --- | --- |
+| `wait_and_shift` | Lowest conceptual change; simple to audit | Often infeasible when downstream frozen operations cannot move |
+| `local_repair` | Bounded blast radius; fast enough for review | May miss global optimum or leave wider bottlenecks unresolved |
+| `alternative_machine_repair` | Uses flexible-resource redundancy | Requires reliable eligible-machine and setup/transport data |
+| `partial_reassignment` | Useful for capacity degradation | Can leave downstream bottleneck or skill constraints unresolved |
+| `priority_swap` | Makes rush-order displacement explicit | Requires planner/customer-service approval |
+| `controlled_global_reschedule` | Broadest feasible search | High perturbation and many resource switches; stricter review |
+| `controlled_frozen_zone_release` | Recovers cases blocked by frozen downstream operations | Requires explicit approval; no autonomous writeback |
+
+## BP Task Judgment
+
+This run supports the BP claim that ReOrch can generate multiple recovery
+options for large flexible job-shop anomalies and compare their trade-offs
+under hard constraints.
+
+It still does not complete the investment-proof loop by itself. The remaining
+evidence needed is:
+
+- Real planner accept / adjust / reject decisions.
+- Actual execution outcomes after the selected policy.
+- Customer-confirmed due dates, frozen-zone rules, quality holds, material,
+  tooling, skill, and outsourcing constraints.
+- Sandbox writeback rehearsal with approval, rollback, compensation, permission,
+  and audit.
+
+With those fields, the same API can be used for a second similar customer pack:
+load rows, run P0 readiness, reconstruct snapshot, solve each incident across
+the policy portfolio, and accumulate the strategy-effect matrix.
+
 ## Remaining Gaps
 
 The system correctly stays conservative:

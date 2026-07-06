@@ -36,6 +36,10 @@ from app.models.flexible_shop import (
     RealDataIntegrationRequest,
     RealDataIntegrationResponse,
 )
+from app.models.large_fjsp_replay import (
+    LargeFjspReplayRequest,
+    LargeFjspReplayResponse,
+)
 from app.models.planning import (
     DataReadinessReport,
     DigitalTwinRunResponse,
@@ -93,6 +97,7 @@ from app.services.flexible_shop_capability import (
     RealDataIntegrationService,
 )
 from app.services.initial_scheduler import InitialScheduler
+from app.services.large_fjsp_replay import LargeFjspReplayService
 from app.services.plan_quality_gate import PlanQualityGate
 from app.services.reality_harness import P0RealityHarnessService
 from app.services.replay_validation import ReplayValidationService
@@ -411,6 +416,17 @@ async def ingest_flexible_shop_execution_feedback(
     body: ExecutionFeedbackIngestionRequest,
 ) -> ExecutionFeedbackIngestionResponse:
     return ExecutionFeedbackService().ingest(body)
+
+
+@router.post(
+    "/flexible-shop/large-fjsp/replay",
+    response_model=LargeFjspReplayResponse,
+    summary="运行大规模 FJSP 异常多策略重调度 replay",
+)
+async def run_large_fjsp_replay(
+    body: LargeFjspReplayRequest,
+) -> LargeFjspReplayResponse:
+    return LargeFjspReplayService().run(body)
 
 
 @router.post(
