@@ -100,6 +100,25 @@ operation was delayed. The implementation now adds an explicit
 the affected work order and reports frozen changes in the KPI. This is not an
 autonomous-writeback path; it is an approval-gated planner option.
 
+## Production Readiness Gate Result
+
+The pack was also evaluated through:
+
+`POST /api/v1/planning/production-readiness/evaluate`
+
+Conservative deployment decision:
+
+| Gate | Result |
+| --- | --- |
+| Production readiness decision | `replay_ready` |
+| Allowed actions | read-only replay, counterfactual replay, multi-strategy trade-off report |
+| Blocked actions | customer shadow mode, sandbox writeback, production writeback, unattended autonomous dispatch |
+
+Reason: the solver evidence is strong enough for replay, but the pack is still
+public benchmark-derived. It lacks customer provenance, planner decisions,
+override reasons, execution outcomes, sandbox writeback proof, security review,
+and customer operations acceptance.
+
 ## Strategy Trade-Offs
 
 | Strategy | Strength | Weakness / Gate |

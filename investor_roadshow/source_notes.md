@@ -17,6 +17,7 @@
 | 约束标定验证 | `docs/validation/constraint_calibration.md` |
 | Replay / Shadow 验证 | `docs/validation/replay_shadow_validation.md` |
 | Large FJSP 脱敏/公开基准派生包运行结果 | `docs/validation/large_fjsp_public_pack_run_20260706.md` |
+| 生产应用架构复盘与生产就绪门控 | `docs/validation/production_application_architecture_review_20260706.md` |
 | Shadow case 只读采集 | `docs/validation/shadow_mode_capture.md` |
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
 | 数字孪生验证包 | `docs/validation/digital_twin_validation_pack.md` |
@@ -49,6 +50,7 @@
 - 可以说：受控 replay case 证明系统能记录采纳、微调、驳回和失败原因。
 - 可以说：Recovery Policy Graph 是长期护城河设计，下一阶段通过客户只读 replay、shadow mode 和执行反馈沉淀。
 - 可以说：大规模柔性作业车间的八项补强工程接口已补齐，可用于客户数据接入前评估、replay/shadow 准备和 sandbox 回写 dry-run 设计。
+- 可以说：新增生产就绪门控，会把公开 benchmark、客户 shadow、受控试点和生产写回分级，当前公开大规模 FJSP pack 只能证明 `replay_ready`。
 - 不应说：已经完成客户生产上线。
 - 不应说：可以无人值守自动调度。
 - 不应说：现有 replay 采纳率等于客户现场 ROI。

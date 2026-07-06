@@ -54,6 +54,10 @@ from app.models.planning import (
     WritebackPreviewRequest,
     WritebackPreviewResponse,
 )
+from app.models.production_readiness import (
+    ProductionReadinessEvidence,
+    ProductionReadinessResponse,
+)
 from app.models.reality_harness import (
     FieldMappingCompileRequest,
     FieldMappingCompileResponse,
@@ -99,6 +103,7 @@ from app.services.flexible_shop_capability import (
 from app.services.initial_scheduler import InitialScheduler
 from app.services.large_fjsp_replay import LargeFjspReplayService
 from app.services.plan_quality_gate import PlanQualityGate
+from app.services.production_readiness import ProductionReadinessGate
 from app.services.reality_harness import P0RealityHarnessService
 from app.services.replay_validation import ReplayValidationService
 from app.services.shadow_mode import ShadowModeService
@@ -427,6 +432,17 @@ async def run_large_fjsp_replay(
     body: LargeFjspReplayRequest,
 ) -> LargeFjspReplayResponse:
     return LargeFjspReplayService().run(body)
+
+
+@router.post(
+    "/production-readiness/evaluate",
+    response_model=ProductionReadinessResponse,
+    summary="评估当前证据可进入的最高生产应用等级",
+)
+async def evaluate_production_readiness(
+    body: ProductionReadinessEvidence,
+) -> ProductionReadinessResponse:
+    return ProductionReadinessGate().evaluate(body)
 
 
 @router.post(
