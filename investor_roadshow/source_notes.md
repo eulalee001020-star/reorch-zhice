@@ -16,6 +16,7 @@
 | P0 Reality Harness | `docs/validation/p0_reality_harness.md` |
 | 约束标定验证 | `docs/validation/constraint_calibration.md` |
 | Replay / Shadow 验证 | `docs/validation/replay_shadow_validation.md` |
+| Large FJSP 脱敏/公开基准派生包运行结果 | `docs/validation/large_fjsp_public_pack_run_20260706.md` |
 | Shadow case 只读采集 | `docs/validation/shadow_mode_capture.md` |
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
 | 数字孪生验证包 | `docs/validation/digital_twin_validation_pack.md` |

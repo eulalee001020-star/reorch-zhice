@@ -18,7 +18,7 @@ Operation,end_time,no,APS,/api/current-schedule,endTime,string,datetime,parse IS
 Machine,machine_id,yes,MES,/api/machines,machineCode,string,string,trim,-,no,-,unique non-empty,M-PCR-01,customer IT,pending,-
 Machine,name,no,MES,/api/machines,machineName,string,string,trim,-,yes,machine_id,-,PCR Line 01,customer IT,pending,-
 Machine,capabilities,yes,MES,/api/machines,capabilityCodes,string,list,split comma,-,no,[],must support operation capabilities,"PCR,QC",process engineer,pending,-
-Machine,status,yes,MES,/api/machines,status,string,enum,map status,"idle=available;running=busy;down=down;maint=maintenance",no,available,known status,available,customer IT,pending,-
+Machine,status,yes,MES,/api/machines,status,string,enum,map status,"idle=available;running=busy;degraded=degraded;down=down;maint=maintenance",no,available,known status,available,customer IT,pending,-
 Incident,incident_id,yes,MES,/api/incidents,eventId,string,string,trim,-,no,-,unique non-empty,INC-001,customer IT,pending,-
 Incident,incident_type,yes,MES,/api/incidents,eventType,string,enum,map incident type,"machine_stop=machine_down;material_late=material_shortage;urgent_order=urgent_order_insert",no,-,known incident type,machine_down,customer IT,pending,-
 Incident,machine_id,yes,MES,/api/incidents,machineCode,string,string,trim,-,no,-,must reference Machine,M-PCR-01,customer IT,pending,-

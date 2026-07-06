@@ -106,6 +106,64 @@ def test_timezone_warning_allows_replay_but_blocks_shadow() -> None:
     assert response.permission.allow_writeback is False
 
 
+def test_repeated_warning_codes_are_capped_for_large_replay_packs() -> None:
+    service = P0RealityHarnessService()
+    raw_work_orders = [
+        {
+            "work_order_id": f"WO-LARGE-{index}",
+            "product_name": "Large replay job",
+            "quantity": 1,
+            "due_time": "2026-07-05T20:00:00",
+            "status": "released",
+        }
+        for index in range(12)
+    ]
+    raw_operations = [
+        {
+            "operation_id": f"OP-LARGE-{index}",
+            "work_order_id": f"WO-LARGE-{index}",
+            "processing_time_min": 30,
+            "machine_id": "M-LARGE",
+            "start_time": "2026-07-05T08:00:00",
+            "end_time": "2026-07-05T08:30:00",
+        }
+        for index in range(12)
+    ]
+
+    response = service.assess(
+        P0RealityHarnessRequest(
+            source_system="large-warning-pack",
+            workshop_id="WS-LARGE",
+            planning_start=datetime(2026, 7, 5, 8, 0, tzinfo=timezone.utc),
+            raw_work_orders=raw_work_orders,
+            raw_operations=raw_operations,
+            raw_machines=[
+                {
+                    "machine_id": "M-LARGE",
+                    "name": "Large Machine",
+                    "capabilities": "CNC",
+                    "status": "available",
+                }
+            ],
+            raw_incidents=[
+                {
+                    "incident_id": "INC-LARGE",
+                    "type": "machine_down",
+                    "machine_id": "M-LARGE",
+                    "start_time": "2026-07-05T09:00:00",
+                    "severity": "P2-High",
+                }
+            ],
+        )
+    )
+
+    warning_codes = {issue.code for issue in response.readiness_report.warnings}
+    assert response.mapping_report.is_valid is True
+    assert warning_codes == {"missing_operation_capabilities", "timezone_missing"}
+    assert response.readiness_report.readiness_score == 0.9
+    assert response.permission.level == "replay_only"
+
+
 @pytest.mark.asyncio
 async def test_p0_reality_harness_sample_pack_api() -> None:
     test_app = FastAPI()

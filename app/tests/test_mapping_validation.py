@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
+from app.adapters.mapping_schema import (
+    CanonicalMachine,
+    CanonicalOperation,
+    CanonicalWorkOrder,
+    build_schedule_snapshot,
+)
 from app.adapters.mapping_validator import validate_customer_payloads
 
 
@@ -51,6 +59,77 @@ def test_customer_payload_validation_accepts_clean_dataset() -> None:
     assert report.is_valid is True
     assert report.total_records == 4
     assert report.blocking_errors == 0
+
+
+def test_customer_payload_validation_accepts_pipe_delimited_alternatives_and_degraded_machine() -> None:
+    report = validate_customer_payloads(
+        raw_work_orders=[
+            {
+                "work_order_id": "WO-FJSP",
+                "product_name": "Large FJSP job",
+                "due_time": "2026-07-05T18:00:00+00:00",
+                "status": "released",
+            }
+        ],
+        raw_operations=[
+            {
+                "operation_id": "OP-FJSP",
+                "work_order_id": "WO-FJSP",
+                "required_capability": "CNC",
+                "processing_time_min": 30,
+                "machine_id": "M01",
+                "eligible_machine_ids": "M01|M02",
+                "start_time": "2026-07-05T08:00:00+00:00",
+                "end_time": "2026-07-05T08:30:00+00:00",
+            }
+        ],
+        raw_machines=[
+            {
+                "machine_id": "M01",
+                "capabilities": "CNC",
+                "status": "available",
+            },
+            {
+                "machine_id": "M02",
+                "capabilities": "CNC",
+                "status": "degraded",
+            },
+        ],
+    )
+
+    assert report.is_valid is True
+    assert report.blocking_errors == 0
+
+
+def test_schedule_snapshot_preserves_eligible_resources_for_fjsp_solver() -> None:
+    snapshot = build_schedule_snapshot(
+        workshop_id="WS-FJSP",
+        captured_at=datetime(2026, 7, 5, 8, tzinfo=timezone.utc),
+        work_orders=[
+            CanonicalWorkOrder(
+                work_order_id="WO-FJSP",
+                product_name="Large FJSP job",
+                due_time=datetime(2026, 7, 5, 18, tzinfo=timezone.utc),
+            )
+        ],
+        operations=[
+            CanonicalOperation(
+                operation_id="OP-FJSP",
+                work_order_id="WO-FJSP",
+                machine_id="M01",
+                eligible_machine_ids=["M01", "M02"],
+                processing_time_min=30,
+            )
+        ],
+        machines=[
+            CanonicalMachine(machine_id="M01", capabilities=["CNC"]),
+            CanonicalMachine(machine_id="M02", capabilities=["CNC"]),
+        ],
+    )
+
+    raw_op = snapshot.raw_data["work_orders"][0]["operations"][0]
+    assert raw_op["eligible_resources"] == ["M01", "M02"]
+    assert snapshot.raw_data["resources"][0]["resource_id"] == "M01"
 
 
 def test_customer_payload_validation_reports_mapping_and_reference_errors() -> None:

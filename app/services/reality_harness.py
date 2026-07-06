@@ -141,7 +141,9 @@ def _merge_reports(
         infos.extend(snapshot_readiness.infos)
         required_inputs.extend(snapshot_readiness.required_inputs)
 
-    penalty = len(blockers) * 0.25 + len(warnings) * 0.05
+    blocker_codes = {issue.code for issue in blockers}
+    warning_codes = {issue.code for issue in warnings}
+    penalty = len(blocker_codes) * 0.25 + len(warning_codes) * 0.05
     readiness_score = max(0.0, round(1.0 - penalty, 4))
     recommendations = _recommendations(blockers, warnings, readiness_score)
     return DataReadinessReport(
