@@ -20,6 +20,7 @@
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
 | 数字孪生验证包 | `docs/validation/digital_twin_validation_pack.md` |
 | Recovery Policy Graph 护城河架构 | `docs/architecture/recovery_policy_graph.md` |
+| 大规模柔性作业车间试点能力包 | `docs/architecture/large_flexible_shop_pilot_capabilities.md` |
 | Constraint-to-Recovery 技术栈 | `docs/architecture/constraint_to_recovery_technical_stack.md` |
 | Constraint-to-Recovery 验证 | `docs/validation/constraint_to_recovery_kernel.md` |
 | 前端截图 | `docs/assets/screenshots/` |

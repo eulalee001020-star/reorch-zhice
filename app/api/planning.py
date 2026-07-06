@@ -12,6 +12,16 @@ from app.models.constraint_calibration import (
     CompiledConstraintCalibration,
     ConstraintCalibrationPack,
 )
+from app.models.flexible_shop import (
+    CounterfactualReplayMatrixRequest,
+    CounterfactualReplayMatrixResponse,
+    DynamicReschedulingPlanRequest,
+    DynamicReschedulingPlanResponse,
+    FlexibleShopBenchmarkRequest,
+    FlexibleShopBenchmarkResponse,
+    FlexibleShopCapabilityRequest,
+    FlexibleShopCapabilityResponse,
+)
 from app.models.planning import (
     DataReadinessReport,
     DigitalTwinRunResponse,
@@ -55,6 +65,12 @@ from app.services.data_readiness import DataReadinessService
 from app.services.digital_twin_runner import DigitalTwinRunner
 from app.services.enterprise_integration import EnterpriseIntegrationService
 from app.services.field_mapping_compiler import FieldMappingCompiler
+from app.services.flexible_shop_capability import (
+    CounterfactualReplayMatrixService,
+    DynamicReschedulingPlanner,
+    FlexibleShopBenchmarkService,
+    FlexibleShopCapabilityService,
+)
 from app.services.initial_scheduler import InitialScheduler
 from app.services.plan_quality_gate import PlanQualityGate
 from app.services.reality_harness import P0RealityHarnessService
@@ -253,6 +269,50 @@ async def evaluate_evidence_gates(
     body: EvidenceGateRequest,
 ) -> EvidenceGateResponse:
     return EvidenceGateService().evaluate(body)
+
+
+@router.post(
+    "/flexible-shop/capability-assessment",
+    response_model=FlexibleShopCapabilityResponse,
+    summary="评估大规模柔性作业车间补强就绪度",
+)
+async def assess_flexible_shop_capability(
+    body: FlexibleShopCapabilityRequest,
+) -> FlexibleShopCapabilityResponse:
+    return FlexibleShopCapabilityService().assess(body)
+
+
+@router.post(
+    "/flexible-shop/dynamic-rescheduling-plan",
+    response_model=DynamicReschedulingPlanResponse,
+    summary="生成大规模柔性作业车间动态重调度策略计划",
+)
+async def plan_flexible_shop_dynamic_rescheduling(
+    body: DynamicReschedulingPlanRequest,
+) -> DynamicReschedulingPlanResponse:
+    return DynamicReschedulingPlanner().plan(body)
+
+
+@router.post(
+    "/flexible-shop/synthetic-benchmark",
+    response_model=FlexibleShopBenchmarkResponse,
+    summary="运行大规模柔性作业车间合成基准代理",
+)
+async def run_flexible_shop_synthetic_benchmark(
+    body: FlexibleShopBenchmarkRequest,
+) -> FlexibleShopBenchmarkResponse:
+    return FlexibleShopBenchmarkService().run(body)
+
+
+@router.post(
+    "/flexible-shop/counterfactual-replay-matrix",
+    response_model=CounterfactualReplayMatrixResponse,
+    summary="生成反事实 replay 策略效果矩阵",
+)
+async def build_counterfactual_replay_matrix(
+    body: CounterfactualReplayMatrixRequest,
+) -> CounterfactualReplayMatrixResponse:
+    return CounterfactualReplayMatrixService().build(body)
 
 
 @router.post(

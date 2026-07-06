@@ -277,6 +277,8 @@ NGS 论文和 NGS Lab demo 应放在 Recovery Policy Graph 的垂直验证层：
 | Preference Profile | 已有偏好画像和 feedback agent 雏形 | 从点击/选择升级为 context-aware policy learning |
 | Policy Memory | 已有案例沉淀和失败样本库 | 增加策略效果矩阵、样本量和置信区间 |
 
+新增大规模柔性作业车间试点能力包后，系统已具备 `FlexibleShopContext`、七类动态异常策略路由、合成 1k/5k/10k 基准代理和反事实 replay 策略效果矩阵接口。详见 [large_flexible_shop_pilot_capabilities.md](large_flexible_shop_pilot_capabilities.md)。这些能力用于进入客户 replay / shadow / sandbox dry-run 前的工程准备，不等同于真实客户生产上线。
+
 ## 11. Claim Boundary
 
 可以说：
