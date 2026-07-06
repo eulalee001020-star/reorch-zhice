@@ -40,6 +40,10 @@ from app.models.large_fjsp_replay import (
     LargeFjspReplayRequest,
     LargeFjspReplayResponse,
 )
+from app.models.level23_digital_twin import (
+    Level23DigitalTwinReplayRequest,
+    Level23DigitalTwinReplayResponse,
+)
 from app.models.planning import (
     DataReadinessReport,
     DigitalTwinRunResponse,
@@ -102,6 +106,7 @@ from app.services.flexible_shop_capability import (
 )
 from app.services.initial_scheduler import InitialScheduler
 from app.services.large_fjsp_replay import LargeFjspReplayService
+from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
 from app.services.plan_quality_gate import PlanQualityGate
 from app.services.production_readiness import ProductionReadinessGate
 from app.services.reality_harness import P0RealityHarnessService
@@ -443,6 +448,17 @@ async def evaluate_production_readiness(
     body: ProductionReadinessEvidence,
 ) -> ProductionReadinessResponse:
     return ProductionReadinessGate().evaluate(body)
+
+
+@router.post(
+    "/digital-twin/level2-3/evaluate",
+    response_model=Level23DigitalTwinReplayResponse,
+    summary="评估 Level 2/3 数字孪生 replay 演练数据包",
+)
+async def evaluate_level23_digital_twin_pack(
+    body: Level23DigitalTwinReplayRequest,
+) -> Level23DigitalTwinReplayResponse:
+    return Level23DigitalTwinReplayEvaluator().evaluate(body)
 
 
 @router.post(

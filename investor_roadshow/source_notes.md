@@ -17,6 +17,7 @@
 | 约束标定验证 | `docs/validation/constraint_calibration.md` |
 | Replay / Shadow 验证 | `docs/validation/replay_shadow_validation.md` |
 | Large FJSP 脱敏/公开基准派生包运行结果 | `docs/validation/large_fjsp_public_pack_run_20260706.md` |
+| Level 2/3 数字孪生排程上下文与模拟反馈 replay 运行结果 | `docs/validation/level23_digital_twin_pack_run_20260706.md` |
 | 生产应用架构复盘与生产就绪门控 | `docs/validation/production_application_architecture_review_20260706.md` |
 | Shadow case 只读采集 | `docs/validation/shadow_mode_capture.md` |
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
@@ -51,9 +52,11 @@
 - 可以说：Recovery Policy Graph 是长期护城河设计，下一阶段通过客户只读 replay、shadow mode 和执行反馈沉淀。
 - 可以说：大规模柔性作业车间的八项补强工程接口已补齐，可用于客户数据接入前评估、replay/shadow 准备和 sandbox 回写 dry-run 设计。
 - 可以说：新增生产就绪门控，会把公开 benchmark、客户 shadow、受控试点和生产写回分级，当前公开大规模 FJSP pack 只能证明 `replay_ready`。
+- 可以说：Level 2/3 数字孪生包已跑通 12 资源、80 工单、312 工序、60 异常、240 候选方案、60 条模拟人工处理和 60 条模拟执行反馈的工程演练链路。
 - 不应说：已经完成客户生产上线。
 - 不应说：可以无人值守自动调度。
 - 不应说：现有 replay 采纳率等于客户现场 ROI。
+- 不应说：Level 2/3 数字孪生包里的模拟人工处理和执行反馈等于真实客户采纳或真实执行结果。
 - 不应说：当前已经完成企业级 Recovery Policy Graph 商业验证。
 - 不应说：已完成某客户 1k/5k/10k 真实工序快照的 P95 求解 SLA 验证。
 - 不应说：所有 APS 都不能重排。
