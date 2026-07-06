@@ -11,9 +11,16 @@
 | API | 作用 | 边界 |
 | --- | --- | --- |
 | `POST /api/v1/planning/flexible-shop/capability-assessment` | 对八大补强模块做就绪度评估 | 评估结构就绪度，不证明客户 ROI |
+| `POST /api/v1/planning/flexible-shop/real-data-integration` | 校验 ERP/MES/WMS/QMS/IoT 真实数据源合同、增量键、ID crosswalk 和数据血缘 | 校验接入准备，不等于已接入某客户生产系统 |
+| `POST /api/v1/planning/flexible-shop/constraint-model` | 编译大规模 FJSP 约束族：替代设备、工序优先级、资源互斥、物料、人员、工装、质量、运输、缓冲区、冻结/WIP | 输出约束模型摘要，不替代客户快照求解 |
+| `POST /api/v1/planning/flexible-shop/decomposition-solve-route` | 生成分解式动态重调度求解路线：异常邻域、瓶颈组、滚动窗口、LNS/ALNS、超时可行解 | 生成求解路线，不声称已在现场被采纳 |
 | `POST /api/v1/planning/flexible-shop/dynamic-rescheduling-plan` | 按异常类型生成恢复策略组合和求解策略 | 输出策略计划，不自动写回 |
+| `POST /api/v1/planning/flexible-shop/multi-incident-recovery` | 为多异常并发场景展开策略候选、硬门槛、AI/求解器/人工角色分工 | 策略候选必须经过质量门和人工确认 |
 | `POST /api/v1/planning/flexible-shop/synthetic-benchmark` | 生成 1k/5k/10k 工序级合成基准代理结果 | 衡量 routing/gating 规模代理，不替代真实求解压测 |
 | `POST /api/v1/planning/flexible-shop/counterfactual-replay-matrix` | 汇总反事实 replay 样本为策略效果矩阵 | 低样本 cell 不能用于自动决策 |
+| `POST /api/v1/planning/flexible-shop/counterfactual-replay-run` | 对同一历史异常 case 跑多种恢复策略，生成 replay 结果和效果矩阵 | replay 分数需要真实历史快照、计划员评审和执行反馈校准 |
+| `POST /api/v1/planning/flexible-shop/writeback-safety-gate` | 校验 sandbox、审批、幂等、回滚、补偿、权限、审计、source refs 和策略置信度 | 不授权无人值守自动写回 |
+| `POST /api/v1/planning/flexible-shop/execution-feedback` | 接收 MES/IoT/RFID/AMR/QMS/工位反馈，生成策略图谱权重更新建议 | 反馈更新需审阅后才能改变调度/回写行为 |
 
 ## 八大补强模块
 
@@ -27,6 +34,33 @@
 | 数据接入 | 评估 ERP/MES/WMS/QMS/IoT 来源齐备性 | 真实增量同步和数据血缘仍需客户系统接入 |
 | 回写安全 | 评估 sandbox、审批角色、幂等、回滚、补偿、权限、审计 | 未完成客户生产写回验收 |
 | 策略图谱 | 反事实 replay 聚合为 `PolicyEffectivenessCell` | 需要真实历史异常、shadow 决策和执行反馈形成高置信矩阵 |
+
+## 本轮补齐的工程闭环
+
+| 用户要求 | 已补齐工程件 | 可验证测试 |
+| --- | --- | --- |
+| 真实数据接入 | `RealDataIntegrationService` 校验真实数据源、增量键、ID namespace、血缘字段、样本数、ID crosswalk、freshness | `test_real_data_integration_assesses_sources_lineage_and_id_alignment` |
+| 大规模 FJSP 约束模型 | `LargeFjspConstraintCompiler` 编译 assignment、precedence、resource no-overlap、material、skill、tooling、changeover、quality、transport、buffer、frozen/WIP | `test_large_fjsp_constraint_model_compiles_constraint_families` |
+| 分解式动态重调度求解器 | `DecompositionDynamicSolver` 生成 incident neighborhood、bottleneck-first、rolling-window、outsourcing branch 的求解路线和预算 | `test_decomposition_solver_builds_bottleneck_and_rolling_subproblems` |
+| 多异常类型恢复策略 | `MultiIncidentRecoveryStrategyService` 将设备故障、插单、缺料、质量、人员、工装、返工展开成候选策略和硬门槛 | `test_multi_incident_recovery_expands_policy_candidates_with_gates` |
+| 反事实 replay | `CounterfactualReplayRunner` 对同一 case 跑多策略，输出 hard feasible、quality gate、delay、perturbation、risk | `test_counterfactual_replay_runner_outputs_results_and_matrix` |
+| 策略效果矩阵 | `CounterfactualReplayMatrixService` 统计 feasible rate、planner acceptance、delay、perturbation、execution failure、confidence | `test_counterfactual_replay_matrix_aggregates_policy_effectiveness` |
+| 生产回写安全 | `ProductionWritebackSafetyService` 检查 sandbox、审批、幂等、回滚、补偿、权限、审计、source refs、策略置信度 | `test_production_writeback_safety_gate_requires_audit_and_rollback` |
+| 现场执行反馈 | `ExecutionFeedbackService` 将 MES/IoT/RFID/AMR/QMS/工位事件转为策略图谱权重更新建议 | `test_execution_feedback_generates_policy_graph_update` |
+
+这八项形成的闭环是：
+
+```text
+真实数据接入
+-> FJSP 约束编译
+-> 分解式动态重调度
+-> 多策略候选
+-> 反事实 replay
+-> 策略效果矩阵
+-> 人审与回写安全门
+-> 现场执行反馈
+-> Recovery Policy Graph 更新
+```
 
 ## 动态异常与恢复策略
 

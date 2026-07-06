@@ -344,3 +344,287 @@ class CounterfactualReplayMatrixResponse(ReOrchModel):
     cells: list[PolicyEffectivenessCell]
     insufficient_contexts: list[str] = Field(default_factory=list)
     claim_boundary: str
+
+
+DataSourceKind = Literal[
+    "ERP",
+    "MES",
+    "WMS",
+    "QMS",
+    "IoT",
+    "RFID",
+    "AMR",
+    "APS",
+    "SCADA",
+]
+
+
+class EnterpriseDataSource(ReOrchModel):
+    source_system: DataSourceKind
+    connection_mode: Literal[
+        "readonly_api",
+        "database_replica",
+        "csv_drop",
+        "event_stream",
+        "manual_upload",
+        "mock",
+    ]
+    endpoint_name: str | None = None
+    incremental_key: str | None = None
+    id_namespace: str | None = None
+    freshness_minutes: int | None = Field(default=None, ge=0)
+    lineage_fields: list[str] = Field(default_factory=list)
+    sample_record_count: int = Field(default=0, ge=0)
+
+
+class EntityIdCrosswalk(ReOrchModel):
+    source_system: DataSourceKind
+    source_entity_type: str
+    source_id: str
+    canonical_entity_type: str
+    canonical_id: str
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
+class RealDataIntegrationRequest(ReOrchModel):
+    context: FlexibleShopContext
+    sources: list[EnterpriseDataSource] = Field(default_factory=list)
+    id_crosswalks: list[EntityIdCrosswalk] = Field(default_factory=list)
+    required_sources: list[DataSourceKind] = Field(
+        default_factory=lambda: ["ERP", "MES", "WMS", "QMS", "IoT"]
+    )
+    allow_mock_sources: bool = False
+
+
+class DataSourceReadinessCheck(ReOrchModel):
+    source_system: DataSourceKind
+    status: Literal["ready", "partial", "missing", "mock_only"]
+    blockers: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    canonical_entities: list[str] = Field(default_factory=list)
+
+
+class RealDataIntegrationResponse(ReOrchModel):
+    overall_status: Literal["ingestion_ready", "shadow_ready", "mock_only", "blocked"]
+    source_checks: list[DataSourceReadinessCheck]
+    canonical_entities_present: list[str] = Field(default_factory=list)
+    id_alignment_score: float = Field(ge=0.0, le=1.0)
+    lineage_score: float = Field(ge=0.0, le=1.0)
+    freshness_status: Literal["fresh", "stale", "unknown"]
+    next_actions: list[str] = Field(default_factory=list)
+    claim_boundary: str
+
+
+class ConstraintFamilyCompilation(ReOrchModel):
+    family: str
+    hard_constraint_count: int = Field(ge=0)
+    soft_constraint_count: int = Field(default=0, ge=0)
+    coverage_score: float = Field(ge=0.0, le=1.0)
+    missing_fields: list[str] = Field(default_factory=list)
+    encoded_as: list[str] = Field(default_factory=list)
+
+
+class LargeFjspConstraintModelRequest(ReOrchModel):
+    context: FlexibleShopContext
+    planning_horizon_minutes: int = Field(default=1440, gt=0)
+    include_soft_objectives: bool = True
+
+
+class LargeFjspConstraintModelResponse(ReOrchModel):
+    compile_status: Literal["compiled", "partial", "blocked"]
+    variable_counts: dict[str, int]
+    constraint_families: list[ConstraintFamilyCompilation]
+    hard_constraints: list[str] = Field(default_factory=list)
+    soft_objectives: list[str] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    claim_boundary: str
+
+
+class DecompositionSubproblem(ReOrchModel):
+    subproblem_id: str
+    scope_type: Literal[
+        "incident_neighborhood",
+        "bottleneck_group",
+        "rolling_window",
+        "outsourcing_branch",
+        "global_repair",
+    ]
+    workshop_ids: list[str] = Field(default_factory=list)
+    machine_group_ids: list[str] = Field(default_factory=list)
+    operation_ids: list[str] = Field(default_factory=list)
+    incident_ids: list[str] = Field(default_factory=list)
+    window_index: int | None = None
+    solver_backend: Literal["heuristic", "cp_sat", "lns", "alns", "manual_review"]
+    time_budget_seconds: float = Field(gt=0.0)
+    freeze_policy: str
+    expected_output: str
+
+
+class DecompositionSolveRequest(ReOrchModel):
+    context: FlexibleShopContext
+    incidents: list[DynamicIncidentScenario] = Field(default_factory=list)
+    timeout_seconds: float = Field(default=120.0, gt=0.0, le=1800.0)
+    max_subproblem_operations: int = Field(default=1000, gt=0)
+    enable_alns_memory: bool = True
+    require_feasible_fallback: bool = True
+
+
+class DecompositionSolveResponse(ReOrchModel):
+    solve_status: Literal["feasible_plan_route", "reference_only", "blocked"]
+    global_strategy: SolverStrategyPlan
+    subproblems: list[DecompositionSubproblem]
+    frozen_operation_ids: list[str] = Field(default_factory=list)
+    warm_start_source: str
+    fallback_policy: str
+    estimated_parallelism: int = Field(ge=1)
+    blockers: list[str] = Field(default_factory=list)
+    claim_boundary: str
+
+
+class RecoveryPolicyCandidate(ReOrchModel):
+    incident_id: str
+    incident_type: IncidentCategory
+    policy_type: str
+    when_to_use: str
+    hard_gates: list[str] = Field(default_factory=list)
+    expected_tradeoffs: list[str] = Field(default_factory=list)
+    ai_role: str
+    solver_role: str
+    human_role: str
+
+
+class MultiIncidentRecoveryRequest(ReOrchModel):
+    context: FlexibleShopContext
+    incidents: list[DynamicIncidentScenario] = Field(default_factory=list)
+
+
+class MultiIncidentRecoveryResponse(ReOrchModel):
+    candidates: list[RecoveryPolicyCandidate]
+    conflict_resolution_order: list[str] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    claim_boundary: str
+
+
+class CounterfactualReplayRunCase(ReOrchModel):
+    case_id: str
+    incident_type: IncidentCategory
+    context_key: str
+    baseline_policy: str
+    policies_to_test: list[str] = Field(default_factory=list)
+
+
+class CounterfactualReplayRunRequest(ReOrchModel):
+    cases: list[CounterfactualReplayRunCase] = Field(default_factory=list)
+    min_sample_count: int = Field(default=3, ge=1)
+
+
+class CounterfactualReplayResult(ReOrchModel):
+    case_id: str
+    context_key: str
+    incident_type: IncidentCategory
+    policy_type: str
+    hard_feasible: bool
+    quality_gate_passed: bool
+    predicted_delay_delta_minutes: float
+    perturbation_cost: float
+    execution_risk_score: float = Field(ge=0.0, le=1.0)
+    planner_review_required: bool
+    rejection_reasons: list[str] = Field(default_factory=list)
+
+
+class CounterfactualReplayRunResponse(ReOrchModel):
+    results: list[CounterfactualReplayResult]
+    matrix: CounterfactualReplayMatrixResponse
+    claim_boundary: str
+
+
+class WritebackSafetyGateCheck(ReOrchModel):
+    gate: str
+    passed: bool
+    blocker: str | None = None
+    evidence_ref: str | None = None
+
+
+class ProductionWritebackSafetyRequest(ReOrchModel):
+    target_systems: list[Literal["MES", "APS", "ERP", "WMS"]] = Field(
+        default_factory=lambda: ["MES"]
+    )
+    instruction_count: int = Field(ge=0)
+    sandbox_mode: bool = True
+    approval_chain: list[str] = Field(default_factory=list)
+    idempotency_key: str | None = None
+    rollback_plan_ref: str | None = None
+    compensation_steps: list[str] = Field(default_factory=list)
+    permission_scope: list[str] = Field(default_factory=list)
+    audit_trace_ref: str | None = None
+    source_ref_count: int = Field(default=0, ge=0)
+    policy_confidence_level: Literal["low", "medium", "high"] = "low"
+
+
+class ProductionWritebackSafetyResponse(ReOrchModel):
+    gate_status: Literal[
+        "allow_controlled_writeback",
+        "allow_sandbox_dry_run",
+        "dry_run_only",
+        "blocked",
+    ]
+    checks: list[WritebackSafetyGateCheck]
+    blocking_reasons: list[str] = Field(default_factory=list)
+    required_approvals: list[str] = Field(default_factory=list)
+    idempotency_key: str | None = None
+    claim_boundary: str
+
+
+class ExecutionFeedbackSignal(ReOrchModel):
+    source_system: Literal["MES", "IoT", "RFID", "AMR", "QMS", "manual_station"]
+    event_type: Literal[
+        "started",
+        "completed",
+        "blocked",
+        "rework",
+        "rejected",
+        "location_changed",
+        "delay_alert",
+    ]
+    observed_at: datetime
+    operation_id: str | None = None
+    work_order_id: str | None = None
+    resource_id: str | None = None
+    planned_at: datetime | None = None
+    actual_quantity: float | None = Field(default=None, ge=0.0)
+    quality_state: str | None = None
+    deviation_minutes: float = 0.0
+    reason_code: str | None = None
+
+
+class ExecutionPolicyFeedback(ReOrchModel):
+    context_key: str
+    policy_type: str
+    outcome_signal: Literal["validated", "needs_recalibration", "failed_in_execution"]
+    evidence_refs: list[str] = Field(default_factory=list)
+    weight_delta: float
+    notes: list[str] = Field(default_factory=list)
+
+
+class ExecutionFeedbackIngestionRequest(ReOrchModel):
+    site_id: str
+    decision_id: str | None = None
+    plan_id: str | None = None
+    context_key: str
+    policy_type: str
+    signals: list[ExecutionFeedbackSignal] = Field(default_factory=list)
+
+
+class ExecutionFeedbackIngestionResponse(ReOrchModel):
+    execution_status: Literal[
+        "on_track",
+        "deviated",
+        "blocked",
+        "quality_hold",
+        "insufficient_signals",
+    ]
+    feedback_updates: list[ExecutionPolicyFeedback]
+    observed_signal_count: int = Field(ge=0)
+    deviation_summary: dict[str, float | int]
+    claim_boundary: str

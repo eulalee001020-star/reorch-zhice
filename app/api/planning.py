@@ -15,12 +15,26 @@ from app.models.constraint_calibration import (
 from app.models.flexible_shop import (
     CounterfactualReplayMatrixRequest,
     CounterfactualReplayMatrixResponse,
+    CounterfactualReplayRunRequest,
+    CounterfactualReplayRunResponse,
+    DecompositionSolveRequest,
+    DecompositionSolveResponse,
     DynamicReschedulingPlanRequest,
     DynamicReschedulingPlanResponse,
+    ExecutionFeedbackIngestionRequest,
+    ExecutionFeedbackIngestionResponse,
     FlexibleShopBenchmarkRequest,
     FlexibleShopBenchmarkResponse,
     FlexibleShopCapabilityRequest,
     FlexibleShopCapabilityResponse,
+    LargeFjspConstraintModelRequest,
+    LargeFjspConstraintModelResponse,
+    MultiIncidentRecoveryRequest,
+    MultiIncidentRecoveryResponse,
+    ProductionWritebackSafetyRequest,
+    ProductionWritebackSafetyResponse,
+    RealDataIntegrationRequest,
+    RealDataIntegrationResponse,
 )
 from app.models.planning import (
     DataReadinessReport,
@@ -67,9 +81,16 @@ from app.services.enterprise_integration import EnterpriseIntegrationService
 from app.services.field_mapping_compiler import FieldMappingCompiler
 from app.services.flexible_shop_capability import (
     CounterfactualReplayMatrixService,
+    CounterfactualReplayRunner,
+    DecompositionDynamicSolver,
     DynamicReschedulingPlanner,
+    ExecutionFeedbackService,
     FlexibleShopBenchmarkService,
     FlexibleShopCapabilityService,
+    LargeFjspConstraintCompiler,
+    MultiIncidentRecoveryStrategyService,
+    ProductionWritebackSafetyService,
+    RealDataIntegrationService,
 )
 from app.services.initial_scheduler import InitialScheduler
 from app.services.plan_quality_gate import PlanQualityGate
@@ -283,6 +304,39 @@ async def assess_flexible_shop_capability(
 
 
 @router.post(
+    "/flexible-shop/real-data-integration",
+    response_model=RealDataIntegrationResponse,
+    summary="评估真实 ERP/MES/WMS/QMS/IoT 数据接入合同",
+)
+async def assess_flexible_shop_real_data_integration(
+    body: RealDataIntegrationRequest,
+) -> RealDataIntegrationResponse:
+    return RealDataIntegrationService().assess(body)
+
+
+@router.post(
+    "/flexible-shop/constraint-model",
+    response_model=LargeFjspConstraintModelResponse,
+    summary="编译大规模 FJSP 约束模型",
+)
+async def compile_large_fjsp_constraint_model(
+    body: LargeFjspConstraintModelRequest,
+) -> LargeFjspConstraintModelResponse:
+    return LargeFjspConstraintCompiler().compile(body)
+
+
+@router.post(
+    "/flexible-shop/decomposition-solve-route",
+    response_model=DecompositionSolveResponse,
+    summary="生成分解式动态重调度求解路线",
+)
+async def plan_flexible_shop_decomposition_solve_route(
+    body: DecompositionSolveRequest,
+) -> DecompositionSolveResponse:
+    return DecompositionDynamicSolver().plan(body)
+
+
+@router.post(
     "/flexible-shop/dynamic-rescheduling-plan",
     response_model=DynamicReschedulingPlanResponse,
     summary="生成大规模柔性作业车间动态重调度策略计划",
@@ -291,6 +345,17 @@ async def plan_flexible_shop_dynamic_rescheduling(
     body: DynamicReschedulingPlanRequest,
 ) -> DynamicReschedulingPlanResponse:
     return DynamicReschedulingPlanner().plan(body)
+
+
+@router.post(
+    "/flexible-shop/multi-incident-recovery",
+    response_model=MultiIncidentRecoveryResponse,
+    summary="生成多异常类型恢复策略候选",
+)
+async def build_flexible_shop_multi_incident_recovery(
+    body: MultiIncidentRecoveryRequest,
+) -> MultiIncidentRecoveryResponse:
+    return MultiIncidentRecoveryStrategyService().build(body)
 
 
 @router.post(
@@ -313,6 +378,39 @@ async def build_counterfactual_replay_matrix(
     body: CounterfactualReplayMatrixRequest,
 ) -> CounterfactualReplayMatrixResponse:
     return CounterfactualReplayMatrixService().build(body)
+
+
+@router.post(
+    "/flexible-shop/counterfactual-replay-run",
+    response_model=CounterfactualReplayRunResponse,
+    summary="运行反事实 replay 并生成策略效果矩阵",
+)
+async def run_counterfactual_replay(
+    body: CounterfactualReplayRunRequest,
+) -> CounterfactualReplayRunResponse:
+    return CounterfactualReplayRunner().run(body)
+
+
+@router.post(
+    "/flexible-shop/writeback-safety-gate",
+    response_model=ProductionWritebackSafetyResponse,
+    summary="执行生产回写安全门控",
+)
+async def evaluate_flexible_shop_writeback_safety(
+    body: ProductionWritebackSafetyRequest,
+) -> ProductionWritebackSafetyResponse:
+    return ProductionWritebackSafetyService().evaluate(body)
+
+
+@router.post(
+    "/flexible-shop/execution-feedback",
+    response_model=ExecutionFeedbackIngestionResponse,
+    summary="接收现场执行反馈并生成策略图谱更新",
+)
+async def ingest_flexible_shop_execution_feedback(
+    body: ExecutionFeedbackIngestionRequest,
+) -> ExecutionFeedbackIngestionResponse:
+    return ExecutionFeedbackService().ingest(body)
 
 
 @router.post(

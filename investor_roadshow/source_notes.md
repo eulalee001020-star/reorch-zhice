@@ -1,6 +1,6 @@
 # Source Notes
 
-版本：2026-07-04
+版本：2026-07-06
 
 ## 项目内部证据
 
@@ -20,7 +20,7 @@
 | Agent 成本与可观测性 | `docs/validation/agent_observability_cost.md` |
 | 数字孪生验证包 | `docs/validation/digital_twin_validation_pack.md` |
 | Recovery Policy Graph 护城河架构 | `docs/architecture/recovery_policy_graph.md` |
-| 大规模柔性作业车间试点能力包 | `docs/architecture/large_flexible_shop_pilot_capabilities.md` |
+| 大规模柔性作业车间试点能力包：真实数据接入、FJSP 约束、分解求解、反事实 replay、策略矩阵、回写安全、执行反馈 | `docs/architecture/large_flexible_shop_pilot_capabilities.md` |
 | Constraint-to-Recovery 技术栈 | `docs/architecture/constraint_to_recovery_technical_stack.md` |
 | Constraint-to-Recovery 验证 | `docs/validation/constraint_to_recovery_kernel.md` |
 | 前端截图 | `docs/assets/screenshots/` |
@@ -47,9 +47,11 @@
 - 可以说：长期路线是从异常重决策切入，补齐完整 APS 能力后逐步减少客户对传统排产系统的依赖。
 - 可以说：受控 replay case 证明系统能记录采纳、微调、驳回和失败原因。
 - 可以说：Recovery Policy Graph 是长期护城河设计，下一阶段通过客户只读 replay、shadow mode 和执行反馈沉淀。
+- 可以说：大规模柔性作业车间的八项补强工程接口已补齐，可用于客户数据接入前评估、replay/shadow 准备和 sandbox 回写 dry-run 设计。
 - 不应说：已经完成客户生产上线。
 - 不应说：可以无人值守自动调度。
 - 不应说：现有 replay 采纳率等于客户现场 ROI。
 - 不应说：当前已经完成企业级 Recovery Policy Graph 商业验证。
+- 不应说：已完成某客户 1k/5k/10k 真实工序快照的 P95 求解 SLA 验证。
 - 不应说：所有 APS 都不能重排。
 - 不应说：企业接入 ReOrch 后立刻不需要其他排产系统。
