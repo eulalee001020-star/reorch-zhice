@@ -39,10 +39,11 @@ PACKAGE = BUILD / "ReOrch_Zhice_AI_Portfolio_20260727"
 DOCX_PATH = DIST / "ReOrch_智策_AI产品作品集_20260727.docx"
 PDF_PATH = DIST / "ReOrch_智策_AI产品作品集_20260727.pdf"
 ZIP_PATH = DIST / "ReOrch_智策_AI作品集材料包_20260727.zip"
+PACKAGE_DOCX_NAME = "ReOrch_Zhice_AI_Product_Portfolio_20260727.docx"
+PACKAGE_PDF_NAME = "ReOrch_Zhice_AI_Product_Portfolio_20260727.pdf"
 SCREENSHOT = ROOT / "docs/assets/screenshots/00-online-demo.png"
 
 CN_FONT = "Arial Unicode MS"
-LATIN_FONT = "Calibri"
 PDF_FONT = "PortfolioCJK"
 BLUE = RGBColor(46, 116, 181)
 DARK_BLUE = RGBColor(31, 77, 120)
@@ -116,9 +117,9 @@ def set_run_font(
     color: RGBColor | None = None,
     italic: bool | None = None,
 ) -> None:
-    run.font.name = LATIN_FONT
-    run._element.rPr.rFonts.set(qn("w:ascii"), LATIN_FONT)
-    run._element.rPr.rFonts.set(qn("w:hAnsi"), LATIN_FONT)
+    run.font.name = CN_FONT
+    run._element.rPr.rFonts.set(qn("w:ascii"), CN_FONT)
+    run._element.rPr.rFonts.set(qn("w:hAnsi"), CN_FONT)
     run._element.rPr.rFonts.set(qn("w:eastAsia"), CN_FONT)
     run._element.rPr.rFonts.set(qn("w:cs"), CN_FONT)
     if size is not None:
@@ -178,7 +179,7 @@ def set_cell_text(cell, text: str, *, bold: bool = False, color: RGBColor | None
     set_run_font(run, size=9.2, bold=bold, color=color)
 
 
-def add_field(paragraph, field: str) -> None:
+def add_field(paragraph, field: str):
     run = paragraph.add_run()
     begin = OxmlElement("w:fldChar")
     begin.set(qn("w:fldCharType"), "begin")
@@ -190,6 +191,7 @@ def add_field(paragraph, field: str) -> None:
     end = OxmlElement("w:fldChar")
     end.set(qn("w:fldCharType"), "end")
     run._r.extend([begin, instruction, separate, end])
+    return run
 
 
 def configure_document(doc: Document) -> None:
@@ -202,7 +204,9 @@ def configure_document(doc: Document) -> None:
     section.footer_distance = Inches(0.32)
 
     normal = doc.styles["Normal"]
-    normal.font.name = LATIN_FONT
+    normal.font.name = CN_FONT
+    normal._element.rPr.rFonts.set(qn("w:ascii"), CN_FONT)
+    normal._element.rPr.rFonts.set(qn("w:hAnsi"), CN_FONT)
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), CN_FONT)
     normal.font.size = Pt(11)
     normal.paragraph_format.space_before = Pt(0)
@@ -213,9 +217,8 @@ def configure_document(doc: Document) -> None:
 
     def populate_footer(footer) -> None:
         paragraph = footer.paragraphs[0]
-        paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        set_run_font(paragraph.add_run("ReOrch 智策  |  Page "), size=8.5, color=MUTED)
-        add_field(paragraph, "PAGE")
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        set_run_font(add_field(paragraph, "PAGE"), size=8.5, color=MUTED)
 
     populate_footer(section.footer)
 
@@ -421,12 +424,12 @@ def build_docx() -> None:
         doc,
         ["产品对象", "关键状态 / 机制", "可验证产出"],
         [
-            ["Incident", "new / validated / blocked / assessing", "来源、时效、严重度、受影响对象与缺失字段"],
-            ["Schedule Snapshot", "versioned / locked / stale", "基准计划、约束版本、source refs 与并发保护"],
-            ["Candidate Plan", "feasible / reference-only / blocked", "KPI、硬约束报告、Gantt diff、风险与解释"],
-            ["Quality Gate", "pass / warning / fail-closed", "数据、约束、权限、置信度与证据检查"],
-            ["Decision Record", "accepted / adjusted / rejected", "确认人、理由、版本、审批与执行草案"],
-            ["Evidence Ledger", "prediction / decision / outcome / failure", "回放、ROI proxy、失败归因与审计导出"],
+            ["Incident", "新增 / 已校验 / 阻断 / 评估中", "来源、时效、严重度、受影响对象与缺失字段"],
+            ["Schedule Snapshot", "版本化 / 已锁定 / 过期", "基准计划、约束版本、source refs 与并发保护"],
+            ["Candidate Plan", "可行 / 仅参考 / 阻断", "KPI、硬约束报告、Gantt diff、风险与解释"],
+            ["Quality Gate", "通过 / 警告 / 失败关闭", "数据、约束、权限、置信度与证据检查"],
+            ["Decision Record", "采纳 / 调整 / 驳回", "确认人、理由、版本、审批与执行草案"],
+            ["Evidence Ledger", "预测 / 决策 / 结果 / 失败", "回放、ROI proxy、失败归因与审计导出"],
         ],
         [1900, 3100, 4360],
     )
@@ -506,7 +509,8 @@ def build_docx() -> None:
 
     doc.core_properties.title = "ReOrch 智策 AI 产品作品集"
     doc.core_properties.subject = "工业异常恢复决策 Copilot"
-    doc.core_properties.author = "Shuangjiang Li"
+    doc.core_properties.author = ""
+    doc.core_properties.last_modified_by = ""
     doc.core_properties.keywords = "Industrial AI, Agent, Scheduling, Decision Support, Portfolio"
     doc.core_properties.comments = ""
     doc.save(DOCX_PATH)
@@ -658,6 +662,15 @@ def pdf_bullets(story, styles, items: list[str]) -> None:
     )
 
 
+class PortfolioDocTemplate(SimpleDocTemplate):
+    def afterPage(self) -> None:
+        self.canv.saveState()
+        self.canv.setFont(PDF_FONT, 7.5)
+        self.canv.setFillColor(colors.HexColor("#5B6560"))
+        self.canv.drawCentredString(4.25 * inch, 0.42 * inch, str(self.page))
+        self.canv.restoreState()
+
+
 def on_pdf_page(canvas, doc) -> None:
     canvas.saveState()
     canvas.setFont(PDF_FONT, 7.5)
@@ -666,14 +679,13 @@ def on_pdf_page(canvas, doc) -> None:
     canvas.drawRightString(7.5 * inch, 10.45 * inch, "PUBLIC PORTFOLIO")
     canvas.setStrokeColor(colors.HexColor("#D9DFDB"))
     canvas.line(inch, 10.32 * inch, 7.5 * inch, 10.32 * inch)
-    canvas.drawRightString(7.5 * inch, 0.42 * inch, f"ReOrch 智策  |  {doc.page}")
     canvas.restoreState()
 
 
 def build_pdf() -> None:
     register_pdf_font()
     styles = pdf_styles()
-    document = SimpleDocTemplate(
+    document = PortfolioDocTemplate(
         str(PDF_PATH),
         pagesize=letter,
         leftMargin=inch,
@@ -681,7 +693,7 @@ def build_pdf() -> None:
         topMargin=0.78 * inch,
         bottomMargin=0.65 * inch,
         title="ReOrch 智策 AI 产品作品集",
-        author="Shuangjiang Li",
+        author="",
     )
     story = [
         Spacer(1, 8),
@@ -811,12 +823,12 @@ def build_pdf() -> None:
         styles,
         ["产品对象", "关键状态 / 机制", "可验证产出"],
         [
-            ["Incident", "new / validated / blocked / assessing", "来源、时效、严重度、受影响对象与缺失字段"],
-            ["Snapshot", "versioned / locked / stale", "基准计划、约束版本、source refs 与并发保护"],
-            ["Candidate", "feasible / reference-only / blocked", "KPI、硬约束报告、Gantt diff、风险与解释"],
-            ["Quality Gate", "pass / warning / fail-closed", "数据、约束、权限、置信度与证据检查"],
-            ["Decision", "accepted / adjusted / rejected", "确认人、理由、版本、审批与执行草案"],
-            ["Ledger", "prediction / decision / outcome / failure", "回放、ROI proxy、失败归因与审计导出"],
+            ["Incident", "新增 / 已校验 / 阻断 / 评估中", "来源、时效、严重度、受影响对象与缺失字段"],
+            ["Snapshot", "版本化 / 已锁定 / 过期", "基准计划、约束版本、source refs 与并发保护"],
+            ["Candidate", "可行 / 仅参考 / 阻断", "KPI、硬约束报告、Gantt diff、风险与解释"],
+            ["Quality Gate", "通过 / 警告 / 失败关闭", "数据、约束、权限、置信度与证据检查"],
+            ["Decision", "采纳 / 调整 / 驳回", "确认人、理由、版本、审批与执行草案"],
+            ["Ledger", "预测 / 决策 / 结果 / 失败", "回放、ROI proxy、失败归因与审计导出"],
         ],
         [1.15 * inch, 2.3 * inch, 3.05 * inch],
     )
@@ -846,7 +858,7 @@ def build_pdf() -> None:
         )
     )
 
-    story.append(Paragraph("7. 失败案例与迭代", styles["h1"]))
+    story.extend([PageBreak(), Paragraph("7. 失败案例与迭代", styles["h1"])])
     pdf_table(
         story,
         styles,
@@ -862,7 +874,7 @@ def build_pdf() -> None:
         )
     )
 
-    story.extend([PageBreak(), Paragraph("8. 项目推进、指标与个人贡献", styles["h1"])])
+    story.append(Paragraph("8. 项目推进、指标与个人贡献", styles["h1"]))
     pdf_table(
         story,
         styles,
@@ -889,6 +901,8 @@ def build_pdf() -> None:
                 "同时明确仍需 Design Partner 数据与现场验收的结论。",
                 styles["body"],
             ),
+            PageBreak(),
+            Table([[""]], colWidths=[1], rowHeights=[42]),
             Paragraph("9. 当前边界与下一阶段", styles["h1"]),
         ]
     )
@@ -972,8 +986,8 @@ PDF / DOCX 项目说明、PRD、业务流程、原型逻辑、指标、评测、
 
 ## 入口
 
-- `ReOrch_智策_AI产品作品集_20260727.pdf`
-- `ReOrch_智策_AI产品作品集_20260727.docx`
+- `ReOrch_Zhice_AI_Product_Portfolio_20260727.pdf`
+- `ReOrch_Zhice_AI_Product_Portfolio_20260727.docx`
 - `README.md`
 - `docs/product/prd_decision_workbench.md`
 - `docs/portfolio/business_process_flow.md`
@@ -1015,8 +1029,8 @@ def build_package() -> None:
         if source.exists():
             copy_file(source, PACKAGE / name)
 
-    for artifact in [DOCX_PATH, PDF_PATH]:
-        copy_file(artifact, PACKAGE / artifact.name)
+    copy_file(DOCX_PATH, PACKAGE / PACKAGE_DOCX_NAME)
+    copy_file(PDF_PATH, PACKAGE / PACKAGE_PDF_NAME)
 
     for directory in [
         "app",

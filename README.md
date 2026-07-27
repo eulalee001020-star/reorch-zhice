@@ -5,6 +5,7 @@
 面向设备故障、急单、缺料与质量返工后的高约束决策：ReOrch 位于 ERP / MES / APS 之上，把分散在电话、Excel 和个人经验中的临场协调，重构为“数据健康检查、影响分析、可行候选、证据解释、人工确认、受控执行、结果复盘”的可审计闭环。
 
 [在线互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site) ·
+[正式 Release 下载](https://github.com/eulalee001020-star/reorch-zhice/releases/latest) ·
 [PDF 作品集](portfolio_artifacts/ReOrch_智策_AI产品作品集_20260727.pdf) ·
 [完整材料包](portfolio_artifacts/ReOrch_智策_AI作品集材料包_20260727.zip) ·
 [PRD](docs/product/prd_decision_workbench.md) ·
