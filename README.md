@@ -4,7 +4,7 @@
 
 面向设备故障、急单、缺料与质量返工后的高约束决策：ReOrch 位于 ERP / MES / APS 之上，把分散在电话、Excel 和个人经验中的临场协调，重构为“数据健康检查、影响分析、可行候选、证据解释、人工确认、受控执行、结果复盘”的可审计闭环。
 
-[在线互动 Demo](LIVE_DEMO_URL) ·
+[在线互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site) ·
 [PDF 作品集](portfolio_artifacts/ReOrch_智策_AI产品作品集_20260727.pdf) ·
 [完整材料包](portfolio_artifacts/ReOrch_智策_AI作品集材料包_20260727.zip) ·
 [PRD](docs/product/prd_decision_workbench.md) ·
@@ -61,7 +61,7 @@ flowchart LR
 | 执行 | 不调用生产写回 | 双审批、短时 permit、幂等键、sandbox certification 和审计记录共同控制 |
 | 降级 | 说明不确定性和缺失证据 | 超时、冲突、漂移或权限不足时 fail closed |
 
-详细设计见 [工业 AI Copilot 方案](docs/portfolio/industrial_ai_copilot_solution.md)、[技术内核架构](docs/architecture/reorch_technical_kernel.md) 和 [可行性恢复机制](docs/architecture/feasibility_restoration.md)。
+详细设计见 [工业 AI Copilot 方案](docs/portfolio/industrial_ai_copilot_solution.md)、[技术内核架构](docs/architecture/constraint_to_recovery_technical_stack.md) 和 [可行性恢复机制](docs/architecture/feasibility_restoration.md)。
 
 ## 已验证状态
 
@@ -82,7 +82,7 @@ flowchart LR
 | --- | --- | --- |
 | 行业调研与定位 | [市场与先进标准对标](docs/portfolio/market_benchmark.md)、[金蝶定位说明](docs/portfolio/kingdee_positioning_note.md)、[服务 AI 竞品对标](docs/portfolio/service_ai_benchmark.md) | 识别主系统未覆盖的异常响应层，并明确竞合边界 |
 | 用户需求 | [证明材料矩阵](docs/portfolio/portfolio_proof_matrix.md)、[业务流程](docs/portfolio/business_process_flow.md) | 从计划员、生产、质量、设备和 IT 角色重构原流程与目标流程 |
-| PRD 与原型 | [决策工作台 PRD](docs/product/prd_decision_workbench.md)、[原型逻辑](docs/portfolio/prototype_logic.md)、[互动 Demo](LIVE_DEMO_URL) | 用户故事、状态、权限、异常、埋点、验收与可运行交互闭环 |
+| PRD 与原型 | [决策工作台 PRD](docs/product/prd_decision_workbench.md)、[原型逻辑](docs/portfolio/prototype_logic.md)、[互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site) | 用户故事、状态、权限、异常、埋点、验收与可运行交互闭环 |
 | 项目推进 | [MVP 交付计划](docs/project/mvp_delivery_plan.md)、[上线就绪评估](docs/validation/launch_readiness_assessment.md) | 需求、评审、研发、联调、灰度、风险、责任人与阶段门 |
 | 上线指标 | [指标体系](docs/portfolio/metric_system.md)、[失败迭代](docs/portfolio/failure_iteration_log.md) | 时效、可行覆盖、采纳、业务代理、稳定性、风险与失败归因 |
 | 创新输入 | [AI 工作流与 Prompt](docs/portfolio/workflow_prompts_io.md)、[Agent 设计](docs/portfolio/ai_increment_agent_design.md) | Agent / solver / guardrail / human-in-the-loop 的 Harness 架构 |
@@ -109,7 +109,7 @@ flowchart LR
 4. 切换 Evidence / Trace，核对 AI 解释的来源与运行步骤。
 5. 人工确认方案；Demo 只生成执行草案，不连接生产系统。
 
-[打开在线互动 Demo](LIVE_DEMO_URL)
+[打开在线互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site)
 
 本地完整栈包含 FastAPI、React、PostgreSQL/pgvector、Redis、Redpanda 和 mock ERP/MES/APS：
 

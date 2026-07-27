@@ -238,6 +238,7 @@ def add_title_block(doc: Document) -> None:
         ("公开证据", "872 项自动化测试 + 合成回放 + 数字孪生 gates"),
         ("更新日期", "2026-07-27"),
         ("公开仓库", "github.com/eulalee001020-star/reorch-zhice"),
+        ("在线 Demo", "reorch-zhice-portfolio.eula-lee001020.chatgpt.site"),
     ]
     for label, value in metadata:
         paragraph = doc.add_paragraph()
@@ -493,6 +494,7 @@ def build_docx() -> None:
         doc,
         [
             "公开仓库：https://github.com/eulalee001020-star/reorch-zhice",
+            "在线 Demo：https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site",
             "产品 PRD：docs/product/prd_decision_workbench.md",
             "业务流程与原型：docs/portfolio/business_process_flow.md；docs/portfolio/prototype_logic.md",
             "评测与失败：docs/portfolio/evaluation_guardrail_cases.md；docs/portfolio/failure_iteration_log.md",
@@ -690,6 +692,10 @@ def build_pdf() -> None:
         Paragraph("<b>公开证据：</b> 872 项自动化测试 + 合成回放 + 数字孪生 gates", styles["meta"]),
         Paragraph("<b>更新日期：</b> 2026-07-27", styles["meta"]),
         Paragraph("<b>公开仓库：</b> github.com/eulalee001020-star/reorch-zhice", styles["meta"]),
+        Paragraph(
+            "<b>在线 Demo：</b> reorch-zhice-portfolio.eula-lee001020.chatgpt.site",
+            styles["meta"],
+        ),
         Spacer(1, 9),
         Table(
             [[Paragraph(POSITIONING, styles["callout"])]],
@@ -905,12 +911,11 @@ def build_pdf() -> None:
         styles,
         [
             "公开仓库：https://github.com/eulalee001020-star/reorch-zhice",
+            "在线 Demo：https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site",
             "PRD：docs/product/prd_decision_workbench.md",
             "流程与原型：docs/portfolio/business_process_flow.md；docs/portfolio/prototype_logic.md",
             "评测与失败：docs/portfolio/evaluation_guardrail_cases.md；docs/portfolio/failure_iteration_log.md",
             "运行时验证：docs/validation/production_runtime_completion_report_20260712.md",
-            "可行性恢复：docs/validation/feasibility_restoration_validation_20260713.md",
-            "个人贡献：docs/portfolio/personal_contribution.md",
         ],
     )
 
@@ -995,6 +1000,7 @@ def build_package() -> None:
     for name in [
         "README.md",
         "LICENSE",
+        "THIRD_PARTY_NOTICES.md",
         "SECURITY.md",
         "CHANGELOG.md",
         ".env.example",
@@ -1041,13 +1047,16 @@ def build_package() -> None:
         if source.exists():
             copy_file(source, PACKAGE / name)
 
-    for directory in ["app", "public", "tests"]:
+    for directory in ["app", "build", "public", "tests", "worker"]:
         source = ROOT / "portfolio_site" / directory
         if source.exists():
             copy_tree(source, PACKAGE / "portfolio_site" / directory)
     for name in [
         "package.json",
         "package-lock.json",
+        "README.md",
+        ".openai/hosting.json",
+        "build/sites-vite-plugin.ts",
         "tsconfig.json",
         "next.config.ts",
         "vite.config.ts",
