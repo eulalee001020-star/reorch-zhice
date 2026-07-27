@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalOperation",
+  "type": "object",
+  "required": ["operation_id", "work_order_id", "processing_time_min"],
+  "properties": {
+    "operation_id": { "type": "string" },
+    "work_order_id": { "type": "string" },
+    "sequence": { "type": "integer" },
+    "required_capability": { "type": ["string", "null"] },
+    "required_capabilities": { "type": "array", "items": { "type": "string" } },
+    "processing_time_min": { "type": "integer", "minimum": 1 },
+    "machine_id": { "type": ["string", "null"] },
+    "eligible_machine_ids": { "type": "array", "items": { "type": "string" } },
+    "start_time": { "type": ["string", "null"], "format": "date-time" },
+    "end_time": { "type": ["string", "null"], "format": "date-time" },
+    "predecessors": { "type": "array", "items": { "type": "string" } },
+    "successors": { "type": "array", "items": { "type": "string" } },
+    "raw_payload": { "type": "object" }
+  }
+}
+

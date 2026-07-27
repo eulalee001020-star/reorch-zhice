@@ -1,0 +1,27 @@
+[
+  {
+    "scenario_id": "flex_printing_down",
+    "incident_type": "machine_down",
+    "machine_id": "M1",
+    "occurred_at": "2022-10-03T08:00:00+00:00",
+    "duration_min": 240,
+    "provenance": "synthetic_incident_on_public_research_data"
+  },
+  {
+    "scenario_id": "flex_urgent_order",
+    "incident_type": "urgent_order_insert",
+    "occurred_at": "2022-10-05T08:00:00+00:00",
+    "source_work_order_id": "FLEX-WO-0001",
+    "priority": 100,
+    "due_in_min": 720,
+    "provenance": "synthetic_incident_on_public_research_data"
+  },
+  {
+    "scenario_id": "flex_material_delay",
+    "incident_type": "material_shortage",
+    "occurred_at": "2022-10-07T08:00:00+00:00",
+    "affected_capability": "P2",
+    "available_in_min": 480,
+    "provenance": "synthetic_incident_on_public_research_data"
+  }
+]

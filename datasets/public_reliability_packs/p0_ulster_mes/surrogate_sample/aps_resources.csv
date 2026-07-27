@@ -1,0 +1,7 @@
+machine_id,name,capabilities,status,is_bottleneck,has_redundancy,criticality
+M-01,Cutting Cell 01,CUT,available,false,true,general
+M-02,CNC Cell 02,CNC,available,true,true,critical
+M-03,CNC Cell 03,CNC,down,true,true,critical
+M-04,CNC Cell 04,CNC,available,true,true,critical
+M-06,CMM Inspection 01,QC,available,false,false,quality_gate
+

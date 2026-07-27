@@ -4,6 +4,8 @@ import type {
   ConfirmResponse,
   DecisionRecord,
   ExecutionResult,
+  SandboxWritebackRequest,
+  SandboxWritebackResponse,
   WritebackStatusResponse,
 } from '@/types';
 
@@ -25,6 +27,17 @@ export async function getDecisionRecord(incidentId: string): Promise<DecisionRec
 export async function getWritebackStatus(incidentId: string): Promise<WritebackStatusResponse> {
   const res = await apiClient.get<WritebackStatusResponse>(
     `/incidents/${incidentId}/writeback-status`,
+  );
+  return res.data;
+}
+
+export async function runSandboxWriteback(
+  incidentId: string,
+  data: SandboxWritebackRequest,
+): Promise<SandboxWritebackResponse> {
+  const res = await apiClient.post<SandboxWritebackResponse>(
+    `/incidents/${incidentId}/sandbox-writeback`,
+    data,
   );
   return res.data;
 }

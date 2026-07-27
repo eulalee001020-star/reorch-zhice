@@ -1,0 +1,842 @@
+[
+  {
+    "case_id": "REHEARSAL-CASE-001",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-13T00:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00001-OP-001"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-001",
+      "snapshot_hash": "a3dd179d4554b0a85739963ec537ac212058626302067683df68f21e7de60745",
+      "as_of": "2026-07-12T23:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-001",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-001"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-002",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-13T05:00:00+00:00",
+      "machine_id": "M-06",
+      "affected_operation_id": "DT-WO-00046-OP-003"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-002",
+      "snapshot_hash": "2e975ff5daf0b4b851a79c1745343e6a21f42ffd540da8f8a567bba2677b133a",
+      "as_of": "2026-07-13T04:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-002",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-30",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-002"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-003",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-13T10:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00091-OP-005"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-003",
+      "snapshot_hash": "135c767fb9872b4fc79333dfb1d6cf5bfb6f0139e0c0438c87cf2dd90964fe18",
+      "as_of": "2026-07-13T09:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-003",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-003"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-004",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-13T15:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00136-OP-007"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-004",
+      "snapshot_hash": "5c34adea289815021def57ab7da74767d9a0597a26e6bff3f7dd7c865bc64ad4",
+      "as_of": "2026-07-13T14:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-004",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-SYNTHETIC-EXT-01",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-004"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-005",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-13T20:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00182-OP-002"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-005",
+      "snapshot_hash": "d218f4f8f5350588fdf48585d7f15e6f7b79bd32abb5c8705e2825251b04dae3",
+      "as_of": "2026-07-13T19:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-005",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-005"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-006",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-14T01:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00227-OP-004"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-006",
+      "snapshot_hash": "9207fc3839d4cdceca4c820033643b328dec142c8ff72a63d7adc1e8f721510c",
+      "as_of": "2026-07-14T00:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-006",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-006"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-007",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-14T06:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00272-OP-006"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-007",
+      "snapshot_hash": "3975e5e4b38b1597e86560d4022b7f36d702a76f601ececedb40d88084b06bee",
+      "as_of": "2026-07-14T05:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-007",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-003-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-007"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-008",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-14T11:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00318-OP-001"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-008",
+      "snapshot_hash": "ec78603134d1497bdde7ca13eaa676fcfefea6d0d614a4515acec89a69b79f87",
+      "as_of": "2026-07-14T10:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-008",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-008"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-009",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-14T16:00:00+00:00",
+      "machine_id": "M-06",
+      "affected_operation_id": "DT-WO-00363-OP-003"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-009",
+      "snapshot_hash": "778ea28a6000bf7518d8a8c85e65c1fc58db3ffb4277b3160a3972ee8a92703d",
+      "as_of": "2026-07-14T15:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-009",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-30",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-009"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-010",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-14T21:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00408-OP-005"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-010",
+      "snapshot_hash": "bc50600f952f7d08903a90868f015ec22632f241445146f1bc61db3e71f1a50f",
+      "as_of": "2026-07-14T20:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-010",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-010"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-011",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-15T02:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00453-OP-007"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-011",
+      "snapshot_hash": "5cb9f82b2ad8706be223d3588a350d1be0c345156da9a02ddb3e4fe288d53d1b",
+      "as_of": "2026-07-15T01:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-011",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-SYNTHETIC-EXT-01",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-011"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-012",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-15T07:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00499-OP-002"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-012",
+      "snapshot_hash": "81fc372f1fb9acdfcb011455a8b5a96d7351303fcfbbdc4b51f9ecf7d88c8fff",
+      "as_of": "2026-07-15T06:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-012",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-012"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-013",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-15T12:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00544-OP-004"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-013",
+      "snapshot_hash": "4ffb4c4eeda4bace0f83272462a2010dbeebb51f7363c3f5356e1c586b11b91b",
+      "as_of": "2026-07-15T11:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-013",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-013"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-014",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-15T17:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00589-OP-006"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-014",
+      "snapshot_hash": "996bd65c13d602cc8e09bbf0afd8134cf0c37f1c854f7c35483b34597c5da65c",
+      "as_of": "2026-07-15T16:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-014",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-003-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-014"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-015",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-15T22:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00635-OP-001"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-015",
+      "snapshot_hash": "048698d6ad025892fe5e5dcceaf764ad4fe72f69dc96336c70e7149c8376e35e",
+      "as_of": "2026-07-15T21:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-015",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-015"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-016",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-16T03:00:00+00:00",
+      "machine_id": "M-06",
+      "affected_operation_id": "DT-WO-00680-OP-003"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-016",
+      "snapshot_hash": "435d7184b5bca84e7e89840e274043730c2579e1dc7e99b9870cc42a95a304a1",
+      "as_of": "2026-07-16T02:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-016",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-30",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-016"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-017",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-16T08:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00725-OP-005"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-017",
+      "snapshot_hash": "7f8b18e35016b175b9650139bac5486e09df259bcdbe3eb9b2a283d0cc2ec5a2",
+      "as_of": "2026-07-16T07:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-017",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-017"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-018",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-16T13:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00770-OP-007"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-018",
+      "snapshot_hash": "32ce6c8c9e51fb8cf01498fed4702e40359f487400ba87e647278069a8d7297f",
+      "as_of": "2026-07-16T12:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-018",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-SYNTHETIC-EXT-01",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-018"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-019",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-16T18:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-00816-OP-002"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-019",
+      "snapshot_hash": "4dace49d6fa189321543ea622db40ede27e1d81e869c72ecf2e8be72851f10d6",
+      "as_of": "2026-07-16T17:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-019",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-019"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-020",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-16T23:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00861-OP-004"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-020",
+      "snapshot_hash": "db45a217164b397fa3db358ba2e31e89eca321609315ef47c9f0b0aab0918f9d",
+      "as_of": "2026-07-16T22:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-020",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-020"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-021",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-17T04:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-00906-OP-006"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-021",
+      "snapshot_hash": "2b2c50a04a06b124bef7c6389338eedf87aa2b81fccef6c9e4526c2447e968b8",
+      "as_of": "2026-07-17T03:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-021",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-003-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-021"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-022",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-17T09:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-00952-OP-001"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-022",
+      "snapshot_hash": "301ce75cc4371f6d1c2099a5ef52a3f8887d7faad01da73979633b23da282d06",
+      "as_of": "2026-07-17T08:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-022",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-022"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-023",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-17T14:00:00+00:00",
+      "machine_id": "M-06",
+      "affected_operation_id": "DT-WO-00997-OP-003"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-023",
+      "snapshot_hash": "e9208c4d8ffc10a5a2d0b9dc41a555e6503c6506698f9aeb8ac89a58452c46c6",
+      "as_of": "2026-07-17T13:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-023",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-30",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-023"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-024",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-17T19:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-01042-OP-005"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-024",
+      "snapshot_hash": "41553a2803e878cf28db954f1620e4d54146596918471271c6ebece88d5b9320",
+      "as_of": "2026-07-17T18:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-024",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-024"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-025",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-18T00:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-01087-OP-007"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-025",
+      "snapshot_hash": "8acc8d5e27935e908df8c481c3319b6ff683ee7ea5a1c860d310e9da33cd774d",
+      "as_of": "2026-07-17T23:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-025",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-SYNTHETIC-EXT-01",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-025"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-026",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-18T05:00:00+00:00",
+      "machine_id": "M-03",
+      "affected_operation_id": "DT-WO-01133-OP-002"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-026",
+      "snapshot_hash": "d5bfc45b74c0a69b145b8c348c72fc996f4d179697d07956e70d740c25af8f17",
+      "as_of": "2026-07-18T04:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-026",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-20",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-026"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-027",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-18T10:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-01178-OP-004"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-027",
+      "snapshot_hash": "cb401d6663d9b26046caccdf1f7bab16951eba985e0275e28634cd9e72a14088",
+      "as_of": "2026-07-18T09:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-027",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-002-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-027"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-028",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-18T15:00:00+00:00",
+      "machine_id": "M-04",
+      "affected_operation_id": "DT-WO-01223-OP-006"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-028",
+      "snapshot_hash": "74b3dbfcdf97c89e2584cd22155422982b6412898c490163f9907e4333df9087",
+      "as_of": "2026-07-18T14:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "accepted",
+      "reason_code": "meets_constraints"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-028",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-003-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-028"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-029",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-18T20:00:00+00:00",
+      "machine_id": "M-01",
+      "affected_operation_id": "DT-WO-01269-OP-001"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-029",
+      "snapshot_hash": "66a7c9c1dfd6a122640c44ed6fd765dc8aa93f1a68ffcbae2dbf23d3beab32b7",
+      "as_of": "2026-07-18T19:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "adjusted",
+      "reason_code": "hidden_shift_constraint"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-029",
+      "status": "completed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-10",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-M03-DOWN",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-029"
+    ]
+  },
+  {
+    "case_id": "REHEARSAL-CASE-030",
+    "provenance": "synthetic_customer_admission_rehearsal",
+    "incident": {
+      "type": "machine_down",
+      "occurred_at": "2026-07-19T01:00:00+00:00",
+      "machine_id": "M-06",
+      "affected_operation_id": "DT-WO-01314-OP-003"
+    },
+    "pre_incident_snapshot": {
+      "snapshot_id": "REHEARSAL-SNAPSHOT-030",
+      "snapshot_hash": "5a21a7e48412f7dde3aca75bb6e238a81fbff587c2b3324ca60ed43660c6fb0f",
+      "as_of": "2026-07-19T00:59:00+00:00"
+    },
+    "planner_result": {
+      "disposition": "rejected",
+      "reason_code": "material_status_unconfirmed"
+    },
+    "execution_outcome": {
+      "receipt_id": "REHEARSAL-RECEIPT-030",
+      "status": "not_executed"
+    },
+    "source_refs": [
+      "surrogate_sample/mes_operations.csv#OP-P0-001-30",
+      "surrogate_sample/mes_downtime_events.csv#INC-P0-SYNTHETIC-EXT-02",
+      "customer_admission_rehearsal/execution_receipts.csv#REHEARSAL-RECEIPT-030"
+    ]
+  }
+]

@@ -14,6 +14,13 @@ import { useWorkbenchStore, useIncidentStore, useAnalysisStore, usePlanStore } f
 import { incidentStatusMap } from '@/utils/statusMapping';
 import type { IncidentStatus } from '@/types';
 
+function traceColor(status?: string, llmUsed?: boolean, llmAllowed?: boolean): string {
+  if (status === 'blocked' || status === 'timed_out') return 'red';
+  if (status === 'degraded') return 'orange';
+  if (llmUsed) return 'magenta';
+  return llmAllowed ? 'geekblue' : 'default';
+}
+
 export const ProcessingStatusPanel: React.FC = () => {
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const agentTrace = useWorkbenchStore((s) => s.agentTrace);
@@ -29,7 +36,12 @@ export const ProcessingStatusPanel: React.FC = () => {
     : null;
 
   return (
-    <Card size="small" bodyStyle={{ padding: '8px 16px' }}>
+    <Card
+      size="small"
+      title="Recovery run status"
+      extra={<Tag color="blue">Sandbox demo / replay-ready path</Tag>}
+      styles={{ body: { padding: '10px 16px' } }}
+    >
       <Descriptions size="small" column={{ xs: 2, sm: 3, md: 6 }}>
         <Descriptions.Item label="当前事件">
           {incidentContextId ? (
@@ -63,6 +75,12 @@ export const ProcessingStatusPanel: React.FC = () => {
         <Descriptions.Item label="刷新时间">
           {dayjs().format('HH:mm:ss')}
         </Descriptions.Item>
+        <Descriptions.Item label="证据等级">
+          <Tag color="geekblue">controlled replay</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="执行权限">
+          <Tag color="gold">确认不触发回写；Sandbox 需二次审批</Tag>
+        </Descriptions.Item>
         <Descriptions.Item label="Agent">
           {agentTrace.length > 0 ? (
             <Tag color="purple">{agentTrace.length} 步</Tag>
@@ -79,7 +97,7 @@ export const ProcessingStatusPanel: React.FC = () => {
           items={[
             {
               key: 'agent-trace',
-              label: `Agent 调用链：${agentTrace.map((step) => step.agent_name).join(' → ')}`,
+              label: `Agent trace / structured evidence (${agentTrace.length} steps)`,
               children: (
                 <Space wrap size={[4, 4]}>
                   {agentTrace.map((step, index) => (
@@ -93,10 +111,12 @@ export const ProcessingStatusPanel: React.FC = () => {
                           : step.fallback_reason
                             ? `降级：${step.fallback_reason}；`
                             : ''
-                      }边界：${step.guardrail}`}
+                      }状态：${step.stage_status ?? 'completed'}；证据引用：${
+                        step.evidence_refs?.length ?? 0
+                      }；边界：${step.guardrail}`}
                     >
-                      <Tag color={step.llm_used ? 'magenta' : step.llm_allowed ? 'geekblue' : 'default'}>
-                        {step.agent_name}
+                      <Tag color={traceColor(step.stage_status, step.llm_used, step.llm_allowed)}>
+                        {step.agent_name} · {step.stage_status ?? 'completed'}
                       </Tag>
                     </Tooltip>
                   ))}

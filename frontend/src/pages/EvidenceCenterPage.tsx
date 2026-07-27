@@ -26,6 +26,15 @@ const categoryColor: Record<string, string> = {
   quality_gate: 'orange',
 };
 
+function evidenceLevel(item: EvidenceItem): { label: string; color: string } {
+  if (item.category === 'replay') return { label: 'lab replay', color: 'blue' };
+  if (item.category === 'failure_samples') return { label: 'controlled failure set', color: 'volcano' };
+  if (item.category === 'llm_eval') return { label: 'offline eval', color: 'purple' };
+  if (item.category === 'data_readiness') return { label: 'readiness gate', color: 'green' };
+  if (item.category === 'quality_gate') return { label: 'quality gate evidence', color: 'gold' };
+  return { label: 'demo evidence', color: 'default' };
+}
+
 function metricText(metrics: Record<string, unknown>): string {
   const entries = Object.entries(metrics).slice(0, 4);
   if (!entries.length) return '-';
@@ -52,8 +61,8 @@ const EvidenceCenterPage: React.FC = () => {
   const counts = data?.summary_counts.by_category as Record<string, number> | undefined;
   const total = Number(data?.summary_counts.total ?? 0);
   const items = data?.items ?? [];
-  const blockedOrLive = useMemo(
-    () => items.filter((item) => item.status.includes('live') || item.category === 'quality_gate').length,
+  const gateBackedEvidence = useMemo(
+    () => items.filter((item) => item.category === 'quality_gate' || item.category === 'data_readiness').length,
     [items],
   );
 
@@ -79,7 +88,15 @@ const EvidenceCenterPage: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       width: 170,
-      render: (status: string) => <Tag>{status}</Tag>,
+      render: (status: string) => <Tag>{status.replace('live', 'controlled')}</Tag>,
+    },
+    {
+      title: '证据等级',
+      width: 170,
+      render: (_, row) => {
+        const level = evidenceLevel(row);
+        return <Tag color={level.color}>{level.label}</Tag>;
+      },
     },
     {
       title: '摘要',
@@ -100,8 +117,40 @@ const EvidenceCenterPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="demo-page">
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <div className="demo-hero">
+          <Row gutter={[18, 18]} align="middle">
+            <Col xs={24} lg={11}>
+              <div className="hero-eyebrow">Evidence Ladder</div>
+              <h1 className="hero-title">把可证明的证据和还未证明的 traction 分开</h1>
+              <div className="hero-subtitle">
+                这里展示受控 replay、失败样本、离线评测和数据就绪证据；真实客户 ROI、上线和自动写回仍需 Design Partner 验证。
+              </div>
+            </Col>
+            <Col xs={24} lg={13}>
+              <div className="evidence-ladder">
+                <div className="evidence-step">
+                  <div className="evidence-step-title">MVP / Demo</div>
+                  <div className="evidence-step-body">证明异常决策闭环存在：影响分析、Top-K、质量门、人工确认、审计。</div>
+                </div>
+                <div className="evidence-step">
+                  <div className="evidence-step-title">Lab Replay</div>
+                  <div className="evidence-step-body">证明系统能记录采纳、微调、驳回和失败归因，不等于客户采纳率。</div>
+                </div>
+                <div className="evidence-step">
+                  <div className="evidence-step-title">Synthetic / Benchmark</div>
+                  <div className="evidence-step-body">证明方法、规模和工程可行性，不等于真实客户 ROI。</div>
+                </div>
+                <div className="evidence-step boundary-note">
+                  <div className="evidence-step-title">Design Partner</div>
+                  <div className="evidence-step-body">下一步需要 10-30 条脱敏历史异常、计划员决策和执行结果。</div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+
         <Card size="small" title="Evidence Center" extra={<AuditOutlined />}>
           <Row gutter={[12, 12]}>
             <Col xs={12} md={4}>
@@ -120,7 +169,7 @@ const EvidenceCenterPage: React.FC = () => {
               <Statistic title="Data readiness" value={counts?.data_readiness ?? 0} />
             </Col>
             <Col xs={12} md={4}>
-              <Statistic title="Live/质量门" value={blockedOrLive} />
+              <Statistic title="Gate-backed" value={gateBackedEvidence} />
             </Col>
           </Row>
           <Alert

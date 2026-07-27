@@ -1,0 +1,17 @@
+{
+  "pack_id": "p1_tablets_manufacturing",
+  "acquisition_status": "complete",
+  "missing_raw_files": [],
+  "canonical_status": "built",
+  "counts": {
+    "work_orders": 4144,
+    "operations": 4144,
+    "resources": 13,
+    "setup_matrix": 191
+  },
+  "scenario_count": 3,
+  "missing_bom_headers": 0,
+  "limitations": [
+    "Lot-sizing data does not contain timestamped equipment incidents, planner actions, or execution outcomes."
+  ]
+}

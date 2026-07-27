@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalScheduleSnapshot",
+  "type": "object",
+  "required": ["snapshot_id", "captured_at", "workshop_id", "work_orders"],
+  "properties": {
+    "snapshot_id": { "type": "string" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "workshop_id": { "type": "string" },
+    "source_system": { "type": ["string", "null"] },
+    "work_orders": { "type": "array", "items": { "type": "object" } },
+    "raw_data": { "type": "object" }
+  }
+}
+

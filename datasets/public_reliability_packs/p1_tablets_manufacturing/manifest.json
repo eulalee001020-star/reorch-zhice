@@ -1,0 +1,53 @@
+{
+  "pack_id": "p1_tablets_manufacturing",
+  "tier": "P1",
+  "title": "TABLETS_MANUFACTURING",
+  "source_url": "https://data.mendeley.com/datasets/mm7yr6t7pp/1",
+  "license": "CC BY 4.0",
+  "provenance": "real_anonymized_production_planning",
+  "claim_boundary": "Engineering reliability evidence only; not customer production reliability, ROI, planner adoption, or writeback authorization.",
+  "acquisition_status": "complete",
+  "generated_at": "2026-07-13T00:00:00+08:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 424,
+      "sha256": "e34a932ef813c7646f0a96e005dcdd8c204da9082e777965af6f6dedadaf45f5"
+    },
+    {
+      "path": "canonical/operations.csv",
+      "bytes": 301320,
+      "sha256": "a95518033283dac316684ed6540d1c7f3e09743f830342a60ade685e8bd245dd"
+    },
+    {
+      "path": "canonical/resources.csv",
+      "bytes": 1210,
+      "sha256": "5e11fb42c857b31debbf075e0947813c20f4819eba6073be96a500193ecc781a"
+    },
+    {
+      "path": "canonical/setup_matrix.csv",
+      "bytes": 14376,
+      "sha256": "3152daa914c643b26be1e3fc25fe0d38813fd24a4db0062e06ee6b491ed21ec4"
+    },
+    {
+      "path": "canonical/work_orders.csv",
+      "bytes": 298619,
+      "sha256": "d0ce9da0b667914c867f3ec6137fd2d067f401a67f6e5391545c754f43469318"
+    },
+    {
+      "path": "raw/extracted/TABLETS_MANUFACTURING Multi-level, multi-product capacitated lot-sizing problems with linked lot sizes and backorders/data.xlsx",
+      "bytes": 169320,
+      "sha256": "feb1436fc868d76dec14343c2007364b56f54fbde3629dba2481f2e8584b2cdf"
+    },
+    {
+      "path": "raw/source_bundle.zip",
+      "bytes": 155111,
+      "sha256": "a2d6a56d688b5c6d6b74d5a8582d4b878bdb5a73fd5420bc9ea9d2175afe7a89"
+    },
+    {
+      "path": "scenarios/incidents.json",
+      "bytes": 840,
+      "sha256": "fff4e268e97da0a6927faab8355f5fa92d066d105a2528ef0808b0846f983415"
+    }
+  ]
+}

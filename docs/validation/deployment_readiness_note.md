@@ -6,6 +6,13 @@ ReOrch has completed MVP development and is ready for controlled lab-trial valid
 
 It is not yet production-ready for unattended customer plant operation. The production boundary depends on customer identity integration, secret management, backup/recovery, real adapter validation, writeback governance, and field acceptance.
 
+The system now includes a machine-readable production gate:
+`POST /api/v1/planning/production-readiness/evaluate`. This gate separates
+`replay_ready`, `shadow_ready`, `controlled_pilot_ready`, and `production_ready`.
+The latest large-FJSP public benchmark-derived pack is classified as
+`replay_ready`: it supports read-only replay and multi-strategy comparison, but
+does not authorize customer shadow mode or production writeback.
+
 ## Minimum Demo Deployment Criteria
 
 | Criterion | Current status |
@@ -30,6 +37,7 @@ Before using the system in a customer pilot, complete:
 - Digital-twin replay/shadow proxy report, followed by shadow-mode comparison against planner decisions.
 - Human-approved writeback dry run in staging.
 - Audit export for incident, plan, decision, writeback, and feedback records.
+- Production readiness gate report with no blockers for the requested deployment level.
 
 ## Deployment Positioning
 

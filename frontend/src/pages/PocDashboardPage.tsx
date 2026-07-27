@@ -4,6 +4,7 @@ import {
   Card,
   Col,
   Form,
+  Alert,
   InputNumber,
   Progress,
   Row,
@@ -77,13 +78,49 @@ const PocDashboardPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="demo-page">
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <div className="demo-hero">
+          <Row gutter={[18, 18]} align="middle">
+            <Col xs={24} lg={11}>
+              <div className="hero-eyebrow">PoC assumption calculator</div>
+              <h1 className="hero-title">把价值假设变成可验证的 PoC 指标</h1>
+              <div className="hero-subtitle">
+                当前测算基于输入假设，用于设计 Design Partner 验收；不能作为已验证客户 ROI 或生产收益承诺。
+              </div>
+            </Col>
+            <Col xs={24} lg={13}>
+              <div className="metric-strip">
+                <div className="metric-tile">
+                  <div className="metric-label">Validation sample</div>
+                  <div className="metric-value">10-30</div>
+                  <div className="metric-note">脱敏历史异常 / 客户</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">Hard gate</div>
+                  <div className="metric-value">0</div>
+                  <div className="metric-note">关键硬约束违例</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">Planner review</div>
+                  <div className="metric-value">60%+</div>
+                  <div className="metric-note">accept-or-adjust 目标</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">Mode</div>
+                  <div className="metric-value">Shadow</div>
+                  <div className="metric-note">先并行验证</div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+
         <Row gutter={[12, 12]}>
           <Col xs={24} lg={10}>
             <Card
               size="small"
-              title="PoC 价值测算"
+              title="PoC 假设测算"
               extra={
                 <Button
                   type="primary"
@@ -115,6 +152,12 @@ const PocDashboardPage: React.FC = () => {
 
           <Col xs={24} lg={14}>
             <Card size="small" title="验收仪表盘">
+              <Alert
+                type="info"
+                showIcon
+                style={{ marginBottom: 12 }}
+                message="以下结果基于输入假设，进入客户现场后必须由历史 replay、shadow mode 和财务口径复核。"
+              />
               <Row gutter={[12, 12]}>
                 <Col xs={12} md={6}>
                   <Statistic
@@ -159,7 +202,7 @@ const PocDashboardPage: React.FC = () => {
 
             <Card
               size="small"
-              title="PoC 验收项"
+              title="Design Partner 验收项"
               style={{ marginTop: 12 }}
               extra={<CheckCircleOutlined />}
             >

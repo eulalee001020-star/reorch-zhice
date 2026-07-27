@@ -27,6 +27,7 @@ from app.models.enums import WritebackStatus
 from app.models.execution import ExecutionResult
 from app.models.solver import CandidatePlan
 from app.services.persistence import persist_execution_result, persist_writeback_job
+from app.services.writeback_policy import WritebackExecutionPermit, WritebackPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,8 @@ class MESInstruction:
         resource_id: str,
         start_time: str,
         end_time: str,
+        idempotency_key: str | None = None,
+        plan_id: str | None = None,
     ) -> None:
         self.instruction_id = instruction_id
         self.work_order_id = work_order_id
@@ -55,6 +58,8 @@ class MESInstruction:
         self.resource_id = resource_id
         self.start_time = start_time
         self.end_time = end_time
+        self.idempotency_key = idempotency_key or instruction_id
+        self.plan_id = plan_id
         self.status: str = "pending"  # pending / success / failed
         self.error: str | None = None
 
@@ -66,6 +71,8 @@ class MESInstruction:
             "resource_id": self.resource_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
+            "idempotency_key": self.idempotency_key,
+            "plan_id": self.plan_id,
         }
 
 
@@ -93,6 +100,7 @@ class MESAdapter:
     def __init__(self) -> None:
         # Track which instruction IDs should fail (for testing)
         self._fail_ids: set[str] = set()
+        self._sent_idempotency_keys: set[str] = set()
         self._base_url = settings.integration.mes_base_url
         self._api_key = settings.integration.mes_api_key
         self._writeback_path = settings.integration.mes_writeback_path
@@ -103,15 +111,33 @@ class MESAdapter:
         """Configure instruction IDs that should simulate failure."""
         self._fail_ids = ids
 
-    async def send_instruction(self, instruction: MESInstruction) -> bool:
+    async def send_instruction(
+        self,
+        instruction: MESInstruction,
+        *,
+        execution_permit: WritebackExecutionPermit | None = None,
+        decision_record_id: str | None = None,
+        confirmed_plan_id: str | None = None,
+    ) -> bool:
         """Send a single instruction to MES. Returns True on success."""
         if instruction.instruction_id in self._fail_ids:
             instruction.status = "failed"
             instruction.error = f"MES rejected instruction {instruction.instruction_id}"
             return False
+        if instruction.idempotency_key in self._sent_idempotency_keys:
+            instruction.status = "success"
+            return True
         if self._base_url:
             try:
-                headers = {"Content-Type": "application/json"}
+                WritebackPolicy.assert_adapter_send_allowed(
+                    execution_permit=execution_permit,
+                    decision_record_id=decision_record_id,
+                    confirmed_plan_id=confirmed_plan_id,
+                )
+                headers = {
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": instruction.idempotency_key,
+                }
                 if self._api_key:
                     headers["X-API-Key"] = self._api_key
                 async with httpx.AsyncClient(
@@ -128,6 +154,7 @@ class MESAdapter:
                 instruction.status = "failed"
                 instruction.error = str(exc)
                 return False
+        self._sent_idempotency_keys.add(instruction.idempotency_key)
         instruction.status = "success"
         return True
 
@@ -194,10 +221,23 @@ class WritebackModule:
 
     # ── MES Writeback (Req 8.1-8.4) ────────────────────────────────
 
+    @classmethod
+    def preview_instructions(cls, plan: CandidatePlan) -> list[dict]:
+        """Build auditable MES instructions without contacting an external system."""
+        return [
+            item.as_payload()
+            for item in cls._convert_to_mes_instructions(
+                plan,
+                only_adjusted_operations=True,
+            )
+        ]
+
     async def writeback_to_mes(
         self,
         confirmed_plan: CandidatePlan,
         decision_record: DecisionRecord,
+        execution_permit: WritebackExecutionPermit | None = None,
+        only_adjusted_operations: bool = False,
     ) -> WritebackStatus:
         """Write confirmed plan schedule changes to MES.
 
@@ -217,7 +257,10 @@ class WritebackModule:
         self._decision_records[incident_key] = decision_record
 
         # Convert schedule to MES instructions (Req 8.2)
-        instructions = self._convert_to_mes_instructions(confirmed_plan)
+        instructions = self._convert_to_mes_instructions(
+            confirmed_plan,
+            only_adjusted_operations=only_adjusted_operations,
+        )
 
         report = WritebackReport()
         report.total_instructions = len(instructions)
@@ -244,7 +287,15 @@ class WritebackModule:
 
         # Send each instruction, tolerating individual failures (Req 8.4)
         for instr in instructions:
-            success = await self._mes.send_instruction(instr)
+            if execution_permit is None:
+                success = await self._mes.send_instruction(instr)
+            else:
+                success = await self._mes.send_instruction(
+                    instr,
+                    execution_permit=execution_permit,
+                    decision_record_id=str(decision_record.decision_record_id),
+                    confirmed_plan_id=str(confirmed_plan.plan_id),
+                )
             if success:
                 report.success_count += 1
             else:
@@ -329,8 +380,6 @@ class WritebackModule:
                 f"Run writeback first."
             )
 
-        # Get work order IDs from the writeback report
-        report = self._writeback_reports.get(key)
         work_order_ids = self._get_affected_work_order_ids(key)
 
         # Poll MES for progress (Req 8.5)
@@ -425,6 +474,8 @@ class WritebackModule:
     @staticmethod
     def _convert_to_mes_instructions(
         plan: CandidatePlan,
+        *,
+        only_adjusted_operations: bool = False,
     ) -> list[MESInstruction]:
         """Convert a CandidatePlan's schedule detail to MES instructions.
 
@@ -433,6 +484,8 @@ class WritebackModule:
         instructions: list[MESInstruction] = []
         for wo in plan.schedule_detail.work_orders:
             for op in wo.operations:
+                if only_adjusted_operations and not (op.is_adjusted or op.is_affected):
+                    continue
                 instr = MESInstruction(
                     instruction_id=f"MES-{op.operation_id}",
                     work_order_id=wo.work_order_id,
@@ -444,6 +497,8 @@ class WritebackModule:
                     end_time=op.end_time.isoformat()
                     if isinstance(op.end_time, datetime)
                     else str(op.end_time),
+                    idempotency_key=f"reorch:{plan.plan_id}:{op.operation_id}",
+                    plan_id=str(plan.plan_id),
                 )
                 instructions.append(instr)
         return instructions

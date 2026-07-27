@@ -1,0 +1,41 @@
+{
+  "tenant_id": "CUSTOMER_TENANT",
+  "matrix_id": "customer-default-authority",
+  "version": "1.0.0",
+  "description": "Confirmed source ownership by canonical field family.",
+  "evidence_refs": [
+    "customer:authority-workshop:YYYY-MM-DD",
+    "customer:system-owner-signoff:REF"
+  ],
+  "rules": [
+    {
+      "authority_role": "order_authority",
+      "source_system": "CUSTOMER_ERP",
+      "canonical_entity": "work_order",
+      "canonical_fields": ["work_order_id", "priority", "due_time", "quantity"],
+      "priority": 10,
+      "read_mode": "cdc",
+      "conflict_policy": "block",
+      "writeback_allowed": false,
+      "evidence_refs": ["customer:erp-data-owner:REF"]
+    },
+    {
+      "authority_role": "operation_authority",
+      "source_system": "CUSTOMER_MES",
+      "canonical_entity": "operation",
+      "canonical_fields": [
+        "operation_id",
+        "work_order_id",
+        "resource_id",
+        "status",
+        "planned_start",
+        "planned_end"
+      ],
+      "priority": 10,
+      "read_mode": "hybrid",
+      "conflict_policy": "block",
+      "writeback_allowed": true,
+      "evidence_refs": ["customer:mes-data-owner:REF"]
+    }
+  ]
+}

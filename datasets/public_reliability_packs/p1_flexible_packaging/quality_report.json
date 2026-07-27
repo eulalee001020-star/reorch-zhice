@@ -1,0 +1,17 @@
+{
+  "pack_id": "p1_flexible_packaging",
+  "acquisition_status": "complete",
+  "missing_raw_files": [],
+  "canonical_status": "built",
+  "counts": {
+    "work_orders": 59,
+    "operations": 237,
+    "resources": 15
+  },
+  "scenario_count": 3,
+  "unmapped_operations": 0,
+  "limitations": [
+    "Factory origin is not established by the repository page.",
+    "Process-to-machine mapping is inferred from published machine names and is retained as an explicit assumption."
+  ]
+}

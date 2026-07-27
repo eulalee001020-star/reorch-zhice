@@ -1,0 +1,9 @@
+{
+  "rehearsal_case_count": 30,
+  "real_customer_case_count": 0,
+  "real_mes_data_dictionary_received": false,
+  "real_execution_receipts_received": false,
+  "real_planner_dispositions_received": false,
+  "customer_admission_ready": false,
+  "provenance": "synthetic_customer_admission_rehearsal"
+}

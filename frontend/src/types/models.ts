@@ -349,6 +349,10 @@ export interface AgentTraceStep {
   latency_ms?: number | null;
   input_tokens?: number | null;
   output_tokens?: number | null;
+  attempt_count?: number;
+  stage_status?: 'completed' | 'degraded' | 'blocked' | 'timed_out';
+  input_fingerprint?: string | null;
+  evidence_refs?: string[];
   fallback_reason?: string | null;
   deterministic_tools: string[];
   guardrail: string;
@@ -387,7 +391,11 @@ export interface AgentDecisionFlowRequest {
 }
 
 export interface AgentDecisionFlowResponse {
+  run_id: string;
+  workflow_status: 'completed' | 'degraded' | 'blocked';
+  input_fingerprint: string;
   incident: Incident;
+  data_readiness?: DataReadinessReport | null;
   impact_report: ImpactReport;
   strategy: StrategyRecommendation;
   candidate_plans: CandidatePlan[];
@@ -396,6 +404,8 @@ export interface AgentDecisionFlowResponse {
   recommendation?: PlanSelectionOutput | null;
   recommendation_explanation?: RecommendationExplanation | null;
   solver_chain_explanation?: SolverChainExplanation | null;
+  admissible_plan_ids: string[];
+  blocked_plan_ids: string[];
   requires_human_confirmation: boolean;
   trace: AgentTraceStep[];
 }
@@ -450,6 +460,8 @@ export interface RuleCandidateReplayResult {
   pass_replay: boolean;
   checked_at: string;
   scenario_count: number;
+  scenario_results: RuleReplayScenarioResult[];
+  evidence_scope_counts: Record<string, number>;
   blocked_reason?: string | null;
   metrics: Record<string, unknown>;
   notes: string[];
@@ -492,12 +504,98 @@ export interface RuleCandidateReviewRequest {
 export interface RuleCandidateReplayRequest {
   scenario_set?: string;
   scenario_count?: number;
+  scenarios?: RuleReplayScenario[];
   notes?: string[];
+}
+
+export interface RuleReplayScenario {
+  scenario_id: string;
+  evidence_scope: 'digital_twin' | 'customer_historical' | 'customer_shadow' | 'customer_production';
+  snapshot_ref: string;
+  source_refs: string[];
+  facts: Record<string, unknown>;
+  expected_outcome: 'allow' | 'avoid' | 'block' | 'review';
+}
+
+export interface RuleReplayScenarioResult {
+  scenario_id: string;
+  evidence_scope: string;
+  snapshot_ref: string;
+  source_refs: string[];
+  expected_outcome: string;
+  observed_outcome: string;
+  rule_triggered: boolean;
+  quality_gate_passed: boolean;
+  passed: boolean;
+  blockers: string[];
+  result_fingerprint: string;
 }
 
 export interface RuleCandidatePublishRequest {
   publisher_id?: string;
   release_note?: string | null;
+}
+
+export interface ProductionValidationRunRequest {
+  scale_repetitions?: number;
+}
+
+export interface ProductionScaleResult {
+  operation_count: number;
+  repetitions: number;
+  all_runs_feasible: boolean;
+  p50_elapsed_ms: number;
+  p95_elapsed_ms: number;
+  max_observed_parallelism: number;
+  max_global_violation_count: number;
+  joint_incident_group_verified: boolean;
+  subproblem_limit: number;
+  evidence_fingerprints: string[];
+  evidence_scope: string;
+}
+
+export interface RecoveryEvidenceCaseSummary {
+  case_id: string;
+  evidence_scope: string;
+  incident: {
+    incident_id: string;
+    incident_type: string;
+    severity: string;
+  };
+  planner_decision: Record<string, unknown>;
+  system_recovery: Record<string, unknown>;
+  execution_outcome: Record<string, unknown>;
+  roi: Record<string, unknown>;
+  evidence_fingerprint: string;
+}
+
+export interface RecoveryEvidenceLedgerSummary {
+  ledger_id: string;
+  evidence_scope: string;
+  cases: RecoveryEvidenceCaseSummary[];
+  case_count: number;
+  planner_baseline_complete: boolean;
+  execution_outcome_complete: boolean;
+  roi_is_proxy: boolean;
+  customer_evidence_gate_passed: boolean;
+  aggregate_roi: Record<string, number | string | boolean>;
+  blockers: string[];
+  ledger_fingerprint: string;
+  claim_boundary: string;
+}
+
+export interface ProductionValidationRunResponse {
+  run_id: string;
+  generated_at: string;
+  evidence_scope: string;
+  checks: Record<string, Record<string, unknown>>;
+  scale_results: ProductionScaleResult[];
+  evidence_ledger: RecoveryEvidenceLedgerSummary;
+  all_digital_twin_checks_passed: boolean;
+  customer_evidence_gate_passed: boolean;
+  blockers: string[];
+  artifact_fingerprint: string;
+  claim_boundary: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -565,6 +663,86 @@ export interface WritebackStatusResponse {
   failed_count: number;
   failed_instructions: Record<string, unknown>[];
   timestamp: string;
+}
+
+export type DesignPartnerPreflightRequest = Record<string, unknown>;
+
+export interface DesignPartnerEvidenceCheck {
+  check_id: string;
+  category: string;
+  status: 'passed' | 'warning' | 'blocked' | 'not_provided';
+  finding: string;
+  evidence_refs: string[];
+  required_action?: string | null;
+}
+
+export interface DesignPartnerRoiSummary {
+  currency: string;
+  evidence_level:
+    | 'none'
+    | 'replay_counterfactual'
+    | 'shadow_observed'
+    | 'execution_measured'
+    | 'finance_validated_execution';
+  submitted_case_count: number;
+  eligible_case_count: number;
+  estimated_case_savings: number;
+  realized_case_savings: number;
+  finance_validated: boolean;
+  roi_ratio?: number | null;
+  claim_allowed: string;
+}
+
+export interface DesignPartnerMoatLayer {
+  layer:
+    | 'data_integration'
+    | 'constraint_translation'
+    | 'validation_assets'
+    | 'workflow_embedding';
+  evidence_coverage_score: number;
+  status: 'nascent' | 'building' | 'validated';
+  customer_private_asset_count: number;
+  reusable_deidentified_asset_count: number;
+  strengths: string[];
+  gaps: string[];
+}
+
+export interface DesignPartnerPreflightResponse {
+  preflight_id: string;
+  generated_at: string;
+  evidence_scope: 'customer_provided' | 'synthetic_sample';
+  customer_ref: string;
+  site_id: string;
+  workshop_id: string;
+  data_fingerprint: string;
+  stage: 'data_repair' | 'replay_ready' | 'shadow_ready';
+  checks: DesignPartnerEvidenceCheck[];
+  roi_summary: DesignPartnerRoiSummary;
+  moat_layers: DesignPartnerMoatLayer[];
+  allowed_actions: string[];
+  blocked_actions: string[];
+  required_next_actions: string[];
+  generated_deliverables: string[];
+  claim_boundary: string;
+}
+
+export interface SandboxWritebackRequest {
+  decision_record_id: string;
+  target_environment?: 'sandbox';
+  dry_run?: boolean;
+  approval_note?: string;
+}
+
+export interface SandboxWritebackResponse {
+  incident_id: string;
+  decision_record_id: string;
+  target_environment: 'sandbox';
+  dry_run: boolean;
+  status: string;
+  instruction_count: number;
+  instructions: Record<string, unknown>[];
+  approved_by?: string | null;
+  claim_boundary: string;
 }
 
 export interface CaseRecord {
@@ -789,6 +967,337 @@ export interface EnterpriseImportResponse {
   source_system: string;
   readiness_report: DataReadinessReport;
   initial_schedule_request: InitialScheduleRequest;
+}
+
+export interface MappingValidationIssue {
+  code: string;
+  category: string;
+  severity: 'error' | 'warning' | string;
+  entity_type: string;
+  entity_id?: string | null;
+  field?: string | null;
+  message: string;
+}
+
+export interface MappingValidationReport {
+  total_records: number;
+  valid_records: number;
+  invalid_records: number;
+  missing_required_fields: number;
+  enum_errors: number;
+  time_parse_errors: number;
+  reference_integrity_errors: number;
+  blocking_errors: number;
+  warnings: number;
+  issues: MappingValidationIssue[];
+}
+
+export interface RealityHarnessPermission {
+  level: 'stop' | 'repair_only' | 'replay_only' | 'shadow_ready' | string;
+  allow_candidate_generation: boolean;
+  allow_historical_replay: boolean;
+  allow_shadow_mode: boolean;
+  allow_writeback: boolean;
+  reasons: string[];
+  required_next_actions: string[];
+}
+
+export interface RealityHarnessAuditStep {
+  step: string;
+  status: string;
+  evidence: Record<string, unknown>;
+}
+
+export interface P0RealityHarnessResponse {
+  source_system: string;
+  workshop_id: string;
+  mapping_report: MappingValidationReport;
+  readiness_report: DataReadinessReport;
+  permission: RealityHarnessPermission;
+  snapshot?: ScheduleSnapshot | null;
+  audit_steps: RealityHarnessAuditStep[];
+}
+
+export interface MachineCapabilityCalibration {
+  resource_id: string;
+  capabilities: string[];
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ResourceCalendarCalibration {
+  resource_id: string;
+  window_start: string;
+  window_end: string;
+  availability_type: string;
+  reason?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface FreezeWindowCalibration {
+  window_start: string;
+  window_end: string;
+  resource_id?: string | null;
+  operation_id?: string | null;
+  reason?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ChangeoverCalibration {
+  from_product_family: string;
+  to_product_family: string;
+  setup_minutes: number;
+  cost: number;
+  resource_id?: string | null;
+  approval_status: string;
+  approved_by?: string | null;
+  source_refs: string[];
+}
+
+export interface ReviewedConstraintCandidateInput {
+  candidate: ConstraintCandidate;
+  review_status: string;
+  replay_passed: boolean;
+  reviewer_id?: string | null;
+  source_refs: string[];
+}
+
+export interface ConstraintCalibrationPack {
+  workshop_id: string;
+  base_request?: InitialScheduleRequest | null;
+  machine_capabilities: MachineCapabilityCalibration[];
+  resource_calendars: ResourceCalendarCalibration[];
+  freeze_windows: FreezeWindowCalibration[];
+  changeovers: ChangeoverCalibration[];
+  rule_candidates: ReviewedConstraintCandidateInput[];
+}
+
+export interface ConstraintCalibrationConflict {
+  code: string;
+  severity: 'blocker' | 'warning' | 'info' | string;
+  message: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
+  source_refs: string[];
+}
+
+export interface CompiledConstraintCalibration {
+  workshop_id: string;
+  blocked: boolean;
+  applied_constraint_count: number;
+  omitted_candidate_count: number;
+  resource_capabilities: Record<string, string[]>;
+  resource_calendar: ResourceCalendarWindowInput[];
+  changeover_rules: ChangeoverRuleInput[];
+  freeze_windows: Record<string, unknown>[];
+  raw_data_patch: Record<string, unknown>;
+  conflicts: ConstraintCalibrationConflict[];
+  initial_schedule_request?: InitialScheduleRequest | null;
+}
+
+export interface ReplayValidationRequest {
+  historical_case_id: string;
+  accepted_schedule: ScheduleDetail;
+  candidate_plans: CandidatePlan[];
+  top_n: number;
+  time_tolerance_minutes: number;
+  acceptance_threshold: number;
+}
+
+export interface ReplayCandidateScore {
+  plan_id: string;
+  rank: number;
+  pass_quality_gate: boolean;
+  recommendation_policy: string;
+  operation_count: number;
+  matched_operation_count: number;
+  resource_match_rate: number;
+  within_time_tolerance_rate: number;
+  average_start_deviation_minutes: number;
+  average_end_deviation_minutes: number;
+  schedule_similarity_score: number;
+  reasons: string[];
+  quality_gate: PlanQualityGateReport;
+}
+
+export interface ReplayValidationResponse {
+  historical_case_id: string;
+  evaluated_plan_count: number;
+  top_n: number;
+  top_n_hit: boolean;
+  best_plan_id?: string | null;
+  best_similarity_score: number;
+  shadow_readiness_level: string;
+  decision: string;
+  candidate_scores: ReplayCandidateScore[];
+  required_next_actions: string[];
+}
+
+export interface PlannerShadowDecision {
+  decision_status: string;
+  selected_plan_id?: string | null;
+  decided_by: string;
+  decided_at: string;
+  override_reason?: string | null;
+  tweak_summary?: string | null;
+}
+
+export interface ShadowCaseCaptureRequest {
+  incident_payload: Record<string, unknown>;
+  schedule_snapshot_id: string;
+  candidate_plans: CandidatePlan[];
+  planner_decision: PlannerShadowDecision;
+  impact_report?: Record<string, unknown> | null;
+  recommendation_explanation?: Record<string, unknown> | null;
+  execution_outcome?: Record<string, unknown> | null;
+  source_refs: string[];
+  advisory_only: boolean;
+}
+
+export interface ShadowCaseCaptureResponse {
+  shadow_case_id: string;
+  captured_at: string;
+  advisory_only: boolean;
+  writeback_blocked: boolean;
+  feedback_capture_complete: boolean;
+  rule_candidate_recommended: boolean;
+  decision_status: string;
+  selected_plan_id?: string | null;
+  missing_fields: string[];
+  audit_bundle: Record<string, unknown>;
+}
+
+export interface AgentCostProfile {
+  provider: string;
+  model_name: string;
+  input_cost_per_million_tokens: number;
+  output_cost_per_million_tokens: number;
+}
+
+export interface AgentTraceObserveRequest {
+  run_id: string;
+  workflow_name: string;
+  trace: AgentTraceStep[];
+  cost_profiles: AgentCostProfile[];
+  cache_hit_count: number;
+}
+
+export interface AgentTraceCostSummary {
+  run_id: string;
+  workflow_name: string;
+  total_steps: number;
+  llm_steps: number;
+  deterministic_steps: number;
+  fallback_steps: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  estimated_cost_usd: number;
+  average_latency_ms: number;
+  p95_latency_ms: number;
+  cache_hit_count: number;
+  guardrails: string[];
+  fallback_reasons: string[];
+  cost_reduction_recommendations: string[];
+  decision_boundary: string;
+}
+
+export interface DecisionGraphNode {
+  node_id: string;
+  node_type: string;
+  label: string;
+  attributes: Record<string, unknown>;
+}
+
+export interface DecisionGraphEdge {
+  source_id: string;
+  target_id: string;
+  edge_type: string;
+  attributes: Record<string, unknown>;
+}
+
+export interface DecisionGraph {
+  snapshot_id: string;
+  workshop_id: string;
+  nodes: DecisionGraphNode[];
+  edges: DecisionGraphEdge[];
+}
+
+export interface DecisionGraphBuildRequest {
+  snapshot: ScheduleSnapshot;
+  incident?: Incident | null;
+  freeze_operation_ids: string[];
+}
+
+export interface DecisionGraphBuildResponse {
+  graph: DecisionGraph;
+  affected_operation_ids: string[];
+  downstream_operation_ids: string[];
+  repairable_frontier_ids: string[];
+  alternative_resources: Record<string, string[]>;
+  metrics: Record<string, number | string>;
+}
+
+export interface RecoveryOperatorRequest {
+  incident: Incident;
+  impact_report?: ImpactReport | null;
+  decision_graph: DecisionGraphBuildResponse;
+  allowed_operator_types: string[];
+  max_operator_count: number;
+}
+
+export interface RecoveryOperatorRecommendation {
+  operator_type: string;
+  label: string;
+  algorithm_family: string;
+  solver_backend: string;
+  scope: string;
+  rank: number;
+  why_selected: string[];
+  required_gates: string[];
+  expected_metrics: string[];
+  llm_role: string;
+}
+
+export interface RecoveryOperatorResponse {
+  incident_id: string;
+  repair_scope: string;
+  recommendations: RecoveryOperatorRecommendation[];
+  rejected_operator_types: string[];
+  claim_boundary: string;
+}
+
+export interface EvidenceGateFinding {
+  gate_name: string;
+  status: string;
+  severity: 'blocker' | 'warning' | 'info' | string;
+  message: string;
+  source_refs: string[];
+}
+
+export interface EvidenceGateRequest {
+  data_readiness?: DataReadinessReport | null;
+  candidate_plans: CandidatePlan[];
+  quality_gates: PlanQualityGateReport[];
+  source_refs: string[];
+  replay_validation?: ReplayValidationResponse | null;
+  shadow_capture?: ShadowCaseCaptureResponse | null;
+  planner_confirmed: boolean;
+}
+
+export interface EvidenceGateResponse {
+  allow_solve: boolean;
+  allow_recommendation: boolean;
+  allow_formal_explanation: boolean;
+  allow_shadow: boolean;
+  allow_writeback: boolean;
+  overall_status: string;
+  findings: EvidenceGateFinding[];
+  recommendation_policy: string;
 }
 
 export interface PlanQualityGateReport {

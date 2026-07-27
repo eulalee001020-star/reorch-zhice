@@ -1,0 +1,32 @@
+{
+  "profile": {
+    "adapter_id": "customer-mes-writeback",
+    "connector_id": "customer-mes-connector",
+    "adapter_version": "1.0.0",
+    "source_system": "CUSTOMER_MES",
+    "target_environment": "sandbox",
+    "command_types": ["reschedule_operation"],
+    "permission_scopes": ["schedule:read", "schedule:sandbox_write"],
+    "max_batch_size": 100,
+    "max_requests_per_minute": 60
+  },
+  "required_blocking_checks": [
+    "sandbox_target",
+    "idempotency_declared",
+    "compare_and_swap_declared",
+    "durable_outbox_declared",
+    "execution_receipts_declared",
+    "reconciliation_declared",
+    "compensation_declared",
+    "transient_retry_single_apply",
+    "outbox_probe_compensated",
+    "read_before_write_and_apply",
+    "duplicate_write_idempotency",
+    "stale_compare_and_swap_rejected",
+    "receipt_correlation",
+    "post_write_reconciliation",
+    "compensation_restores_business_state"
+  ],
+  "validity_days": 90,
+  "boundary": "Certification is version- and sandbox-specific; it is not a write permit."
+}

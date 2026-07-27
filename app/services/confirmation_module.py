@@ -28,7 +28,6 @@ from app.models.schedule import ScheduleDetail, ScheduleSnapshot
 from app.models.solver import (
     CandidatePlan,
     ConstraintValidationReport,
-    SolverChain,
 )
 from app.services.constraint_validator import ConstraintValidator
 
@@ -84,6 +83,7 @@ class ConfirmationModule:
         # In-memory stores for MVP
         self._pending_incidents: dict[UUID, datetime] = {}
         self._timeout_notifications: list[dict] = []
+        self._confirmed_plans: dict[UUID, CandidatePlan] = {}
 
     # ── RBAC enforcement (Req 7.7) ──────────────────────────────────
 
@@ -179,6 +179,7 @@ class ConfirmationModule:
             )
 
         confirmed_plan_id = selected_plan.plan_id
+        confirmed_plan = selected_plan
         derived_from_plan_id = selected_plan.plan_id
         is_manual_adjusted = False
         is_override = False
@@ -210,6 +211,12 @@ class ConfirmationModule:
 
             # New plan version ID
             confirmed_plan_id = uuid4()
+            confirmed_plan = selected_plan.model_copy(
+                update={
+                    "plan_id": confirmed_plan_id,
+                    "schedule_detail": adjusted_schedule,
+                }
+            )
 
         elif request.action == ConfirmAction.REJECT_AND_RESELECT:
             # Override (Req 7.5)
@@ -243,6 +250,7 @@ class ConfirmationModule:
 
         # Remove from pending (timeout tracking)
         self._pending_incidents.pop(request.incident_id, None)
+        self._confirmed_plans[confirmed_plan_id] = confirmed_plan
 
         return ConfirmResponse(
             confirmed_plan_id=confirmed_plan_id,
@@ -251,6 +259,10 @@ class ConfirmationModule:
             constraint_validation=constraint_report,
             decision_record_id=decision_record.decision_record_id,
         )
+
+    def get_confirmed_plan(self, plan_id: UUID) -> CandidatePlan | None:
+        """Return the exact accepted plan version, including micro-adjustments."""
+        return self._confirmed_plans.get(plan_id)
 
     # ── Timeout check (Req 7.8) ────────────────────────────────────
 

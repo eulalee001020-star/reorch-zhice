@@ -15,10 +15,15 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import APIKeyHeader
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.core.config import settings
+from app.services.oidc_auth import (
+    OIDCVerificationError,
+    OIDCTokenVerifier,
+    parse_role_mapping,
+)
 
 # ── Roles ───────────────────────────────────────────────────────────
 
@@ -33,6 +38,7 @@ class Role(str, Enum):
 # ── API Key scheme ──────────────────────────────────────────────────
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+_bearer = HTTPBearer(auto_error=False)
 
 class APIKeyRecord(BaseModel):
     user_id: str
@@ -87,13 +93,58 @@ class CurrentUser(BaseModel):
     role: Role
     username: str = "system"
     display_name: str = "System"
+    tenant_id: str = "default"
+    auth_source: str = "api_key"
+
+
+_OIDC_VERIFIER: OIDCTokenVerifier | None = None
+
+
+def _oidc_verifier() -> OIDCTokenVerifier:
+    global _OIDC_VERIFIER
+    if _OIDC_VERIFIER is None:
+        if not settings.auth.oidc_issuer or not settings.auth.oidc_audience:
+            raise OIDCVerificationError("oidc_configuration_incomplete")
+        _OIDC_VERIFIER = OIDCTokenVerifier(
+            issuer=settings.auth.oidc_issuer,
+            audience=settings.auth.oidc_audience,
+            algorithms=[
+                item.strip()
+                for item in settings.auth.oidc_algorithms.split(",")
+                if item.strip()
+            ],
+            role_claim=settings.auth.oidc_role_claim,
+            tenant_claim=settings.auth.oidc_tenant_claim,
+            role_mapping=parse_role_mapping(settings.auth.oidc_role_mapping),
+            jwks_url=settings.auth.oidc_jwks_url,
+        )
+    return _OIDC_VERIFIER
 
 
 async def get_current_user(
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
+    bearer: Annotated[
+        HTTPAuthorizationCredentials | None, Security(_bearer)
+    ] = None,
 ) -> CurrentUser:
     """Resolve the current user from the X-API-Key header."""
-    if api_key is None:
+    if bearer is not None and settings.auth.mode in {"oidc", "hybrid"}:
+        try:
+            principal = _oidc_verifier().verify(bearer.credentials)
+            return CurrentUser(
+                user_id=principal.user_id,
+                role=Role(principal.role),
+                username=principal.username,
+                display_name=principal.display_name,
+                tenant_id=principal.tenant_id,
+                auth_source="oidc",
+            )
+        except (OIDCVerificationError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=str(exc),
+            ) from exc
+    if api_key is None or settings.auth.mode == "oidc":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing X-API-Key header",
@@ -114,14 +165,29 @@ async def get_current_user(
 
 async def get_optional_current_user(
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
+    bearer: Annotated[
+        HTTPAuthorizationCredentials | None, Security(_bearer)
+    ] = None,
 ) -> CurrentUser:
     """Resolve current user when available, otherwise return a system user.
 
     This keeps local MVP endpoints usable while still allowing production API
     callers to attach auditable role/user context with ``X-API-Key``.
     """
+    if bearer is not None and settings.auth.mode in {"oidc", "hybrid"}:
+        return await get_current_user(api_key=api_key, bearer=bearer)
+    if api_key is None and (settings.auth.require_api_key or settings.auth.mode == "oidc"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-API-Key header",
+        )
     if api_key is None:
-        return CurrentUser(user_id="system", role=Role.IT_ADMIN)
+        return CurrentUser(
+            user_id="system",
+            role=Role.IT_ADMIN,
+            tenant_id="local-development",
+            auth_source="local_system",
+        )
     record = _API_KEY_STORE.get(api_key)
     if record is None:
         raise HTTPException(
@@ -138,6 +204,11 @@ async def get_optional_current_user(
 
 async def authenticate_user(username: str, password: str) -> LoginResponse:
     """Validate PoC credentials and return an API key-backed session."""
+    if settings.auth.mode == "oidc":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password login is disabled in OIDC mode",
+        )
     stored = _CREDENTIAL_STORE.get(username)
     if stored is None or stored[0] != password:
         raise HTTPException(

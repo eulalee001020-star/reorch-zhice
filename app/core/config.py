@@ -1,5 +1,7 @@
 """Application configuration via environment variables."""
 
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -77,8 +79,11 @@ class AppSettings(BaseSettings):
     name: str = "ReOrch 智策"
     version: str = "0.1.0"
     debug: bool = False
-    env: str = Field(default="development", description="development | staging | production")
+    env: str = Field(
+        default="development", description="development | staging | production"
+    )
     log_level: str = "INFO"
+    require_durable_persistence: bool = False
 
     # OpenTelemetry
     otel_service_name: str = "reorch-backend"
@@ -86,6 +91,10 @@ class AppSettings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
+
+    @property
+    def durable_persistence_required(self) -> bool:
+        return self.require_durable_persistence or self.env in {"staging", "production"}
 
 
 class AuthSettings(BaseSettings):
@@ -99,6 +108,22 @@ class AuthSettings(BaseSettings):
     """
 
     model_config = {"env_prefix": "AUTH_"}
+
+    require_api_key: bool = False
+    mode: Literal["api_key", "oidc", "hybrid"] = "api_key"
+    writeback_permit_secret: str = ""
+    recovery_approval_secret: str = ""
+    writeback_permit_ttl_seconds: int = Field(default=300, ge=30, le=1800)
+    oidc_issuer: str | None = None
+    oidc_audience: str | None = None
+    oidc_jwks_url: str | None = None
+    oidc_algorithms: str = "RS256"
+    oidc_role_claim: str = "roles"
+    oidc_tenant_claim: str = "tenant_id"
+    oidc_role_mapping: str = (
+        "planner=Planner,shop_floor_executor=Shop_Floor_Executor,"
+        "management=Management,it_admin=IT_Admin"
+    )
 
     users: str = (
         "planner:planner123:planner-1:Planner:planner-key-001:Planner,"
@@ -123,6 +148,10 @@ class IntegrationSettings(BaseSettings):
     mes_progress_path: str = "/api/execution/progress"
     mes_health_path: str = "/health"
     mes_format: str = "standard"
+    writeback_mode: Literal["disabled", "sandbox"] = "disabled"
+    mes_target_environment: Literal["local", "sandbox", "production"] = "local"
+    require_certified_writeback_adapter: bool = False
+    writeback_adapter_id: str = "mes-default"
 
     erp_aps_base_url: str | None = None
     erp_aps_api_key: str | None = None
@@ -150,6 +179,51 @@ class LLMSettings(BaseSettings):
     api_key: str | None = None
     model: str = "configured-small-agent-model"
     request_timeout_seconds: float = 12.0
+    max_attempts: int = Field(default=2, ge=1, le=4)
+    retry_backoff_seconds: float = Field(default=0.25, ge=0.0, le=5.0)
+    circuit_failure_threshold: int = Field(default=3, ge=1, le=20)
+    circuit_reset_seconds: float = Field(default=60.0, ge=1.0, le=3600.0)
+    max_payload_bytes: int = Field(default=65_536, ge=1024, le=1_048_576)
+
+
+class AgentRuntimeSettings(BaseSettings):
+    """Timeouts for the controlled decision workflow."""
+
+    model_config = {"env_prefix": "AGENT_"}
+
+    impact_timeout_seconds: float = Field(default=15.0, gt=0.0, le=120.0)
+    strategy_timeout_seconds: float = Field(default=15.0, gt=0.0, le=120.0)
+    solver_timeout_seconds: float = Field(default=65.0, gt=0.0, le=600.0)
+    evaluation_timeout_seconds: float = Field(default=15.0, gt=0.0, le=120.0)
+    explanation_timeout_seconds: float = Field(default=12.0, gt=0.0, le=120.0)
+
+
+class SolverRuntimeSettings(BaseSettings):
+    """Process-local capacity limits for CPU-heavy solver calls."""
+
+    model_config = {"env_prefix": "SOLVER_"}
+
+    max_concurrent_jobs: int = Field(default=2, ge=1, le=16)
+    queue_timeout_seconds: float = Field(default=2.0, ge=0.0, le=60.0)
+    cp_sat_workers: int = Field(default=4, ge=1, le=32)
+    max_model_operations: int = Field(default=2000, ge=10, le=100_000)
+    heuristic_budget_ratio: float = Field(default=0.20, ge=0.01, le=0.50)
+    heuristic_max_seconds: float = Field(default=2.0, ge=0.05, le=30.0)
+    initial_cp_sat_budget_ratio: float = Field(default=0.65, ge=0.20, le=0.95)
+    max_alns_iterations: int = Field(default=4, ge=0, le=20)
+
+
+class OperationalRuntimeSettings(BaseSettings):
+    """Durable state used by CDC, solve jobs, shadow, and evidence services."""
+
+    model_config = {"env_prefix": "RUNTIME_"}
+
+    database_url: str | None = None
+    local_database_path: str = "output/reorch_runtime.db"
+    default_max_queued_jobs: int = Field(default=20, ge=1, le=10000)
+    default_max_running_jobs: int = Field(default=2, ge=1, le=100)
+    default_max_operations_per_job: int = Field(default=10000, ge=1, le=1_000_000)
+    solve_lease_seconds: int = Field(default=30, ge=3, le=3600)
 
 
 class Settings(BaseSettings):
@@ -162,6 +236,9 @@ class Settings(BaseSettings):
     auth: AuthSettings = AuthSettings()
     integration: IntegrationSettings = IntegrationSettings()
     llm: LLMSettings = LLMSettings()
+    agent: AgentRuntimeSettings = AgentRuntimeSettings()
+    solver: SolverRuntimeSettings = SolverRuntimeSettings()
+    runtime: OperationalRuntimeSettings = OperationalRuntimeSettings()
 
 
 settings = Settings()

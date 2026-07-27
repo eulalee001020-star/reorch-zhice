@@ -7,13 +7,14 @@
  * - 3 buttons: Accept, Adjust, Reject
  * - Adjust mode: simple form for operation adjustments
  * - Reject: override reason modal (required)
- * - After confirm: show success + writeback progress
+ * - After confirm: keep MES untouched and offer an explicit sandbox dry-run
  *
  * Requirements: 13.1-13.12, 31.4, 31.7
  */
 
 import React, { useState } from 'react';
 import {
+  App as AntdApp,
   Card,
   Button,
   Tag,
@@ -23,11 +24,9 @@ import {
   Input,
   Space,
   Spin,
-  Progress,
   Divider,
   Form,
   InputNumber,
-  message,
 } from 'antd';
 import {
   CheckOutlined,
@@ -35,6 +34,7 @@ import {
   RollbackOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import {
   useWorkbenchStore,
@@ -42,16 +42,16 @@ import {
   useConfirmStore,
   useAuthStore,
 } from '@/stores';
-import { ConfirmAction, WritebackStatus, type WritebackStatusResponse } from '@/types';
-import { confirmPlan, getWritebackStatus, runPostDecisionLearning } from '@/api';
+import { ConfirmAction, type SandboxWritebackResponse } from '@/types';
+import { confirmPlan, runSandboxWriteback } from '@/api';
 import { exportDecisionPdf, exportDecisionExcel } from '@/api/exports';
-import type { PostDecisionLearningOutput } from '@/types';
 
 const { TextArea } = Input;
 
 type PanelMode = 'view' | 'adjust' | 'confirmed';
 
 export const ConfirmationPanel: React.FC = () => {
+  const { message } = AntdApp.useApp();
   const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
   const planSelectionOutput = usePlanStore((s) => s.planSelectionOutput);
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
@@ -62,15 +62,14 @@ export const ConfirmationPanel: React.FC = () => {
   const [mode, setMode] = useState<PanelMode>('view');
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [writebackProgress, setWritebackProgress] = useState<number | null>(null);
-  const [writebackStatus, setWritebackStatus] = useState<WritebackStatusResponse | null>(null);
+  const [confirmedAction, setConfirmedAction] = useState<ConfirmAction | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [writebackPreview, setWritebackPreview] = useState<SandboxWritebackResponse | null>(null);
 
   // Adjustment draft state
   const [adjustments, setAdjustments] = useState<Record<string, unknown>[]>([]);
   const [exportLoading, setExportLoading] = useState<string | null>(null);
   const [decisionRecordId, setDecisionRecordId] = useState<string | null>(null);
-  const [learningLoading, setLearningLoading] = useState(false);
-  const [learningResult, setLearningResult] = useState<PostDecisionLearningOutput | null>(null);
 
   if (!incidentContextId) {
     return (
@@ -85,25 +84,6 @@ export const ConfirmationPanel: React.FC = () => {
   const canConfirm = currentUser
     ? ['Planner', 'IT_Admin', 'Management'].includes(currentUser.role)
     : false;
-
-  const refreshWritebackStatus = async () => {
-    if (!incidentContextId) return;
-    const status = await getWritebackStatus(incidentContextId);
-    setWritebackStatus(status);
-    const progress = status.total_instructions > 0
-      ? Math.round(((status.success_count + status.failed_count) / status.total_instructions) * 100)
-      : status.status === WritebackStatus.SUCCESS
-        ? 100
-        : 0;
-    setWritebackProgress(progress);
-  };
-
-  const pollWritebackStatus = async () => {
-    for (let attempt = 0; attempt < 6; attempt += 1) {
-      await refreshWritebackStatus();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-  };
 
   const handleConfirm = async (action: ConfirmAction) => {
     if (!incidentContextId || !activePlanId) return;
@@ -124,32 +104,13 @@ export const ConfirmationPanel: React.FC = () => {
         confirmed_by: currentUser?.user_id,
       });
       setDecisionRecordId(confirmResponse.decision_record_id);
+      setConfirmedAction(action);
       setMode('confirmed');
-      message.success('方案已确认');
-      setLearningLoading(true);
-      runPostDecisionLearning({
-        decision_record_id: confirmResponse.decision_record_id,
-        incident_id: incidentContextId,
-        planner_id: currentUser?.user_id,
-        rule_text:
-          action === ConfirmAction.REJECT_AND_RESELECT
-            ? overrideReason
-            : undefined,
-        min_samples: 1,
-      })
-        .then((result) => {
-          setLearningResult(result);
-        })
-        .catch(() => {
-          message.warning('确认已完成，学习闭环证据暂未生成');
-        })
-        .finally(() => {
-          setLearningLoading(false);
-        });
-      pollWritebackStatus().catch(() => {
-        setWritebackProgress(null);
-        setWritebackStatus(null);
-      });
+      message.success(
+        action === ConfirmAction.REJECT_AND_RESELECT
+          ? '否决决定已记录'
+          : '方案已确认，尚未回写',
+      );
     } catch {
       message.error('确认失败，请重试');
     } finally {
@@ -160,6 +121,24 @@ export const ConfirmationPanel: React.FC = () => {
   const handleRejectConfirm = () => {
     setRejectModalOpen(false);
     handleConfirm(ConfirmAction.REJECT_AND_RESELECT);
+  };
+
+  const handleWritebackPreview = async () => {
+    if (!incidentContextId || !decisionRecordId) return;
+    setPreviewLoading(true);
+    try {
+      const preview = await runSandboxWriteback(incidentContextId, {
+        decision_record_id: decisionRecordId,
+        target_environment: 'sandbox',
+        dry_run: true,
+      });
+      setWritebackPreview(preview);
+      message.success('Sandbox 指令预览已生成，未修改外部系统');
+    } catch {
+      message.error('指令预览生成失败');
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   // Confirmed state
@@ -183,38 +162,40 @@ export const ConfirmationPanel: React.FC = () => {
 
     return (
       <Card title="推荐与确认" size="small">
-        <Alert message="方案已确认" type="success" showIcon style={{ marginBottom: 12 }} />
-        {writebackProgress !== null && (
+        <Alert
+          message={
+            confirmedAction === ConfirmAction.REJECT_AND_RESELECT
+              ? '否决决定已记录，不会生成回写指令'
+              : '方案已确认，尚未回写 MES'
+          }
+          description={
+            confirmedAction === ConfirmAction.REJECT_AND_RESELECT
+              ? '请返回方案比较区重新选择。'
+              : '下一步可生成 Sandbox 指令预览；预览不会修改任何外部系统。'
+          }
+          type={confirmedAction === ConfirmAction.REJECT_AND_RESELECT ? 'warning' : 'success'}
+          showIcon
+          style={{ marginBottom: 12 }}
+        />
+        {confirmedAction !== ConfirmAction.REJECT_AND_RESELECT && (
           <div style={{ marginBottom: 12 }}>
-            <div style={{ marginBottom: 8, fontSize: 13 }}>回写进度</div>
-            <Progress
-              percent={writebackProgress}
-              status={
-                writebackStatus?.status === WritebackStatus.FAILED
-                  ? 'exception'
-                  : writebackProgress === 100
-                    ? 'success'
-                    : 'active'
-              }
-            />
-            {writebackStatus && (
-              <Descriptions size="small" column={1} bordered>
-                <Descriptions.Item label="回写状态">
-                  <Tag
-                    color={
-                      writebackStatus.status === WritebackStatus.SUCCESS
-                        ? 'green'
-                        : writebackStatus.status === WritebackStatus.PARTIAL_SUCCESS
-                          ? 'orange'
-                          : 'red'
-                    }
-                  >
-                    {writebackStatus.status}
-                  </Tag>
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              loading={previewLoading}
+              onClick={handleWritebackPreview}
+            >
+              生成 Sandbox 指令预览
+            </Button>
+            {writebackPreview && (
+              <Descriptions size="small" column={1} bordered style={{ marginTop: 12 }}>
+                <Descriptions.Item label="环境">
+                  <Tag color="blue">Sandbox dry-run</Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="指令统计">
-                  {writebackStatus.success_count}/{writebackStatus.total_instructions} 成功，
-                  {writebackStatus.failed_count} 失败
+                <Descriptions.Item label="指令数">
+                  {writebackPreview.instruction_count}
+                </Descriptions.Item>
+                <Descriptions.Item label="系统影响">
+                  未修改外部系统
                 </Descriptions.Item>
               </Descriptions>
             )}
@@ -223,38 +204,12 @@ export const ConfirmationPanel: React.FC = () => {
         <Divider style={{ margin: '12px 0' }} />
         <div style={{ marginBottom: 12 }}>
           <div style={{ marginBottom: 8, fontSize: 13 }}>学习闭环证据</div>
-          {learningLoading ? (
-            <Spin size="small" />
-          ) : learningResult ? (
-            <Space direction="vertical" size={6} style={{ width: '100%' }}>
-              <Space size={[4, 4]} wrap>
-                {learningResult.trace.map((step) => (
-                  <Tag key={step.agent_name} color="purple">
-                    {step.agent_name}
-                  </Tag>
-                ))}
-              </Space>
-              <Descriptions size="small" column={1} bordered>
-                <Descriptions.Item label="规则候选">
-                  {learningResult.rule_candidate_output.candidates.length} 条，
-                  {learningResult.rule_candidate_output.requires_human_review ? '需人工审核' : '无需审核'}
-                </Descriptions.Item>
-                <Descriptions.Item label="案例沉淀">
-                  {learningResult.case_memory_output.case_title}
-                </Descriptions.Item>
-                <Descriptions.Item label="偏好学习">
-                  {learningResult.preference_learning_output.recommended_use}，
-                  样本 {learningResult.preference_learning_output.sample_count}
-                </Descriptions.Item>
-              </Descriptions>
-            </Space>
-          ) : (
-            <Alert
-              message="等待 RuleCandidate → CaseMemory → PreferenceLearning 结果"
-              type="info"
-              showIcon
-            />
-          )}
+          <Alert
+            message="等待执行结果后再启动学习闭环"
+            description="确认本身不构成效果证据；采集 ExecutionResult 后再运行 RuleCandidate → CaseMemory → PreferenceLearning。"
+            type="info"
+            showIcon
+          />
         </div>
         <Divider style={{ margin: '12px 0' }} />
         <Space>
@@ -278,31 +233,37 @@ export const ConfirmationPanel: React.FC = () => {
   }
 
   return (
-    <Card title="推荐与确认" size="small">
+    <Card title="计划员确认" size="small">
       {pso ? (
         <>
           {/* Recommendation summary */}
           <Descriptions size="small" column={1} bordered style={{ marginBottom: 12 }}>
-            <Descriptions.Item label="推荐方案">
+            <Descriptions.Item label="系统建议方案">
               <Tag color="blue">{pso.recommended_plan_id.slice(0, 8)}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="推荐置信度">
+            <Descriptions.Item label="建议置信度">
               <Tag color={pso.recommendation_confidence >= 0.7 ? 'green' : 'orange'}>
                 {(pso.recommendation_confidence * 100).toFixed(0)}%
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="自动预选">
+            <Descriptions.Item label="默认待确认">
               {pso.auto_preselected ? (
-                <Tag color="cyan">是</Tag>
+                <Tag color="cyan">已置顶</Tag>
               ) : (
-                <Tag color="default">否</Tag>
+                <Tag color="default">无</Tag>
               )}
             </Descriptions.Item>
           </Descriptions>
+          <Alert
+            message="系统只给出待确认建议；生产执行和回写必须经过计划员或主管授权。"
+            type="info"
+            showIcon
+            style={{ marginBottom: 12 }}
+          />
 
           {/* Core reasons */}
           <div style={{ marginBottom: 8 }}>
-            <div style={{ fontWeight: 500, marginBottom: 4, fontSize: 13 }}>核心推荐原因</div>
+            <div style={{ fontWeight: 500, marginBottom: 4, fontSize: 13 }}>建议依据</div>
             {pso.reason_codes.map((r, i) => (
               <Tag key={i} style={{ marginBottom: 4 }}>{r}</Tag>
             ))}

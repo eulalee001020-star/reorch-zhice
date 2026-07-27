@@ -45,6 +45,7 @@ _ALLOWED_MACHINE_STATUSES = {
     "offline",
     "unavailable",
     "busy",
+    "degraded",
 }
 _ALLOWED_INCIDENT_TYPES = {
     "machine_down",

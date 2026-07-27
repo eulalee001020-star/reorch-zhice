@@ -7,12 +7,12 @@ Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7
 from __future__ import annotations
 
 import logging
-from uuid import UUID
 
 from app.models.enums import GoalMode
 from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
 from app.models.solver import CandidatePlan
+from app.services.manual_weights_validator import ManualWeightsValidator
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,17 @@ _GOAL_WEIGHTS: dict[str, dict[str, float]] = {
     },
 }
 
+
+def resolve_goal_weights(
+    goal_mode: GoalMode | str,
+    manual_weights: dict[str, float] | None = None,
+) -> dict[str, float]:
+    """Resolve one auditable weight profile for evaluation and recommendation."""
+    if manual_weights is not None:
+        return ManualWeightsValidator().validate(manual_weights)
+    value = goal_mode if isinstance(goal_mode, str) else goal_mode.value
+    return dict(_GOAL_WEIGHTS.get(value, _GOAL_WEIGHTS[GoalMode.BALANCED.value]))
+
 # Score unit descriptions (Req 5.7)
 _SCORE_UNIT_DESCRIPTIONS: dict[str, str] = {
     "delayed_order_count": "Number of work orders whose completion exceeds due date (lower is better)",
@@ -107,7 +118,7 @@ class EvaluationCenter:
             Business objective mode driving weight allocation.
         """
         goal_mode_str = goal_mode if isinstance(goal_mode, str) else goal_mode.value
-        weights = _GOAL_WEIGHTS.get(goal_mode_str, _GOAL_WEIGHTS[GoalMode.BALANCED.value])
+        weights = resolve_goal_weights(goal_mode_str)
 
         # Pre-compute baseline metrics from the snapshot
         baseline = _compute_baseline_metrics(snapshot)
@@ -139,7 +150,7 @@ class EvaluationCenter:
 
         return ComparisonMatrix(
             rows=rows,
-            normalization_method="min-max per dimension, weighted sum",
+            normalization_method="fixed bounded transforms per dimension, weighted sum",
             score_unit_descriptions=dict(_SCORE_UNIT_DESCRIPTIONS),
             baseline_snapshot_id=snapshot_id,
         )

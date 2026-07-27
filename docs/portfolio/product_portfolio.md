@@ -7,7 +7,7 @@
 
 ReOrch 智策解决的是复杂离散制造中“计划被现场异常打断后，如何快速形成可信、可执行、可追溯的新方案”的问题。系统不把大模型包装成万能排产器，而是用 AI 组织异常理解、规则候选、推荐解释、案例沉淀和偏好学习，再由确定性影响分析、求解器、质量门、数字孪生和计划员确认保证生产责任。
 
-当前进度：MVP 已完成，正在合作实验室进行初步试用和验证。现阶段目标是验证流程可用性、数据适配、约束覆盖、计划员接受度和风险提示效果；后续会根据试用反馈继续完善。
+当前进度：MVP 已完成，公开证据来自自动化测试、合成回放和数字孪生演练。现阶段目标是通过 Design Partner 验证流程可用性、数据适配、约束覆盖、计划员接受度和风险提示效果。
 
 为了避免把产品叙事压窄成单一制造场景，ReOrch 在作品集中保留“双层结构”：底层是通用的高约束异常决策内核，上层可以按行业替换领域对象、硬约束、评价指标和解释语言。当前可互动 demo 以离散制造的瓶颈设备异常为主；同时基于 NGS-LRSP 论文和本地 synthetic / digital-twin-style 实验包，重构了一个 NGS 实验室特化版，用来展示同一套内核如何迁移到样本链路、QC、试剂、hold-time、pool/run、index compatibility 和实验室审计更严格的场景。详见 [ngs_lab_specialized_portfolio.md](ngs_lab_specialized_portfolio.md)。
 
@@ -29,7 +29,7 @@ ReOrch 智策解决的是复杂离散制造中“计划被现场异常打断后�
 | 失败样本库 | [../validation/failure_case_library.md](../validation/failure_case_library.md) |
 | LLM Agent 离线评测 | [../validation/llm_agent_offline_eval.md](../validation/llm_agent_offline_eval.md) |
 | Data Readiness 停损规则 | [../integration/data_readiness_stop_rules.md](../integration/data_readiness_stop_rules.md) |
-| 验收与验证证据 | `pytest -q`、`frontend build`、`docs/demo/demo_validation_report.md`、`docs/validation/digital_twin_validation_pack.md`、合作实验室试用反馈 |
+| 验收与验证证据 | `pytest -q`、`frontend build`、`docs/demo/demo_validation_report.md`、`docs/validation/digital_twin_validation_pack.md` |
 
 ## 2. 为什么选择这个场景
 
@@ -44,7 +44,7 @@ ReOrch 智策解决的是复杂离散制造中“计划被现场异常打断后�
 - 瓶颈资源冲突。
 - 换线、夹具、刀具、人员技能等现场隐性约束。
 
-项目的关键判断是把产品切口收窄到“异常响应层”，而不是直接挑战成熟 APS 的全厂级计划能力。首期场景进一步收敛为“关键瓶颈设备故障或停机导致急单延期风险时的局部重排决策”。这样更符合 B 端产品从实验室试用、单车间验证、单异常高频痛点逐步推进的落地规律，也能避免一开始就把设备故障、插单、物料延期和质量返工都包装成同一个商业切口。
+项目的关键判断是把产品切口收窄到“异常响应层”，而不是直接挑战成熟 APS 的全厂级计划能力。首期场景进一步收敛为“关键瓶颈设备故障或停机导致急单延期风险时的局部重排决策”。这符合 B 端产品从受控演练、单车间验证、单异常高频痛点逐步推进的落地规律，也避免把设备故障、插单、物料延期和质量返工包装成一个未经验证的商业切口。
 
 ### 2.1 用户与场景拆解
 
@@ -80,7 +80,7 @@ AI 的增量价值不是“自动排产”，而是把模糊异常输入转成�
 | Agent/Workflow 设计 | Incident Intake、Impact、Strategy、Solver、Explanation、Case Memory、Audit 分工，并明确五个 AI 增量 Agent 的产品边界 | [workflow_prompts_io.md](workflow_prompts_io.md)、[ai_increment_agent_design.md](ai_increment_agent_design.md) |
 | 工程落地意识 | FastAPI + React + Docker Compose + CI + mock integration + sandbox demo | 根目录 README 与 `.github/workflows/ci.yml` |
 | 安全治理意识 | schema 校验、硬约束质量门、置信度降级、人工确认、幂等、审计 | [trust_quality_gate.md](trust_quality_gate.md) |
-| 商业判断 | 不夸大“AI 自动排产”，先用数字孪生和实验室试用验证价值，再推进客户现场试点 | [market_benchmark.md](market_benchmark.md) |
+| 商业判断 | 不夸大“AI 自动排产”，先用数字孪生和受控演练验证方法，再推进客户现场试点 | [market_benchmark.md](market_benchmark.md) |
 
 ## 4. 产品设计原则
 
@@ -99,7 +99,7 @@ AI 的增量价值不是“自动排产”，而是把模糊异常输入转成�
 - 不绕过硬约束校验。
 - 不绕过计划员确认直接写回 MES/APS。
 - 不把未验证案例直接升级为硬规则。
-- 不把 sandbox、实验室试用或 synthetic benchmark 宣称为客户生产系统正式上线。
+- 不把 sandbox、受控实验室演练或 synthetic benchmark 宣称为客户生产系统正式上线。
 
 在工业场景，可信 AI 产品的关键不是“让模型更自主”，而是让模型在正确的责任边界内提高协同效率和解释效率。
 
@@ -167,7 +167,7 @@ LLM 结果不能因为表达自信就直接进入生产决策。ReOrch 将结果
 | Demo 数据校验 | 69 条记录，0 blocking error |
 | Sandbox 数据 | 12 个工单、48 道工序、8 台设备、1 个核心异常 |
 | 数字孪生验证 | 5 套初始方案、5 个受影响工序、1 个可行重排方案、风险分 0.2462、单次价值估算 7385 元 |
-| 实验室验证 | MVP 已进入合作实验室初步试用 |
+| 实验室验证 | 已具备受控演练条件，尚无 Design Partner 验证证据 |
 | 安全边界 | 人工确认前不回写，生产接入从只读和 shadow mode 开始 |
 | 上线判断 | 当前支持受控试用和验证，不建议直接生产上线 |
 
@@ -186,7 +186,7 @@ LLM 结果不能因为表达自信就直接进入生产决策。ReOrch 将结果
 | 样本 | 现象 | 处理 |
 | --- | --- | --- |
 | 数字孪生重排扰动较大 | `large_schedule_perturbation`，质量门置信度为 `medium` | 不自动写回，要求计划员确认 |
-| 约束覆盖有限 | 质量门 warning：constraint coverage limited | 在合作实验室验证物料、人员、工装夹具等现场约束 |
+| 约束覆盖有限 | 质量门 warning：constraint coverage limited | 在 Design Partner 场景验证物料、人员、工装夹具等现场约束 |
 | 生产上线边界 | MVP 可受控试用，但不适合无人值守自动调度 | 上线就绪评估要求只读接入、shadow mode、回滚和审计验收 |
 
 ## 7. 三分钟项目介绍
@@ -211,8 +211,8 @@ prompt 工作流和实验室验证路径，展示从问题定义到受控验证�
 
 | 阶段 | 目标 | 成功标准 |
 | --- | --- | --- |
-| P0 | MVP 完成与合作实验室试用 | 10-30 分钟内生成可解释候选方案，收集试用反馈 |
-| P1 | 数字孪生 replay/shadow 代理 + 合作实验室复核 | Top-N 覆盖、低风险场景采纳率和计划员反馈可量化 |
+| P0 | MVP 完成与受控实验室演练 | 10-30 分钟内生成可解释候选方案，完成演练证据 |
+| P1 | 数字孪生 replay/shadow 代理 + Design Partner 复核 | Top-N 覆盖、低风险场景采纳率和计划员反馈可量化 |
 | P2 | 客户现场受控试点 | 只读接入、人工确认 dry-run、审计包和回滚预案齐备 |
 | P3 | 生产小范围上线 | 全链路审计、幂等、防重复提交、失败回滚和运维验收齐备 |
 

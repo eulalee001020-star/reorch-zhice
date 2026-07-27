@@ -1,0 +1,42 @@
+{
+  "tenant_id": "CUSTOMER_TENANT",
+  "constraint_id": "resource-eligibility",
+  "constraint_type": "resource_eligibility",
+  "version": "1.0.0",
+  "criticality": "hard",
+  "authority_roles": ["operation_authority"],
+  "parameter_schema": {
+    "operation_id": "string",
+    "eligible_resource_ids": "array"
+  },
+  "compiler_ref": "customer_pack.resource_eligibility_compiler",
+  "validator_ref": "customer_pack.resource_eligibility_validator",
+  "replay_evidence": [
+    {
+      "case_id": "CUSTOMER-CASE-001",
+      "passed": true,
+      "executed_at": "2026-07-12T08:00:00+00:00",
+      "result_fingerprint": "REPLACE_WITH_EXECUTED_RESULT_SHA256",
+      "evidence_scope": "customer_historical",
+      "source_refs": ["customer:case-001:source", "customer:case-001:result"]
+    },
+    {
+      "case_id": "CUSTOMER-CASE-002",
+      "passed": true,
+      "executed_at": "2026-07-12T08:05:00+00:00",
+      "result_fingerprint": "REPLACE_WITH_EXECUTED_RESULT_SHA256",
+      "evidence_scope": "customer_historical",
+      "source_refs": ["customer:case-002:source", "customer:case-002:result"]
+    },
+    {
+      "case_id": "CUSTOMER-CASE-003",
+      "passed": true,
+      "executed_at": "2026-07-12T08:10:00+00:00",
+      "result_fingerprint": "REPLACE_WITH_EXECUTED_RESULT_SHA256",
+      "evidence_scope": "customer_historical",
+      "source_refs": ["customer:case-003:source", "customer:case-003:result"]
+    }
+  ],
+  "proposed_by_agent": false,
+  "description": "Hard resource eligibility constraint confirmed by customer owner."
+}

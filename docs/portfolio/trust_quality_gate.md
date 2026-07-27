@@ -13,7 +13,7 @@ ReOrch 的可信性设计不是让 LLM 自证正确，而是把模型输出放�
 | 置信度 | 低置信度不自动预选，提示计划员对比候选方案 | 已实现 | `IncidentAgent.confidence`、`StrategyRecommendation.confidence`、`recommendation_confidence`、前端低置信度提示 |
 | 审计 | 推荐、确认、覆盖、回写、执行反馈均可留痕 | 核心链路已实现，数字孪生已形成审计包结构 | `DecisionRecord`、`audit_metadata`、`AgentTraceStep`、`quality_gates`、`validation_evidence.audit_package_proxy` |
 
-结论：当前已经具备 MVP 级可信性质量门，足以支撑合作实验室试用、数字孪生 replay/shadow 代理验证和受控 demo。生产级版本需要把数字孪生验证包迁移到客户现场数据，并完成回写失败处置、审计导出格式和运维验收。
+结论：当前已经具备 MVP 级可信性质量门，足以支撑受控实验室演练、数字孪生 replay/shadow 代理验证和受控 demo。生产级版本需要把数字孪生验证包迁移到客户现场数据，并完成回写失败处置、审计导出格式和运维验收。
 
 ## 2. 质量门如何工作
 
@@ -66,7 +66,7 @@ LLM/Agent 输出
 | 缺口 | 为什么重要 | 后续补强 |
 | --- | --- | --- |
 | 逐条解释引用 | 数字孪生已输出 source refs，但客户现场需要绑定真实数据主键 | 将 `validation_evidence.source_refs` 接到客户工单、工序、设备、KPI、约束报告 |
-| 业务风险阈值 | 数字孪生已输出风险分、质量门置信度和风险标记，但不同工厂阈值不同 | 用合作实验室反馈和客户历史异常校准延期、换线、扰动、瓶颈阈值 |
+| 业务风险阈值 | 数字孪生已输出风险分、质量门置信度和风险标记，但不同工厂阈值不同 | 用 Design Partner 反馈和客户历史异常校准延期、换线、扰动、瓶颈阈值 |
 | replay / shadow 数据 | 数字孪生已提供代理指标，但还不是客户真实生产数据 | 进入只读接入后，用真实历史异常和计划员并行决策复核 |
 | 生产级审计导出 | 数字孪生已有审计包结构，正式试点需要导出格式和签名留痕 | 生成 decision audit package：输入、输出、版本、确认、回写、执行反馈 |
 

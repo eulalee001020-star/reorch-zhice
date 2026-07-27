@@ -1,0 +1,5 @@
+work_order_id,product_id,product_name,quantity,priority,due_time,status
+WO-P0-001,P-AXLE-A,Drive Axle A,120,URGENT,2026-05-14T20:00:00+08:00,released
+WO-P0-002,P-AXLE-B,Drive Axle B,80,HIGH,2026-05-14T21:00:00+08:00,released
+WO-P0-003,P-HOUSING-A,Gear Housing A,60,NORMAL,2026-05-15T12:00:00+08:00,released
+

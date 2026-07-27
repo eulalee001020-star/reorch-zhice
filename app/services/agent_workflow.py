@@ -7,11 +7,17 @@ writeback remain deterministic services or optimization tools.
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import json
 import re
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Literal, TypeVar
 from uuid import UUID, uuid4
 
+from app.core.config import settings
 from app.models.agent import (
     AgentDecisionFlowRequest,
     AgentDecisionFlowResponse,
@@ -43,6 +49,7 @@ from app.models.schedule import ScheduleSnapshot
 from app.models.solver import CandidatePlan
 from app.models.strategy import StrategyRecommendation
 from app.services.evaluation_center import EvaluationCenter
+from app.services.data_readiness import DataReadinessService
 from app.services.explainability_layer import ExplainabilityLayer
 from app.services.hybrid_solver import HybridSolver
 from app.services.impact_analysis_engine import ImpactAnalysisEngine
@@ -71,6 +78,7 @@ _GENERIC_RESOURCE_RE = re.compile(
     flags=re.IGNORECASE,
 )
 _CLOCK_RE = re.compile(r"(?:after\s*)?([01]?\d|2[0-3]):([0-5]\d)", re.IGNORECASE)
+_StageResult = TypeVar("_StageResult")
 
 
 class AgentWorkflowError(Exception):
@@ -79,6 +87,16 @@ class AgentWorkflowError(Exception):
 
 class AgentWorkflowNotFoundError(AgentWorkflowError):
     """Raised when a required persisted object cannot be found."""
+
+
+class AgentWorkflowStageError(AgentWorkflowError):
+    """Raised when a mandatory workflow stage fails or exceeds its budget."""
+
+    def __init__(self, stage: str, reason: str, *, retryable: bool) -> None:
+        super().__init__(f"{stage}:{reason}")
+        self.stage = stage
+        self.reason = reason
+        self.retryable = retryable
 
 
 @dataclass(frozen=True)
@@ -101,6 +119,11 @@ def _trace(
     freedom_level: str,
     llm_allowed: bool,
     llm_result: LLMJsonResult | None = None,
+    stage_status: Literal[
+        "completed", "degraded", "blocked", "timed_out"
+    ] = "completed",
+    input_fingerprint: str | None = None,
+    evidence_refs: list[str] | None = None,
     fallback_reason: str | None = None,
     deterministic_tools: list[str] | None = None,
     guardrail: str,
@@ -117,6 +140,10 @@ def _trace(
         latency_ms=llm_result.latency_ms if llm_result else None,
         input_tokens=llm_result.input_tokens if llm_result else None,
         output_tokens=llm_result.output_tokens if llm_result else None,
+        attempt_count=llm_result.attempt_count if llm_result else 1,
+        stage_status=stage_status,
+        input_fingerprint=input_fingerprint,
+        evidence_refs=evidence_refs or [],
         fallback_reason=fallback_reason,
         deterministic_tools=deterministic_tools or [],
         guardrail=guardrail,
@@ -131,6 +158,55 @@ def _default_preference_profile(planner_id: str) -> PreferenceProfile:
         override_history=[],
         updated_at=datetime.now(tz=timezone.utc),
     )
+
+
+async def _run_stage(
+    stage: str,
+    awaitable: Awaitable[_StageResult],
+    timeout_seconds: float,
+) -> _StageResult:
+    try:
+        return await asyncio.wait_for(awaitable, timeout=timeout_seconds)
+    except TimeoutError as exc:
+        raise AgentWorkflowStageError(
+            stage,
+            f"timeout_after_{timeout_seconds:g}s",
+            retryable=True,
+        ) from exc
+    except AgentWorkflowError:
+        raise
+    except Exception as exc:
+        raise AgentWorkflowStageError(
+            stage,
+            f"{type(exc).__name__}",
+            retryable=False,
+        ) from exc
+
+
+def _workflow_fingerprint(
+    request: AgentDecisionFlowRequest,
+    incident: Incident,
+    snapshot: ScheduleSnapshot | None,
+) -> str:
+    payload = {
+        "request": request.model_dump(mode="json"),
+        "incident": incident.model_dump(mode="json"),
+        "snapshot": {
+            "snapshot_id": str(snapshot.snapshot_id),
+            "snapshot_version": snapshot.snapshot_version,
+            "snapshot_hash": snapshot.snapshot_hash,
+            "captured_at": snapshot.captured_at.isoformat(),
+        }
+        if snapshot
+        else None,
+    }
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 class IncidentAgent:
@@ -203,7 +279,11 @@ class IncidentAgent:
             llm_allowed=True,
             llm_result=llm_result,
             fallback_reason=fallback_reason,
-            deterministic_tools=["keyword_classifier", "resource_regex", "duration_parser"],
+            deterministic_tools=[
+                "keyword_classifier",
+                "resource_regex",
+                "duration_parser",
+            ],
             guardrail=(
                 "字段补全必须带置信度；低置信度或非求解支持类型进入人工确认，"
                 "不会自动进入求解流程。"
@@ -291,22 +371,26 @@ class StrategyAgent:
         from app.api.analysis import _strategy_cache
 
         _strategy_cache[str(impact_report.incident_id)] = recommendation
-        return recommendation, preference_profile, _trace(
-            agent_name="Strategy Agent",
-            input_summary=(
-                f"affected_orders={len(impact_report.affected_work_orders)}, "
-                f"downtime={estimated_repair_time_minutes:.1f}min"
-            ),
-            output_summary=(
-                f"strategy={recommendation.strategy_type}, "
-                f"confidence={recommendation.confidence:.2f}"
-            ),
-            freedom_level="medium",
-            llm_allowed=True,
-            deterministic_tools=["StrategySelector"],
-            guardrail=(
-                "策略依据来自影响工序、受影响订单、downtime、slack、priority、"
-                "可替代机器和设备负载等规则因子。"
+        return (
+            recommendation,
+            preference_profile,
+            _trace(
+                agent_name="Strategy Agent",
+                input_summary=(
+                    f"affected_orders={len(impact_report.affected_work_orders)}, "
+                    f"downtime={estimated_repair_time_minutes:.1f}min"
+                ),
+                output_summary=(
+                    f"strategy={recommendation.strategy_type}, "
+                    f"confidence={recommendation.confidence:.2f}"
+                ),
+                freedom_level="medium",
+                llm_allowed=True,
+                deterministic_tools=["StrategySelector"],
+                guardrail=(
+                    "策略依据来自影响工序、受影响订单、downtime、slack、priority、"
+                    "可替代机器和设备负载等规则因子。"
+                ),
             ),
         )
 
@@ -352,7 +436,9 @@ class SolverAgent:
             if not generated:
                 continue
 
-            if _strategy_value(current_strategy.strategy_type) == _strategy_value(strategy.strategy_type):
+            if _strategy_value(current_strategy.strategy_type) == _strategy_value(
+                strategy.strategy_type
+            ):
                 candidates.extend(generated)
             else:
                 candidates.append(generated[0])
@@ -384,7 +470,11 @@ class SolverAgent:
             ),
             freedom_level="none",
             llm_allowed=False,
-            deterministic_tools=["SolverPolicyOrchestrator", "HybridSolver", "ConstraintValidator"],
+            deterministic_tools=[
+                "SolverPolicyOrchestrator",
+                "HybridSolver",
+                "ConstraintValidator",
+            ],
             guardrail=(
                 "不能自由生成方案，必须调用排程算法和约束校验；"
                 "若推荐策略不足 Top-K，补充对照策略候选供计划员比较。"
@@ -420,19 +510,25 @@ class EvaluationAgent:
             manual_weights=manual_weights,
         )
         recommendation = await PlanRecommendationEngine().recommend(selection_input)
-        await persist_plan_recommendation(incident.incident_id, recommendation, user_id=user_id)
+        await persist_plan_recommendation(
+            incident.incident_id, recommendation, user_id=user_id
+        )
 
         from app.api.solver import _recommendation_store
 
         _recommendation_store[str(incident.incident_id)] = recommendation
-        return matrix, recommendation, _trace(
-            agent_name="Evaluation Agent",
-            input_summary=f"candidate_count={len(candidates)}, goal_mode={goal_mode}",
-            output_summary=f"recommended_plan={recommendation.recommended_plan_id}",
-            freedom_level="none",
-            llm_allowed=False,
-            deterministic_tools=["EvaluationCenter", "PlanRecommendationEngine"],
-            guardrail="只计算指标对比和推荐排序，不能篡改候选方案数据。",
+        return (
+            matrix,
+            recommendation,
+            _trace(
+                agent_name="Evaluation Agent",
+                input_summary=f"candidate_count={len(candidates)}, goal_mode={goal_mode}",
+                output_summary=f"recommended_plan={recommendation.recommended_plan_id}",
+                freedom_level="none",
+                llm_allowed=False,
+                deterministic_tools=["EvaluationCenter", "PlanRecommendationEngine"],
+                guardrail="只计算指标对比和推荐排序，不能篡改候选方案数据。",
+            ),
         )
 
 
@@ -454,14 +550,18 @@ class ExplanationAgent:
             matched_cases=[],
         )
         solver_chain_explanation = await layer.explain_solver_chain(recommended_plan)
-        return recommendation_explanation, solver_chain_explanation, _trace(
-            agent_name="Explanation Agent",
-            input_summary=f"recommended_plan={recommended_plan.plan_id}",
-            output_summary="recommendation_explanation_and_solver_chain",
-            freedom_level="medium",
-            llm_allowed=True,
-            deterministic_tools=["ExplainabilityLayer"],
-            guardrail="可以自然语言表达，但不能修改指标、方案和约束校验结果。",
+        return (
+            recommendation_explanation,
+            solver_chain_explanation,
+            _trace(
+                agent_name="Explanation Agent",
+                input_summary=f"recommended_plan={recommended_plan.plan_id}",
+                output_summary="recommendation_explanation_and_solver_chain",
+                freedom_level="medium",
+                llm_allowed=True,
+                deterministic_tools=["ExplainabilityLayer"],
+                guardrail="可以自然语言表达，但不能修改指标、方案和约束校验结果。",
+            ),
         )
 
 
@@ -501,7 +601,9 @@ class RuleCandidateAgent:
                     "rule_text": text,
                     "context": request.context,
                     "source": request.source,
-                    "incident_id": str(request.incident_id) if request.incident_id else None,
+                    "incident_id": str(request.incident_id)
+                    if request.incident_id
+                    else None,
                     "decision_record_id": (
                         str(request.decision_record_id)
                         if request.decision_record_id
@@ -544,7 +646,11 @@ class RuleCandidateAgent:
             llm_allowed=True,
             llm_result=llm_result,
             fallback_reason=fallback_reason,
-            deterministic_tools=["constraint_classifier", "resource_regex", "time_parser"],
+            deterministic_tools=[
+                "constraint_classifier",
+                "resource_regex",
+                "time_parser",
+            ],
             guardrail=(
                 "只生成 pending_human_review 候选规则，不发布 hard constraint，"
                 "不直接修改求解器权重或生产主数据。"
@@ -578,7 +684,9 @@ class FeedbackAgent:
                 user_payload={
                     "override_text": text,
                     "planner_id": request.planner_id,
-                    "incident_id": str(request.incident_id) if request.incident_id else None,
+                    "incident_id": str(request.incident_id)
+                    if request.incident_id
+                    else None,
                     "decision_record_id": (
                         str(request.decision_record_id)
                         if request.decision_record_id
@@ -622,7 +730,11 @@ class FeedbackAgent:
             llm_allowed=True,
             llm_result=llm_result,
             fallback_reason=fallback_reason,
-            deterministic_tools=["override_classifier", "resource_regex", "time_parser"],
+            deterministic_tools=[
+                "override_classifier",
+                "resource_regex",
+                "time_parser",
+            ],
             guardrail="只沉淀归因和候选规则，不直接改排程约束或写回策略。",
         )
 
@@ -691,7 +803,9 @@ class PreferenceLearningAgent:
     def __init__(self, case_library=None) -> None:
         self._case_library = case_library
 
-    async def learn(self, request: PreferenceLearningRequest) -> PreferenceLearningOutput:
+    async def learn(
+        self, request: PreferenceLearningRequest
+    ) -> PreferenceLearningOutput:
         case_records = list(request.case_records)
         if not case_records and self._case_library is not None:
             case_records = self._case_library.list_cases()
@@ -762,7 +876,7 @@ class PreferenceLearningAgent:
 
             dominant_strategy = max(
                 profile.strategy_preferences,
-                key=profile.strategy_preferences.get,
+                key=lambda item: profile.strategy_preferences[item],
             )
             evidence_summary.append(
                 f"基于 {sample_count} 个案例，当前最强偏好信号是 {dominant_strategy}。"
@@ -814,10 +928,15 @@ class PostDecisionLearningAgent:
     def __init__(self, case_library=None) -> None:
         self._case_library = case_library
 
-    async def run(self, request: PostDecisionLearningRequest) -> PostDecisionLearningOutput:
-        decision_record = request.decision_record or await _load_decision_record_for_learning(
-            decision_record_id=request.decision_record_id,
-            incident_id=request.incident_id,
+    async def run(
+        self, request: PostDecisionLearningRequest
+    ) -> PostDecisionLearningOutput:
+        decision_record = (
+            request.decision_record
+            or await _load_decision_record_for_learning(
+                decision_record_id=request.decision_record_id,
+                incident_id=request.incident_id,
+            )
         )
         if decision_record is None:
             raise AgentWorkflowNotFoundError(
@@ -836,7 +955,8 @@ class PostDecisionLearningAgent:
 
         rule_output = await RuleCandidateAgent().compile_rules(
             RuleCandidateRequest(
-                rule_text=request.rule_text or _post_decision_rule_text(decision_record),
+                rule_text=request.rule_text
+                or _post_decision_rule_text(decision_record),
                 context={
                     "strategy_type": decision_record.strategy_type,
                     "confirmed_plan_id": str(decision_record.confirmed_plan_id),
@@ -887,6 +1007,14 @@ class AgentOrchestrator:
     ) -> AgentDecisionFlowResponse:
         incident = await _load_incident(request.incident_id)
         snapshot = await _load_latest_snapshot()
+        run_id = f"agent_run_{uuid4().hex}"
+        input_fingerprint = _workflow_fingerprint(request, incident, snapshot)
+        snapshot_ref = (
+            f"snapshot:{snapshot.snapshot_id}:v{snapshot.snapshot_version}"
+            if snapshot
+            else "snapshot:missing"
+        )
+        workflow_status: Literal["completed", "degraded", "blocked"] = "completed"
         trace: list[AgentTraceStep] = [
             _trace(
                 agent_name="Orchestrator",
@@ -894,117 +1022,334 @@ class AgentOrchestrator:
                 output_summary="workflow_started",
                 freedom_level="low",
                 llm_allowed=False,
+                input_fingerprint=input_fingerprint,
+                evidence_refs=[f"incident:{incident.incident_id}", snapshot_ref],
                 deterministic_tools=["workflow_state_machine"],
                 guardrail="按受控顺序组织 Agent，不允许跳过影响分析、约束求解和人工确认。",
             )
         ]
 
-        impact_report, impact_trace = await ImpactAnalysisAgent().run(
-            incident,
-            snapshot,
-            user_id=user_id,
+        data_readiness = (
+            DataReadinessService().assess_schedule_snapshot(snapshot)
+            if snapshot is not None
+            else None
         )
+        data_gate_passed = bool(data_readiness and data_readiness.is_ready)
+        if not data_gate_passed:
+            workflow_status = "blocked"
+        trace.append(
+            _trace(
+                agent_name="DataGate",
+                input_summary=snapshot_ref,
+                output_summary=(
+                    f"ready={data_gate_passed}, "
+                    f"blockers={len(data_readiness.blockers) if data_readiness else 1}"
+                ),
+                freedom_level="none",
+                llm_allowed=False,
+                stage_status="completed" if data_gate_passed else "blocked",
+                input_fingerprint=input_fingerprint,
+                evidence_refs=[snapshot_ref],
+                fallback_reason=None if snapshot else "schedule_snapshot_not_available",
+                deterministic_tools=["DataReadinessService"],
+                guardrail="DataGate 缺失或存在 blocker 时不进入求解和推荐。",
+            )
+        )
+
+        impact_report, impact_trace = await _run_stage(
+            "impact_analysis",
+            ImpactAnalysisAgent().run(
+                incident,
+                snapshot,
+                user_id=user_id,
+            ),
+            settings.agent.impact_timeout_seconds,
+        )
+        impact_trace.input_fingerprint = input_fingerprint
+        impact_trace.evidence_refs = [f"incident:{incident.incident_id}", snapshot_ref]
         trace.append(impact_trace)
 
-        strategy, preference_profile, strategy_trace = await StrategyAgent().run(
-            impact_report,
-            snapshot,
-            planner_id=request.planner_id,
-            estimated_repair_time_minutes=request.estimated_repair_time_minutes,
-            user_id=user_id,
+        strategy, preference_profile, strategy_trace = await _run_stage(
+            "strategy_selection",
+            StrategyAgent().run(
+                impact_report,
+                snapshot,
+                planner_id=request.planner_id,
+                estimated_repair_time_minutes=request.estimated_repair_time_minutes,
+                user_id=user_id,
+            ),
+            settings.agent.strategy_timeout_seconds,
         )
+        strategy_trace.input_fingerprint = input_fingerprint
+        strategy_trace.evidence_refs = [
+            f"impact_report:{impact_report.incident_id}",
+            snapshot_ref,
+        ]
         trace.append(strategy_trace)
 
         candidates: list[CandidatePlan] = []
         quality_gates = []
+        admissible_candidates: list[CandidatePlan] = []
+        blocked_plan_ids: list[UUID] = []
         comparison_matrix: ComparisonMatrix | None = None
         recommendation: PlanSelectionOutput | None = None
         recommendation_explanation: RecommendationExplanation | None = None
         solver_chain_explanation: SolverChainExplanation | None = None
 
-        if request.auto_solve and snapshot is not None:
-            candidates, solver_trace = await SolverAgent().run(
-                incident=incident,
-                impact_report=impact_report,
-                strategy=strategy,
-                preference_profile=preference_profile,
-                snapshot=snapshot,
-                user_id=user_id,
-            )
-            trace.append(solver_trace)
+        if request.auto_solve and snapshot is not None and data_gate_passed:
+            try:
+                candidates, solver_trace = await _run_stage(
+                    "solver",
+                    SolverAgent().run(
+                        incident=incident,
+                        impact_report=impact_report,
+                        strategy=strategy,
+                        preference_profile=preference_profile,
+                        snapshot=snapshot,
+                        user_id=user_id,
+                    ),
+                    settings.agent.solver_timeout_seconds,
+                )
+                solver_trace.input_fingerprint = input_fingerprint
+                solver_trace.evidence_refs = [
+                    f"impact_report:{impact_report.incident_id}",
+                    snapshot_ref,
+                ]
+                trace.append(solver_trace)
+            except AgentWorkflowStageError as exc:
+                workflow_status = "blocked"
+                trace.append(
+                    _trace(
+                        agent_name="Solver Tool / Solver Agent",
+                        input_summary=f"strategy={strategy.strategy_type}",
+                        output_summary="solver_stage_failed_closed",
+                        freedom_level="none",
+                        llm_allowed=False,
+                        stage_status=(
+                            "timed_out"
+                            if exc.reason.startswith("timeout_after")
+                            else "blocked"
+                        ),
+                        input_fingerprint=input_fingerprint,
+                        evidence_refs=[snapshot_ref],
+                        fallback_reason=exc.reason,
+                        deterministic_tools=[
+                            "SolverPolicyOrchestrator",
+                            "HybridSolver",
+                        ],
+                        guardrail="求解超时或异常时 fail-closed，不生成伪候选和伪推荐。",
+                    )
+                )
+
             gate = PlanQualityGate()
             quality_gates = [gate.evaluate(plan) for plan in candidates]
-            blocked_count = sum(1 for report in quality_gates if not report.pass_gate)
+            gate_by_plan_id = {report.plan_id: report for report in quality_gates}
+            admissible_candidates = [
+                plan
+                for plan in candidates
+                if (
+                    gate_by_plan_id[plan.plan_id].pass_gate
+                    and gate_by_plan_id[plan.plan_id].recommendation_policy
+                    != "show_as_reference_only"
+                )
+            ]
+            admissible_ids = {plan.plan_id for plan in admissible_candidates}
+            blocked_plan_ids = [
+                plan.plan_id
+                for plan in candidates
+                if plan.plan_id not in admissible_ids
+            ]
             warning_count = sum(1 for report in quality_gates if report.warnings)
+            if (
+                blocked_plan_ids
+                and admissible_candidates
+                and workflow_status != "blocked"
+            ):
+                workflow_status = "degraded"
+            if candidates and not admissible_candidates:
+                workflow_status = "blocked"
             trace.append(
                 _trace(
                     agent_name="Quality Gate Agent",
                     input_summary=f"candidate_plans={len(candidates)}",
                     output_summary=(
-                        f"passed={len(quality_gates) - blocked_count}, "
-                        f"blocked={blocked_count}, warnings={warning_count}"
+                        f"admissible={len(admissible_candidates)}, "
+                        f"blocked_or_reference={len(blocked_plan_ids)}, "
+                        f"warnings={warning_count}"
                     ),
                     freedom_level="none",
                     llm_allowed=False,
-                    deterministic_tools=["PlanQualityGate", "ConstraintValidationReport"],
+                    stage_status="blocked"
+                    if candidates and not admissible_candidates
+                    else "completed",
+                    input_fingerprint=input_fingerprint,
+                    evidence_refs=[
+                        *(f"plan:{plan.plan_id}" for plan in candidates),
+                        snapshot_ref,
+                    ],
+                    deterministic_tools=[
+                        "PlanQualityGate",
+                        "ConstraintValidationReport",
+                    ],
                     guardrail=(
                         "每个候选方案必须生成 pass/warning/block 结果；"
-                        "硬约束失败方案不能作为推荐方案进入确认。"
+                        "block 或 reference-only 方案不进入评价与推荐。"
                     ),
                 )
             )
         elif request.auto_solve:
+            workflow_status = "blocked"
             trace.append(
                 _trace(
                     agent_name="Solver Tool / Solver Agent",
-                    input_summary="snapshot=None",
-                    output_summary="solver_skipped_no_schedule_snapshot",
+                    input_summary=snapshot_ref,
+                    output_summary="solver_skipped_by_datagate",
                     freedom_level="none",
                     llm_allowed=False,
+                    stage_status="blocked",
+                    input_fingerprint=input_fingerprint,
+                    evidence_refs=[snapshot_ref],
+                    fallback_reason=(
+                        "schedule_snapshot_not_available"
+                        if snapshot is None
+                        else "data_readiness_blockers"
+                    ),
                     deterministic_tools=["ScheduleSnapshotGuard"],
-                    guardrail="没有排程快照时不能生成伪方案。",
+                    guardrail="DataGate 未通过时不能生成伪方案。",
                 )
             )
 
-        if request.auto_recommend and candidates and snapshot is not None:
-            comparison_matrix, recommendation, evaluation_trace = await EvaluationAgent().run(
-                incident=incident,
-                snapshot=snapshot,
-                candidates=candidates,
-                goal_mode=request.goal_mode,
-                manual_weights=request.manual_weights,
-                user_id=user_id,
-            )
-            trace.append(evaluation_trace)
-
-            recommended = _find_candidate(candidates, recommendation.recommended_plan_id)
-            if recommended is not None:
-                alternatives = [plan for plan in candidates if plan.plan_id != recommended.plan_id]
-                (
-                    recommendation_explanation,
-                    solver_chain_explanation,
-                    explanation_trace,
-                ) = await ExplanationAgent().run(
-                    recommended_plan=recommended,
-                    alternatives=alternatives,
-                    comparison_matrix=comparison_matrix,
+        if request.auto_recommend and admissible_candidates and snapshot is not None:
+            try:
+                comparison_matrix, recommendation, evaluation_trace = await _run_stage(
+                    "evaluation",
+                    EvaluationAgent().run(
+                        incident=incident,
+                        snapshot=snapshot,
+                        candidates=admissible_candidates,
+                        goal_mode=request.goal_mode,
+                        manual_weights=request.manual_weights,
+                        user_id=user_id,
+                    ),
+                    settings.agent.evaluation_timeout_seconds,
                 )
-                trace.append(explanation_trace)
+                evaluation_trace.input_fingerprint = input_fingerprint
+                evaluation_trace.evidence_refs = [
+                    *(f"plan:{plan.plan_id}" for plan in admissible_candidates),
+                    snapshot_ref,
+                ]
+                trace.append(evaluation_trace)
+            except AgentWorkflowStageError as exc:
+                workflow_status = "blocked"
+                trace.append(
+                    _trace(
+                        agent_name="Evaluation Agent",
+                        input_summary=f"candidate_count={len(admissible_candidates)}",
+                        output_summary="evaluation_stage_failed_closed",
+                        freedom_level="none",
+                        llm_allowed=False,
+                        stage_status=(
+                            "timed_out"
+                            if exc.reason.startswith("timeout_after")
+                            else "blocked"
+                        ),
+                        input_fingerprint=input_fingerprint,
+                        evidence_refs=[
+                            *(f"plan:{plan.plan_id}" for plan in admissible_candidates)
+                        ],
+                        fallback_reason=exc.reason,
+                        deterministic_tools=[
+                            "EvaluationCenter",
+                            "PlanRecommendationEngine",
+                        ],
+                        guardrail="评价失败时不输出推荐计划。",
+                    )
+                )
+
+            recommended = (
+                _find_candidate(
+                    admissible_candidates,
+                    recommendation.recommended_plan_id,
+                )
+                if recommendation is not None
+                else None
+            )
+            if recommended is not None and comparison_matrix is not None:
+                alternatives = [
+                    plan
+                    for plan in admissible_candidates
+                    if plan.plan_id != recommended.plan_id
+                ]
+                try:
+                    (
+                        recommendation_explanation,
+                        solver_chain_explanation,
+                        explanation_trace,
+                    ) = await _run_stage(
+                        "explanation",
+                        ExplanationAgent().run(
+                            recommended_plan=recommended,
+                            alternatives=alternatives,
+                            comparison_matrix=comparison_matrix,
+                        ),
+                        settings.agent.explanation_timeout_seconds,
+                    )
+                    explanation_trace.input_fingerprint = input_fingerprint
+                    explanation_trace.evidence_refs = [
+                        f"plan:{recommended.plan_id}",
+                        snapshot_ref,
+                    ]
+                    trace.append(explanation_trace)
+                except AgentWorkflowStageError as exc:
+                    if workflow_status == "completed":
+                        workflow_status = "degraded"
+                    trace.append(
+                        _trace(
+                            agent_name="Explanation Agent",
+                            input_summary=f"recommended_plan={recommended.plan_id}",
+                            output_summary="deterministic_recommendation_retained_without_explanation",
+                            freedom_level="medium",
+                            llm_allowed=True,
+                            stage_status="degraded",
+                            input_fingerprint=input_fingerprint,
+                            evidence_refs=[f"plan:{recommended.plan_id}"],
+                            fallback_reason=exc.reason,
+                            deterministic_tools=["ExplainabilityLayer"],
+                            guardrail="解释失败不改变方案和排序；前端必须显示降级状态。",
+                        )
+                    )
+        elif request.auto_recommend and request.auto_solve:
+            workflow_status = "blocked"
 
         trace.append(
             _trace(
                 agent_name="Confirmation Agent",
                 input_summary=f"recommendation={getattr(recommendation, 'recommended_plan_id', None)}",
-                output_summary="pending_human_confirmation",
+                output_summary=(
+                    "pending_human_confirmation"
+                    if recommendation is not None
+                    else "no_admissible_recommendation"
+                ),
                 freedom_level="none",
                 llm_allowed=False,
+                stage_status="completed" if recommendation is not None else "blocked",
+                input_fingerprint=input_fingerprint,
+                evidence_refs=(
+                    [f"plan:{recommendation.recommended_plan_id}"]
+                    if recommendation is not None
+                    else []
+                ),
                 deterministic_tools=["ConfirmationModule"],
                 guardrail="不会自动确认、不会自动写回 MES；必须由有权限用户形成 DecisionRecord。",
             )
         )
 
         return AgentDecisionFlowResponse(
+            run_id=run_id,
+            workflow_status=workflow_status,
+            input_fingerprint=input_fingerprint,
             incident=incident,
+            data_readiness=data_readiness,
             impact_report=impact_report,
             strategy=strategy,
             candidate_plans=candidates,
@@ -1013,6 +1358,8 @@ class AgentOrchestrator:
             recommendation=recommendation,
             recommendation_explanation=recommendation_explanation,
             solver_chain_explanation=solver_chain_explanation,
+            admissible_plan_ids=[plan.plan_id for plan in admissible_candidates],
+            blocked_plan_ids=blocked_plan_ids,
             requires_human_confirmation=True,
             trace=trace,
         )
@@ -1115,14 +1462,18 @@ def _post_decision_rule_text(decision_record: DecisionRecord) -> str:
     )
 
 
-def _find_candidate(candidates: list[CandidatePlan], plan_id: UUID) -> CandidatePlan | None:
+def _find_candidate(
+    candidates: list[CandidatePlan], plan_id: UUID
+) -> CandidatePlan | None:
     for candidate in candidates:
         if str(candidate.plan_id) == str(plan_id):
             return candidate
     return None
 
 
-def _candidate_strategy_sequence(strategy_type: str | StrategyType) -> list[StrategyType]:
+def _candidate_strategy_sequence(
+    strategy_type: str | StrategyType,
+) -> list[StrategyType]:
     primary = StrategyType(_strategy_value(strategy_type))
     sequence = [primary]
     for candidate in (
@@ -1157,7 +1508,9 @@ def _comparison_strategy(
 
 
 def _strategy_value(strategy_type: str | StrategyType) -> str:
-    return strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type)
+    return (
+        strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type)
+    )
 
 
 def _compile_constraint_candidate(
@@ -1175,7 +1528,9 @@ def _compile_constraint_candidate(
         "machine_ids": [resource_id] if resource_id else [],
         "operation_ids": context.get("operation_ids", []),
         "product_family": context.get("product_family"),
-        "time_window": f"after {time_hint}" if time_hint else context.get("time_window"),
+        "time_window": f"after {time_hint}"
+        if time_hint
+        else context.get("time_window"),
     }
     confidence = _constraint_confidence(
         constraint_type=constraint_type,
@@ -1238,7 +1593,8 @@ def _constraint_candidate_from_llm(
         return None
     confidence = max(0.0, min(confidence, 0.9))
 
-    scope = data.get("scope") if isinstance(data.get("scope"), dict) else {}
+    raw_scope = data.get("scope")
+    scope: dict = dict(raw_scope) if isinstance(raw_scope, dict) else {}
     machine_ids = scope.get("machine_ids")
     if isinstance(machine_ids, str):
         scope["machine_ids"] = [machine_ids]
@@ -1252,7 +1608,9 @@ def _constraint_candidate_from_llm(
 
     risk_note = data.get("risk_note")
     if not isinstance(risk_note, str) or not risk_note.strip():
-        risk_note = "LLM 候选规则必须人工审核，并通过 replay 或 shadow mode 后才能发布。"
+        risk_note = (
+            "LLM 候选规则必须人工审核，并通过 replay 或 shadow mode 后才能发布。"
+        )
 
     return ConstraintCandidate(
         candidate_id=f"constraint_candidate_{uuid4().hex[:8]}",
@@ -1326,7 +1684,9 @@ def _compiled_constraint_rule(
     if constraint_type == "material":
         return "check material readiness before releasing or recommending this plan"
     if constraint_type == "quality":
-        return "require quality/rework confirmation before treating operation as available"
+        return (
+            "require quality/rework confirmation before treating operation as available"
+        )
     if constraint_type == "changeover":
         return "include changeover risk before recommending resource reassignment"
     if constraint_type == "forbidden_assignment" and resource_id:
@@ -1344,7 +1704,11 @@ def _constraint_risk_note(
 ) -> str:
     if constraint_type == "review_note":
         return "规则类型和适用范围不足，必须人工补充后才能 replay。"
-    if not resource_id and constraint_type in {"calendar", "skill", "forbidden_assignment"}:
+    if not resource_id and constraint_type in {
+        "calendar",
+        "skill",
+        "forbidden_assignment",
+    }:
         return "缺少明确资源范围，不能升级为硬约束。"
     if constraint_type == "calendar" and not time_hint:
         return "缺少明确时间窗口，不能发布为班次/日历规则。"
@@ -1373,7 +1737,9 @@ def _build_case_title(decision_record) -> str:
 
 def _build_incident_signature(decision_record) -> str:
     override_flag = "override" if decision_record.is_override else "accepted"
-    return f"{decision_record.strategy_type}:{override_flag}:{decision_record.incident_id}"
+    return (
+        f"{decision_record.strategy_type}:{override_flag}:{decision_record.incident_id}"
+    )
 
 
 def _case_reusability(case) -> str:
@@ -1429,7 +1795,9 @@ def _deterministic_feedback_structure(text: str) -> dict:
         reason = "operator_preference"
         confidence = 0.86 if resource_id and time_hint else 0.76
         if resource_id and time_hint:
-            future_rule = f"avoid assigning urgent jobs to {resource_id} after {time_hint}"
+            future_rule = (
+                f"avoid assigning urgent jobs to {resource_id} after {time_hint}"
+            )
         elif resource_id:
             future_rule = f"review assignment constraints for {resource_id}"
         else:
@@ -1575,27 +1943,53 @@ def _detect_incident_type(text: str, resource_id: str | None) -> str:
     lowered = text.lower()
     if _is_machine_down(text, lowered, resource_id):
         return "machine_down"
-    if any(token in text for token in ("物料", "材料", "缺料", "齐套", "没到", "未到")) or "material" in lowered:
+    if (
+        any(token in text for token in ("物料", "材料", "缺料", "齐套", "没到", "未到"))
+        or "material" in lowered
+    ):
         return "material_shortage"
-    if any(token in text for token in ("客户加急", "急单", "加急", "插单")) or "urgent" in lowered:
+    if (
+        any(token in text for token in ("客户加急", "急单", "加急", "插单"))
+        or "urgent" in lowered
+    ):
         return "urgent_order_insert"
-    if any(token in text for token in ("产能下降", "产能降低", "降速", "效率下降", "设备产能")) or "capacity" in lowered:
+    if (
+        any(
+            token in text
+            for token in ("产能下降", "产能降低", "降速", "效率下降", "设备产能")
+        )
+        or "capacity" in lowered
+    ):
         return "capacity_degradation"
     return "unknown"
 
 
 def _is_machine_down(text: str, lowered: str, resource_id: str | None) -> bool:
-    machine_failure_terms = ("坏", "停了", "停机", "故障", "宕机", "down", "failure", "stopped")
+    machine_failure_terms = (
+        "坏",
+        "停了",
+        "停机",
+        "故障",
+        "宕机",
+        "down",
+        "failure",
+        "stopped",
+    )
     if any(term in lowered for term in ("down", "failure", "stopped")):
         return True
     if any(term in text for term in machine_failure_terms):
-        return resource_id is not None or any(token in text for token in ("设备", "机台", "机器", "产线", "CNC"))
+        return resource_id is not None or any(
+            token in text for token in ("设备", "机台", "机器", "产线", "CNC")
+        )
     return False
 
 
 def _has_urgent_risk(text: str) -> bool:
     lowered = text.lower()
-    return any(token in text for token in ("急单", "加急", "客户急")) or "urgent" in lowered
+    return (
+        any(token in text for token in ("急单", "加急", "客户急"))
+        or "urgent" in lowered
+    )
 
 
 def _confidence(
@@ -1644,15 +2038,27 @@ def _extract_time_hint(text: str) -> str | None:
 
 def _extract_duration_minutes(text: str) -> int | None:
     patterns = [
-        (re.compile(r"(\d+(?:\.\d+)?)\s*(?:个)?\s*(小时|钟头|h|hour|hours)", re.IGNORECASE), 60),
-        (re.compile(r"(\d+(?:\.\d+)?)\s*(?:分钟|分|min|mins|minute|minutes)", re.IGNORECASE), 1),
+        (
+            re.compile(
+                r"(\d+(?:\.\d+)?)\s*(?:个)?\s*(小时|钟头|h|hour|hours)", re.IGNORECASE
+            ),
+            60,
+        ),
+        (
+            re.compile(
+                r"(\d+(?:\.\d+)?)\s*(?:分钟|分|min|mins|minute|minutes)", re.IGNORECASE
+            ),
+            1,
+        ),
     ]
     for pattern, multiplier in patterns:
         match = pattern.search(text)
         if match:
             return int(round(float(match.group(1)) * multiplier))
 
-    cn_hour = re.search(r"([一二两俩三四五六七八九十半]+)\s*(?:个)?\s*(小时|钟头)", text)
+    cn_hour = re.search(
+        r"([一二两俩三四五六七八九十半]+)\s*(?:个)?\s*(小时|钟头)", text
+    )
     if cn_hour:
         return int(round(_parse_chinese_number(cn_hour.group(1)) * 60))
 

@@ -22,6 +22,7 @@ import {
   Alert,
   Button,
   Tooltip,
+  Typography,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -34,6 +35,8 @@ import { GoalMode } from '@/types';
 import { goalModeMap } from '@/utils/statusMapping';
 import type { ComparisonMatrixRow, PlanQualityGateReport } from '@/types';
 import { GanttChart } from '@/components/GanttChart';
+
+const { Text } = Typography;
 
 const KPI_LABELS: Record<string, string> = {
   delayed_order_count: '延迟工单数',
@@ -61,6 +64,46 @@ function gateTooltip(gate: PlanQualityGateReport): string {
     return gate.warnings.join('；');
   }
   return `置信度 ${gate.confidence_level}，策略：${gate.recommendation_policy}`;
+}
+
+function strategyTitle(strategyType?: string): { title: string; tag: string; color: string; desc: string } {
+  const map: Record<string, { title: string; tag: string; color: string; desc: string }> = {
+    wait_and_repair: {
+      title: '冻结窗口局部右移',
+      tag: '低扰动',
+      color: 'gold',
+      desc: '只移动故障资源下游受影响工序，保留未受影响订单和冻结区。',
+    },
+    local_repair: {
+      title: '替代资源 + 队列重排序',
+      tag: '系统建议',
+      color: 'green',
+      desc: '把关键路径工序分配到替代设备，并对瓶颈队列做交期优先与换型感知重排序。',
+    },
+    global_reschedule: {
+      title: '滚动窗口大邻域重调度',
+      tag: '备选',
+      color: 'blue',
+      desc: '对未来窗口执行大邻域搜索，允许跨资源重排但限制冻结区和交接班区。',
+    },
+  };
+  return map[strategyType ?? ''] ?? {
+    title: strategyType ?? '恢复候选方案',
+    tag: '候选',
+    color: 'default',
+    desc: '基于当前异常快照生成的可比较恢复候选，需通过质量门并由计划员确认。',
+  };
+}
+
+function signed(value?: number): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '-';
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? '+' : ''}${rounded}`;
+}
+
+function metricClass(value?: number, lowerIsBetter = true): string {
+  if (typeof value !== 'number' || value === 0) return 'good';
+  return lowerIsBetter ? (value <= 0 ? 'good' : 'bad') : (value >= 0 ? 'good' : 'bad');
 }
 
 export const PlanComparisonPanel: React.FC = () => {
@@ -127,10 +170,10 @@ export const PlanComparisonPanel: React.FC = () => {
         tags.push(<Tag key="top" color="gold">评分第一</Tag>);
       }
       if (planId === planSelectionOutput.recommended_plan_id) {
-        tags.push(<Tag key="rec" color="blue">AI 推荐</Tag>);
+        tags.push(<Tag key="rec" color="blue">系统建议</Tag>);
       }
       if (planSelectionOutput.auto_preselected && planId === planSelectionOutput.recommended_plan_id) {
-        tags.push(<Tag key="auto" color="cyan">自动预选</Tag>);
+        tags.push(<Tag key="auto" color="cyan">待确认默认</Tag>);
       }
     }
     if (planId === selectedPlanId) {
@@ -189,9 +232,14 @@ export const PlanComparisonPanel: React.FC = () => {
     );
   };
 
+  const rankedRows = matrix?.rows.slice(0, 3) ?? [];
+  const activePlanId = selectedPlanId ?? planSelectionOutput?.recommended_plan_id ?? rankedRows[0]?.plan_id;
+  const activeGate = activePlanId ? qualityGateByPlan.get(activePlanId) : undefined;
+  const activeRow = rankedRows.find((row) => row.plan_id === activePlanId) ?? matrix?.rows.find((row) => row.plan_id === activePlanId);
+
   return (
     <Card
-      title="候选方案比较"
+      title="质量门后 Top-K 恢复方案"
       size="small"
       extra={
         <Space>
@@ -219,6 +267,106 @@ export const PlanComparisonPanel: React.FC = () => {
         </Spin>
       ) : matrix ? (
         <>
+          <div className="plan-card-grid">
+            {rankedRows.map((row, index) => {
+              const plan = candidatePlans.find((item) => item.plan_id === row.plan_id);
+              const title = strategyTitle(plan?.strategy_type ?? plan?.solver_chain.strategy_type);
+              const gate = qualityGateByPlan.get(row.plan_id);
+              const delayDelta = row.delta_vs_baseline.max_delay_minutes;
+              const changedOps = Math.abs(Math.round(row.delta_vs_baseline.changeover_count_delta ?? row.kpi_vector.changeover_count_delta ?? 0));
+              const solveTime = typeof plan?.solver_metadata.solve_time_seconds === 'number'
+                ? `${Math.max(1, Math.round(plan.solver_metadata.solve_time_seconds))} 秒`
+                : '-';
+              const hardViolations = gate?.hard_blockers.length ?? 0;
+              return (
+                <div
+                  key={row.plan_id}
+                  className={row.plan_id === activePlanId ? 'recovery-plan-card active' : 'recovery-plan-card'}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedPlanId(row.plan_id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      setSelectedPlanId(row.plan_id);
+                    }
+                  }}
+                >
+                  <div className="plan-rank">{index + 1}</div>
+                  <div className="plan-main">
+                    <h3>
+                      {title.title}
+                      <Tag color={title.color}>{title.tag}</Tag>
+                      {planTag(row.plan_id)}
+                    </h3>
+                    <p>{title.desc}</p>
+                    <div className="plan-checks">
+                      <span className="plan-check">目标评分 {row.kpi_vector.normalized_score?.toFixed(2) ?? '-'}</span>
+                      <span className="plan-check">{plan?.solver_chain.solver_name ?? 'solver chain'}</span>
+                      <span className="plan-check">{gate?.recommendation_policy ?? 'quality gate pending'}</span>
+                    </div>
+                  </div>
+                  <div className="plan-metrics">
+                    <div className="plan-metric">
+                      <label>最大延期变化</label>
+                      <strong className={metricClass(delayDelta)}>{signed(delayDelta)} 分钟</strong>
+                    </div>
+                    <div className="plan-metric">
+                      <label>换型 / 扰动</label>
+                      <strong className={changedOps > 100 ? 'warn' : 'good'}>{changedOps}</strong>
+                    </div>
+                    <div className="plan-metric">
+                      <label>求解时间</label>
+                      <strong className="good">{solveTime}</strong>
+                    </div>
+                    <div className="plan-metric">
+                      <label>硬约束违例</label>
+                      <strong className={hardViolations > 0 ? 'bad' : 'good'}>{hardViolations}</strong>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="gate-summary-panel">
+            <h3>质量门与推荐解释</h3>
+            <div className="gate-summary-grid">
+              <div className="gate-row-card">
+                <span>当前方案</span>
+                <strong>{activePlanId ? activePlanId.slice(0, 8) : '-'}</strong>
+              </div>
+              <div className="gate-row-card">
+                <span>硬约束</span>
+                <strong>{activeGate ? (activeGate.pass_gate ? '通过' : '阻断') : '未校验'}</strong>
+              </div>
+              <div className="gate-row-card">
+                <span>置信度</span>
+                <strong>{activeGate?.confidence_level ?? '-'}</strong>
+              </div>
+              <div className="gate-row-card">
+                <span>综合评分</span>
+                <strong>{activeRow?.kpi_vector.normalized_score?.toFixed(2) ?? '-'}</strong>
+              </div>
+            </div>
+            <Text type="secondary">
+              {planSelectionOutput?.reason_summary ?? '所有候选方案在同一异常快照下比较，系统只置顶建议项，最终由计划员确认。'}
+            </Text>
+          </div>
+
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 10 }}
+            message={
+              <Space wrap size={[6, 6]}>
+                <span>策略组合进入同一质量门：</span>
+                <Tag>等待维修</Tag>
+                <Tag>局部修复</Tag>
+                <Tag>全局重排</Tag>
+                <span>最终由计划员确认，不自动写回。</span>
+              </Space>
+            }
+          />
           <Table<ComparisonMatrixRow>
             dataSource={matrix.rows}
             columns={columns}

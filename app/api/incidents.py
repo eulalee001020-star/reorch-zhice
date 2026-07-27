@@ -117,7 +117,7 @@ async def create_incident(
         incident = await intake.receive_event(body)
     except IntakeValidationError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
                 "message": exc.reason,
                 "missing_fields": exc.missing_fields,

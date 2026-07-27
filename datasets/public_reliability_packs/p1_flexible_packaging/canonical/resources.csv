@@ -1,0 +1,16 @@
+machine_id,name,capabilities,status,minimum_speed,speed_ratio,setup_time_min
+M1,Printing A1,P1,available,200,1,150
+M2,Printing A2,P1,available,200,0.75,150
+M3,Printing B1,P1,available,200,0.5,150
+M4,Drylaminasi 1,P2,available,200,1,90
+M5,Drylaminasi 2,P2,available,200,0.75,90
+M6,Drylaminasi 3,P2,available,200,0.5,90
+M7,Extrusion 1,P3,available,200,1,90
+M8,Extrusion 2,P3,available,200,1,90
+M9,Sliting 1,P4,available,80,1,60
+M10,Sliting 2,P4,available,80,0.75,60
+M11,Sliting 3,P4,available,80,0.75,60
+M12,Sliting 4,P4,available,80,0.5,60
+M13,Sliting 5,P4,available,80,0.125,60
+M14,Bag Making 1,P5,available,80,1,90
+M15,Bag Making 2,P5,available,80,0.75,90

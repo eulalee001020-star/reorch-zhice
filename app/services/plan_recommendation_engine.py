@@ -13,8 +13,9 @@ from uuid import UUID
 
 from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
 from app.models.recommendation import PlanSelectionInput, PlanSelectionOutput
-from app.models.schedule import GanttDiffPayload
+from app.models.schedule import GanttDiffPayload, Operation, WorkOrder
 from app.models.solver import CandidatePlan
+from app.services.evaluation_center import resolve_goal_weights
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,10 @@ _DEFAULT_CONFIDENCE_THRESHOLD = 0.7
 
 # Below this confidence, never auto-preselect (Req 29.8)
 _LOW_CONFIDENCE_THRESHOLD = 0.5
+
+
+class NoFeasiblePlanError(ValueError):
+    """Raised when recommendation has no independently feasible candidate."""
 
 
 class PlanRecommendationEngine:
@@ -60,24 +65,25 @@ class PlanRecommendationEngine:
         PlanSelectionOutput
         """
         candidates = selection_input.candidate_plans
+        weights_used = _resolve_weights(selection_input)
 
         # --- 1. Pre-filter: remove infeasible plans (Req 29.3) ----------
         feasible = _filter_feasible(candidates, selection_input.execution_constraints)
 
         if not feasible:
-            # Fallback: use all candidates if none pass filter
-            logger.warning("No feasible candidates after filtering; using all candidates")
-            feasible = list(candidates)
+            raise NoFeasiblePlanError(
+                "no_feasible_candidate_after_hard_constraint_filter"
+            )
 
         # --- 2. Rank by normalized_score (descending) -------------------
-        ranked = _rank_plans(feasible)
+        ranked = _rank_plans(feasible, weights_used)
 
         # --- 3. Identify top-scored and recommended plan ----------------
         top_scored = ranked[0]
-        recommended = _select_recommended(ranked, selection_input)
+        recommended = _select_recommended(ranked, selection_input, weights_used)
 
         # --- 4. Compute confidence (Req 29.6) ---------------------------
-        confidence = _compute_confidence(ranked, recommended)
+        confidence = _compute_confidence(ranked, recommended, weights_used)
 
         # --- 5. Risk flags (Req 29.7) -----------------------------------
         risk_flags = _collect_risk_flags(recommended, selection_input)
@@ -106,13 +112,10 @@ class PlanRecommendationEngine:
         # --- 11. Build gantt diff payload for frontend rendering --------
         gantt_diff = _build_gantt_diff(recommended, selection_input)
 
-        # --- 12. Weights used -------------------------------------------
-        weights_used = _resolve_weights(selection_input)
-
-        # --- 13. Matched case IDs ---------------------------------------
+        # --- 12. Matched case IDs ---------------------------------------
         matched_case_ids = _extract_case_ids(selection_input.historical_case_matches)
 
-        # --- 14. Audit metadata (Req 29.10) -----------------------------
+        # --- 13. Audit metadata (Req 29.10) -----------------------------
         audit_metadata = _build_audit_metadata(selection_input, confidence)
 
         return PlanSelectionOutput(
@@ -154,7 +157,9 @@ def _filter_feasible(
     return feasible
 
 
-def _rank_plans(plans: list[CandidatePlan]) -> list[CandidatePlan]:
+def _rank_plans(
+    plans: list[CandidatePlan], weights: dict[str, float]
+) -> list[CandidatePlan]:
     """Sort plans by normalized_score descending."""
     # Rank by feasibility first, then by a deterministic KPI proxy computed
     # from the schedule itself. This keeps recommendation useful even when an
@@ -164,7 +169,7 @@ def _rank_plans(plans: list[CandidatePlan]) -> list[CandidatePlan]:
         plans,
         key=lambda p: (
             status_order.get(p.feasibility_status, 9),
-            -_compute_kpi(p, {}).normalized_score,
+            -_compute_kpi(p, weights).normalized_score,
         ),
     )
 
@@ -172,6 +177,7 @@ def _rank_plans(plans: list[CandidatePlan]) -> list[CandidatePlan]:
 def _select_recommended(
     ranked: list[CandidatePlan],
     inp: PlanSelectionInput,
+    weights: dict[str, float],
 ) -> CandidatePlan:
     """Select the final AI-recommended plan.
 
@@ -194,10 +200,14 @@ def _select_recommended(
             and ranked[0].strategy_type != preferred_strategy
             and ranked[1].strategy_type == preferred_strategy
         ):
-            # Only override if the score gap is small (< 10%)
-            # We can't compute exact score here without the matrix,
-            # so we use a heuristic based on feasibility parity.
-            if ranked[1].feasibility_status == ranked[0].feasibility_status:
+            score_gap = abs(
+                _compute_kpi(ranked[0], weights).normalized_score
+                - _compute_kpi(ranked[1], weights).normalized_score
+            )
+            if (
+                score_gap < 0.10
+                and ranked[1].feasibility_status == ranked[0].feasibility_status
+            ):
                 recommended = ranked[1]
 
     return recommended
@@ -214,6 +224,7 @@ def _preferred_strategy(pref: dict) -> str | None:
 def _compute_confidence(
     ranked: list[CandidatePlan],
     recommended: CandidatePlan,
+    weights: dict[str, float],
 ) -> float:
     """Compute Recommendation_Confidence (0-1).
 
@@ -226,21 +237,20 @@ def _compute_confidence(
         # Only one candidate — high confidence by default
         return 0.9 if ranked[0].feasibility_status == "feasible" else 0.4
 
-    # Base confidence from feasibility
-    base = 0.7 if recommended.feasibility_status == "feasible" else 0.3
+    if recommended.feasibility_status != "feasible":
+        return 0.4
 
-    # Boost if there's a clear gap (recommended is feasible, #2 is not)
+    base = 0.6
+    recommended_score = _compute_kpi(recommended, weights).normalized_score
+
     second = ranked[1] if ranked[0].plan_id == recommended.plan_id else ranked[0]
-    if (
-        recommended.feasibility_status == "feasible"
-        and second.feasibility_status != "feasible"
-    ):
+    if second.feasibility_status != "feasible":
         base += 0.2
-
-    # Reduce if all plans have the same feasibility (harder to distinguish)
-    all_same = all(p.feasibility_status == ranked[0].feasibility_status for p in ranked)
-    if all_same and len(ranked) > 2:
-        base -= 0.1
+    else:
+        second_score = _compute_kpi(second, weights).normalized_score
+        base += min(0.3, abs(recommended_score - second_score) * 3.0)
+        if abs(recommended_score - second_score) < 0.05:
+            base -= 0.1
 
     return min(1.0, max(0.0, round(base, 4)))
 
@@ -430,8 +440,8 @@ def _build_gantt_diff(
     )
 
 
-def _flatten_operations(plan: CandidatePlan) -> list[tuple[object, object]]:
-    pairs: list[tuple[object, object]] = []
+def _flatten_operations(plan: CandidatePlan) -> list[tuple[WorkOrder, Operation]]:
+    pairs: list[tuple[WorkOrder, Operation]] = []
     for wo in plan.schedule_detail.work_orders:
         for op in wo.operations:
             pairs.append((wo, op))
@@ -466,23 +476,19 @@ def _compute_kpi(plan: CandidatePlan, weights: dict[str, float]) -> KPIVector:
     utilization_delta = _resource_utilization_dispersion(op_pairs)
     critical_otd = priority_on_time / priority_total if priority_total else 1.0
 
-    effective_weights = weights or _resolve_weights(
-        PlanSelectionInput(
-            incident_id=UUID(int=0),
-            incident_type="",
-            severity="",
-            schedule_snapshot_id=UUID(int=0),
-            candidate_plans=[],
-            goal_mode="balanced",
-        )
-    )
+    effective_weights = weights or resolve_goal_weights("balanced")
     penalty = (
-        effective_weights.get("delayed_order_count", 0.2) * min(delayed_order_count / 5, 1)
-        + effective_weights.get("max_delay_minutes", 0.15) * min(max_delay_minutes / 480, 1)
-        + effective_weights.get("spi", 0.2) * min(spi, 1)
-        + effective_weights.get("resource_utilization_delta", 0.15) * min(utilization_delta, 1)
-        + effective_weights.get("changeover_count_delta", 0.1) * min(changeovers / 10, 1)
-        + effective_weights.get("critical_order_otd_impact", 0.2) * (1 - critical_otd)
+        effective_weights.get("delayed_order_count", 0.0)
+        * min(delayed_order_count / 5, 1)
+        + effective_weights.get("max_delay_minutes", 0.0)
+        * min(max_delay_minutes / 480, 1)
+        + effective_weights.get("spi", 0.0) * min(spi, 1)
+        + effective_weights.get("resource_utilization_delta", 0.0)
+        * min(utilization_delta, 1)
+        + effective_weights.get("changeover_count_delta", 0.0)
+        * min(changeovers / 10, 1)
+        + effective_weights.get("critical_order_otd_impact", 0.0)
+        * (1 - critical_otd)
     )
 
     return KPIVector(
@@ -496,7 +502,7 @@ def _compute_kpi(plan: CandidatePlan, weights: dict[str, float]) -> KPIVector:
     )
 
 
-def _count_changeovers(op_pairs: list[tuple[object, object]]) -> int:
+def _count_changeovers(op_pairs: list[tuple[WorkOrder, Operation]]) -> int:
     by_resource: dict[str, list[tuple[datetime, str]]] = {}
     for wo, op in op_pairs:
         by_resource.setdefault(op.resource_id, []).append((op.start_time, wo.product_name))
@@ -509,7 +515,9 @@ def _count_changeovers(op_pairs: list[tuple[object, object]]) -> int:
     return count
 
 
-def _resource_utilization_dispersion(op_pairs: list[tuple[object, object]]) -> float:
+def _resource_utilization_dispersion(
+    op_pairs: list[tuple[WorkOrder, Operation]],
+) -> float:
     minutes_by_resource: dict[str, float] = {}
     for _, op in op_pairs:
         minutes = max(0.0, (op.end_time - op.start_time).total_seconds() / 60.0)
@@ -546,17 +554,7 @@ def _critical_path_summary(plan: CandidatePlan) -> list[dict]:
 
 def _resolve_weights(inp: PlanSelectionInput) -> dict[str, float]:
     """Resolve the effective weights used for recommendation."""
-    if inp.manual_weights:
-        return dict(inp.manual_weights)
-    # Default balanced weights
-    return {
-        "delayed_order_count": 0.20,
-        "max_delay_minutes": 0.15,
-        "spi": 0.20,
-        "resource_utilization_delta": 0.15,
-        "changeover_count_delta": 0.10,
-        "critical_order_otd_impact": 0.20,
-    }
+    return resolve_goal_weights(inp.goal_mode, inp.manual_weights)
 
 
 def _extract_case_ids(case_matches: list[dict]) -> list[UUID]:

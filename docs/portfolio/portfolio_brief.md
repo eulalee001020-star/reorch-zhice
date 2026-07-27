@@ -25,7 +25,7 @@ ReOrch 的产品切口不是替换主系统，而是在主系统之上补“异�
 | 系统设计 | Incident -> Impact -> Solver -> Quality Gate -> Recommendation -> Confirmation -> Writeback -> Case Memory |
 | 评测与质量门 | schema、source refs、硬约束、风险阈值、数字孪生 replay、失败样本库和人工确认 |
 | 工程落地 | FastAPI、React、OR-Tools、Docker Compose、mock integration、测试和 CI 验证材料 |
-| 商业判断 | 先实验室试用和只读/shadow 验证，再进入客户现场；不宣称已生产上线 |
+| 商业判断 | 先受控实验室演练和只读/shadow 验证，再进入客户现场；不宣称已生产上线 |
 
 ## 4. 工作流与演示
 

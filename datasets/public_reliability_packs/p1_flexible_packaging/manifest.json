@@ -1,0 +1,73 @@
+{
+  "pack_id": "p1_flexible_packaging",
+  "tier": "P1",
+  "title": "Data for Flexible Packaging Scheduling",
+  "source_url": "https://data.mendeley.com/datasets/h66hb89k6z/1",
+  "license": "CC BY 4.0",
+  "provenance": "public_research_dataset_unverified_factory_origin",
+  "claim_boundary": "Engineering reliability evidence only; not customer production reliability, ROI, planner adoption, or writeback authorization.",
+  "acquisition_status": "complete",
+  "generated_at": "2026-07-13T00:00:00+08:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 476,
+      "sha256": "bbbf632c804add63fd1e42bde049b223f2f54aaf89032ff77f8a3e3b4f0b4aff"
+    },
+    {
+      "path": "canonical/operations.csv",
+      "bytes": 17776,
+      "sha256": "a033acdd7389ed86b021f794b0eaa757ca003b92023fb90d03cb21040e7b9eed"
+    },
+    {
+      "path": "canonical/resources.csv",
+      "bytes": 673,
+      "sha256": "60d7d28e95235c7388399923f0e1354f5286b77f9a5d477060ed119a54592c2c"
+    },
+    {
+      "path": "canonical/work_orders.csv",
+      "bytes": 6017,
+      "sha256": "fa4a410d6697302be09c9945860510e5fc49913497f2d164ebe8362f24aa2a0b"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/1-Machine.xlsx",
+      "bytes": 10270,
+      "sha256": "04a8da3eb1f141d79ef47255e61c6b7b1d5eb332f75c697c9251fa8ac495fd21"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/2-Process.xlsx",
+      "bytes": 9452,
+      "sha256": "f8a245e79e08972ced47945083ed54fd042dc4ab866603cd471b70630a59fd65"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/3-Routing.xlsx",
+      "bytes": 9451,
+      "sha256": "6a35e5542d33291ef4ce3ad3888302494db50991fc46e91cd5d824cec6e8466b"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/4-Width.xlsx",
+      "bytes": 19362,
+      "sha256": "da5f863ea3d67123df380c7771cc0392cf3593e466cb1254dbf26435e6b8bbbe"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/5-Product Type.xlsx",
+      "bytes": 9929,
+      "sha256": "4b5605688d6f3f95126095469e947fa834c90a257ac043810a91fda8830ab9fd"
+    },
+    {
+      "path": "raw/extracted/Data for Flexible Packaging Scheduling/6-Data Order.xlsx",
+      "bytes": 12644,
+      "sha256": "2014698a7cf567f24fb630bd8e23dab30c92b586dee1ff65803d7473a0f9420b"
+    },
+    {
+      "path": "raw/source_bundle.zip",
+      "bytes": 56422,
+      "sha256": "69d9575cc869068648aa812d9e4b853fe79c4dbfc45c4623d7b72fe6cf0d4c9c"
+    },
+    {
+      "path": "scenarios/incidents.json",
+      "bytes": 807,
+      "sha256": "90d8627f9bee1b9958f8298c7e581f35cad9832bdcd6c7700b8e2dd13cbfb26b"
+    }
+  ]
+}

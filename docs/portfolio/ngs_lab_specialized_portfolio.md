@@ -60,7 +60,7 @@ NGS 版本的关键不是换一套名词，而是把“质量门”从普通排�
 
 ### 4.1 NGS Lab Repair Scheduling Copilot
 
-建议对外命名为：
+产品名称：
 
 > ReOrch for NGS Lab Scheduling
 > NGS 实验室异常修复排程 Copilot

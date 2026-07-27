@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -20,6 +21,7 @@ from app.models.enums import (
 )
 from app.models.incident import Incident
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
+from app.models.solver import ConstraintViolation
 
 
 @pytest.fixture(autouse=True)
@@ -258,6 +260,10 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
 
     assert resp.status_code == 200
     data = resp.json()
+    assert data["workflow_status"] in {"completed", "degraded"}
+    assert data["run_id"].startswith("agent_run_")
+    assert len(data["input_fingerprint"]) == 64
+    assert data["data_readiness"]["is_ready"] is True
     assert data["impact_report"]["incident_id"] == str(incident.incident_id)
     assert data["strategy"]["strategy_type"] in {
         "wait_and_repair",
@@ -270,6 +276,7 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
     assert "recommendation_policy" in data["quality_gates"][0]
     assert data["comparison_matrix"] is not None
     assert data["recommendation"] is not None
+    assert data["recommendation"]["recommended_plan_id"] in data["admissible_plan_ids"]
     assert data["requires_human_confirmation"] is True
     assert len(data["candidate_plans"]) >= 2
     assert len({plan["strategy_type"] for plan in data["candidate_plans"]}) >= 2
@@ -281,6 +288,87 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
     assert "Quality Gate Agent" in trace_names
     assert "Evaluation Agent" in trace_names
     assert "Confirmation Agent" in trace_names
+
+
+@pytest.mark.asyncio
+async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeypatch):
+    from app.services.plan_quality_gate import PlanQualityGate
+
+    incident = _seed_incident()
+    _seed_snapshot()
+    original_evaluate = PlanQualityGate.evaluate
+    call_count = 0
+
+    def block_first(self, plan):
+        nonlocal call_count
+        report = original_evaluate(self, plan)
+        call_count += 1
+        if call_count == 1:
+            report.pass_gate = False
+            report.confidence_level = "blocked"
+            report.hard_blockers = [
+                ConstraintViolation(
+                    constraint_type="test_hard_constraint",
+                    operation_id="OP-001",
+                    detail="test_hard_constraint_violation",
+                )
+            ]
+            report.recommendation_policy = "do_not_recommend"
+        return report
+
+    monkeypatch.setattr(PlanQualityGate, "evaluate", block_first)
+    app = _make_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.post(
+            "/api/v1/agents/decision-flow",
+            json={"incident_id": str(incident.incident_id)},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    blocked_plan_id = data["candidate_plans"][0]["plan_id"]
+    assert blocked_plan_id in data["blocked_plan_ids"]
+    assert blocked_plan_id not in data["admissible_plan_ids"]
+    assert data["recommendation"]["recommended_plan_id"] != blocked_plan_id
+
+
+@pytest.mark.asyncio
+async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
+    from app.core.config import settings
+    from app.services.agent_workflow import SolverAgent
+
+    incident = _seed_incident()
+    _seed_snapshot()
+
+    async def slow_solver(self, **kwargs):
+        await asyncio.sleep(0.05)
+        raise AssertionError("timeout should cancel the stage before this point")
+
+    monkeypatch.setattr(SolverAgent, "run", slow_solver)
+    monkeypatch.setattr(settings.agent, "solver_timeout_seconds", 0.01)
+    app = _make_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.post(
+            "/api/v1/agents/decision-flow",
+            json={"incident_id": str(incident.incident_id)},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["workflow_status"] == "blocked"
+    assert data["candidate_plans"] == []
+    assert data["recommendation"] is None
+    solver_trace = next(
+        item
+        for item in data["trace"]
+        if item["agent_name"] == "Solver Tool / Solver Agent"
+    )
+    assert solver_trace["stage_status"] == "timed_out"
+    assert solver_trace["fallback_reason"].startswith("timeout_after_")
 
 
 @pytest.mark.asyncio
@@ -354,7 +442,35 @@ async def test_rule_candidate_review_replay_publish_lifecycle():
         )
         replay_resp = await client.post(
             f"/api/v1/agents/rules/candidates/{candidate_id}/replay",
-            json={"scenario_set": "lab_replay_acceptance", "scenario_count": 3},
+            json={
+                "scenario_set": "lab_replay_acceptance",
+                "scenarios": [
+                    {
+                        "scenario_id": "calendar-after-cutoff",
+                        "evidence_scope": "digital_twin",
+                        "snapshot_ref": "dt:snapshot:1",
+                        "source_refs": ["dt:mes:1"],
+                        "facts": {"machine_id": "M4", "operation_start_time": "17:00"},
+                        "expected_outcome": "avoid",
+                    },
+                    {
+                        "scenario_id": "calendar-before-cutoff",
+                        "evidence_scope": "digital_twin",
+                        "snapshot_ref": "dt:snapshot:2",
+                        "source_refs": ["dt:mes:2"],
+                        "facts": {"machine_id": "M4", "operation_start_time": "15:00"},
+                        "expected_outcome": "allow",
+                    },
+                    {
+                        "scenario_id": "calendar-other-machine",
+                        "evidence_scope": "digital_twin",
+                        "snapshot_ref": "dt:snapshot:3",
+                        "source_refs": ["dt:mes:3"],
+                        "facts": {"machine_id": "M5", "operation_start_time": "17:00"},
+                        "expected_outcome": "allow",
+                    },
+                ],
+            },
         )
         publish_resp = await client.post(
             f"/api/v1/agents/rules/candidates/{candidate_id}/publish",
@@ -369,10 +485,42 @@ async def test_rule_candidate_review_replay_publish_lifecycle():
     assert replay_resp.status_code == 200
     assert replay_resp.json()["status"] == "replay_passed"
     assert replay_resp.json()["replay_result"]["pass_replay"] is True
+    assert replay_resp.json()["replay_result"]["scenario_count"] == 3
+    assert len(replay_resp.json()["replay_result"]["scenario_results"]) == 3
     assert publish_resp.status_code == 200
     publish_data = publish_resp.json()
     assert publish_data["status"] == "published_readonly"
     assert publish_data["published_record"]["readonly"] is True
+
+
+@pytest.mark.asyncio
+async def test_rule_candidate_replay_ignores_unverified_scenario_count():
+    app = _make_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        compile_resp = await client.post(
+            "/api/v1/agents/rules/compile",
+            json={
+                "rule_text": "M4 operator unavailable after 16:00, urgent jobs should avoid it",
+                "source": "lab_replay",
+            },
+        )
+        candidate_id = compile_resp.json()["candidates"][0]["candidate_id"]
+        await client.post(
+            f"/api/v1/agents/rules/candidates/{candidate_id}/review",
+            json={"action": "approve_for_replay", "reviewer_id": "planner-1"},
+        )
+        replay_resp = await client.post(
+            f"/api/v1/agents/rules/candidates/{candidate_id}/replay",
+            json={"scenario_count": 999},
+        )
+
+    assert replay_resp.status_code == 200
+    result = replay_resp.json()["replay_result"]
+    assert result["pass_replay"] is False
+    assert result["scenario_count"] == 0
+    assert result["blocked_reason"] == "at_least_three_executed_scenario_results_required"
 
 
 @pytest.mark.asyncio
@@ -402,7 +550,10 @@ async def test_rule_candidate_reject_requires_reason():
     assert reject_resp.status_code == 422
     assert reject_with_reason_resp.status_code == 200
     assert reject_with_reason_resp.json()["status"] == "rejected"
-    assert reject_with_reason_resp.json()["reject_reason"] == "缺少资源、时间窗口和适用工序。"
+    assert (
+        reject_with_reason_resp.json()["reject_reason"]
+        == "缺少资源、时间窗口和适用工序。"
+    )
 
 
 @pytest.mark.asyncio
@@ -442,7 +593,9 @@ async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
     data = resp.json()
     candidate = data["candidates"][0]
     assert candidate["constraint_type"] == "quality"
-    assert candidate["compiled_rule"] == "require QA hold release before OP-7 can be moved"
+    assert (
+        candidate["compiled_rule"] == "require QA hold release before OP-7 can be moved"
+    )
     assert data["trace"][0]["llm_used"] is True
     assert data["trace"][0]["llm_provider"] == "fake_llm"
 
@@ -502,10 +655,16 @@ async def test_post_decision_learning_runs_rule_case_preference_chain():
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["rule_candidate_output"]["candidates"][0]["status"] == "pending_human_review"
+    assert (
+        data["rule_candidate_output"]["candidates"][0]["status"]
+        == "pending_human_review"
+    )
     assert data["case_memory_output"]["status"] == "execution_feedback_captured"
     assert data["preference_learning_output"]["sample_count"] == 1
-    assert data["preference_learning_output"]["recommended_use"] == "ranking_tiebreaker_only"
+    assert (
+        data["preference_learning_output"]["recommended_use"]
+        == "ranking_tiebreaker_only"
+    )
     assert [step["agent_name"] for step in data["trace"]] == [
         "Rule Candidate Agent",
         "Case Memory Agent",

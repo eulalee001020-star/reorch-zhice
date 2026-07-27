@@ -478,13 +478,66 @@ async def test_recommend_with_manual_weights():
             f"/api/v1/incidents/{incident.incident_id}/recommend",
             json={
                 "goal_mode": "delivery_priority",
-                "manual_weights": {"delivery": 0.5, "stability": 0.3, "cost": 0.2},
+                "manual_weights": {
+                    "delayed_order_count": 0.30,
+                    "max_delay_minutes": 0.20,
+                    "spi": 0.10,
+                    "resource_utilization_delta": 0.10,
+                    "changeover_count_delta": 0.10,
+                    "critical_order_otd_impact": 0.20,
+                },
             },
         )
 
     assert resp.status_code == 200
     data = resp.json()
     assert data["goal_mode_used"] == "delivery_priority"
+
+
+@pytest.mark.asyncio
+async def test_recommend_rejects_unknown_manual_weight_keys():
+    incident, _ = _seed_full_context()
+    app = _make_app()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        await client.post(
+            f"/api/v1/incidents/{incident.incident_id}/solve",
+            json={},
+        )
+        response = await client.post(
+            f"/api/v1/incidents/{incident.incident_id}/recommend",
+            json={"manual_weights": {"delivery": 1.0}},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "invalid_manual_weights"
+
+
+@pytest.mark.asyncio
+async def test_recommend_blocks_reference_only_timeout_candidates():
+    from app.api.solver import _candidate_plans_store
+
+    incident, _ = _seed_full_context()
+    app = _make_app()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        await client.post(
+            f"/api/v1/incidents/{incident.incident_id}/solve",
+            json={},
+        )
+        for candidate in _candidate_plans_store[str(incident.incident_id)]:
+            candidate.feasibility_status = "timeout_partial"
+        response = await client.post(
+            f"/api/v1/incidents/{incident.incident_id}/recommend",
+            json={"goal_mode": "balanced"},
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "no_admissible_candidate"
 
 
 @pytest.mark.asyncio

@@ -60,7 +60,7 @@ Solvers and workflow services must not depend on vendor-specific field names.
 | `machine_id` | string | yes | Stable equipment/resource id | reject | MES/APS/SCADA |
 | `name` | string | no | Display name | fallback to id | MES |
 | `capabilities` | list[string] | recommended | Process capabilities | warn if empty | MES/PLM |
-| `status` | enum | yes | `available`, `busy`, `down`, `maintenance`, `offline`, `unavailable` | reject unknown | MES/SCADA |
+| `status` | enum | yes | `available`, `busy`, `degraded`, `down`, `maintenance`, `offline`, `unavailable` | reject unknown | MES/SCADA |
 | `calendar` | list[object] | no | Shift, downtime, maintenance windows | default empty | MES/APS |
 | `is_bottleneck` | bool | no | Bottleneck flag | default false | APS/domain config |
 | `has_redundancy` | bool | no | Alternative resource exists | default false | APS/domain config |

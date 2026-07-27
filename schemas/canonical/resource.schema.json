@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalMachine",
+  "type": "object",
+  "required": ["machine_id"],
+  "properties": {
+    "machine_id": { "type": "string" },
+    "name": { "type": ["string", "null"] },
+    "capabilities": { "type": "array", "items": { "type": "string" } },
+    "status": { "type": "string" },
+    "calendar": { "type": "array", "items": { "type": "object" } },
+    "is_bottleneck": { "type": "boolean" },
+    "has_redundancy": { "type": "boolean" },
+    "criticality": { "type": "string" },
+    "raw_payload": { "type": "object" }
+  }
+}
+

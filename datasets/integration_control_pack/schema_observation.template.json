@@ -1,0 +1,18 @@
+{
+  "tenant_id": "CUSTOMER_TENANT",
+  "connector_id": "customer-mes-connector",
+  "source_system": "CUSTOMER_MES",
+  "entity_type": "operation",
+  "schema_version": "SOURCE_SCHEMA_VERSION",
+  "fields": {
+    "operation_id": "string",
+    "work_order_id": "string",
+    "resource_id": "string",
+    "status": "string",
+    "planned_start": "datetime",
+    "planned_end": "datetime"
+  },
+  "observed_at": "2026-07-12T08:00:00+00:00",
+  "sample_record_count": 100,
+  "source_refs": ["customer:schema-snapshot:REF"]
+}

@@ -4,14 +4,15 @@
 
 | 文件 | 内容 |
 | --- | --- |
+| `00-online-demo.png` | 独立在线 Demo 的异常队列、Top-K 候选、证据、质量门与人工确认首屏 |
 | `01-login.png` | 登录与角色入口 |
-| `02-decision-workbench.png` | 异常决策工作台、影响分析、Agent 调用链和推荐确认 |
-| `03-plan-comparison.png` | Top-K 候选方案、质量门、KPI 对比和甘特图 |
-| `04-evidence-center.png` | 证据中心、replay、失败样本、LLM eval、data readiness 和 CI 证据 |
-| `05-data-readiness.png` | 数据就绪检查、缺字段阻断和停损规则 |
+| `02-decision-workbench.png` | 异常恢复决策层、影响分析、证据等级和计划员确认 |
+| `03-plan-comparison.png` | 恢复策略组合、质量门、KPI 对比和甘特图 |
+| `04-evidence-center.png` | Evidence Ladder、受控 replay、失败样本、离线评测和数据就绪证据 |
+| `05-data-readiness.png` | DataGate 权限阶梯、readiness 检查和停损规则 |
 | `06-ngs-lab.png` | NGS Lab replay、hard gate、候选修复方案和实验室审计边界 |
 
-截图生成环境：
+`00-online-demo.png` 来自独立作品集 Demo 的 1200 x 818 浏览器视口。其余截图来自完整本地栈：
 
 ```text
 Backend: uvicorn app.main:app --host 127.0.0.1 --port 8000

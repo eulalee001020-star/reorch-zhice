@@ -35,6 +35,7 @@
 | [workflow_prompts_io.md](workflow_prompts_io.md) | Agent/Workflow 设计、Prompt 结构、输入输出示例和人机协作边界 |
 | [ai_increment_agent_design.md](ai_increment_agent_design.md) | 将异常理解、规则候选、推荐解释、案例沉淀和偏好学习拆成独立 Agent，说明输入输出、质量门和能力边界 |
 | [trust_quality_gate.md](trust_quality_gate.md) | LLM 输出可信性、硬约束、质量门、置信度、审计和兜底机制 |
+| [../architecture/recovery_policy_graph.md](../architecture/recovery_policy_graph.md) | 护城河架构：把异常上下文、候选策略、计划员选择、驳回原因和执行结果沉淀为企业恢复策略图谱 |
 
 ## 3. 验证与状态材料
 
@@ -82,6 +83,7 @@ portfolio_brief.md
 -> workflow_prompts_io.md
 -> ai_increment_agent_design.md
 -> trust_quality_gate.md
+-> ../architecture/recovery_policy_graph.md
 -> project_status_assessment.md
 -> ../validation/digital_twin_validation_pack.md
 -> ../validation/lab_replay_acceptance_evidence.md

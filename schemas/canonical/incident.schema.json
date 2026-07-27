@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CanonicalIncident",
+  "type": "object",
+  "required": ["incident_id", "incident_type", "machine_id", "start_time"],
+  "properties": {
+    "incident_id": { "type": "string" },
+    "incident_type": { "type": "string" },
+    "machine_id": { "type": "string" },
+    "start_time": { "type": "string", "format": "date-time" },
+    "severity": { "type": "string" },
+    "description": { "type": ["string", "null"] },
+    "raw_payload": { "type": "object" }
+  }
+}
+

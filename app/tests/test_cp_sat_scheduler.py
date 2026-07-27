@@ -171,3 +171,50 @@ def test_cp_sat_respects_frozen_operations():
     assert frozen.start_time == NOW + timedelta(minutes=30)
     assert frozen.end_time == NOW + timedelta(hours=3)
 
+
+def test_cp_sat_rejects_when_process_capacity_is_exhausted(monkeypatch):
+    class ExhaustedCapacity:
+        def acquire(self, *, timeout):
+            return False
+
+        def release(self):
+            raise AssertionError("release must not run when acquire failed")
+
+    monkeypatch.setattr(
+        "app.services.cp_sat_scheduler._SOLVER_CAPACITY",
+        ExhaustedCapacity(),
+    )
+
+    result = CpSatFjspScheduler().solve(
+        snapshot=_snapshot_with_alternative_machine(),
+        impact_report=_impact(),
+        strategy_type=StrategyType.LOCAL_REPAIR,
+        affected_op_ids=["op-affected"],
+        frozen_operation_ids=[],
+        timeout_seconds=5,
+    )
+
+    assert result.is_feasible is False
+    assert result.status_name == "SOLVER_CAPACITY_EXHAUSTED"
+    assert result.solver_log["max_concurrent_jobs"] >= 1
+
+
+def test_cp_sat_routes_oversized_instance_to_decomposition(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings.solver, "max_model_operations", 1)
+    result = CpSatFjspScheduler().solve(
+        snapshot=_snapshot_with_alternative_machine(),
+        impact_report=_impact(),
+        strategy_type=StrategyType.LOCAL_REPAIR,
+        affected_op_ids=["op-affected"],
+        frozen_operation_ids=[],
+        timeout_seconds=5,
+    )
+
+    assert result.is_feasible is False
+    assert result.status_name == "INSTANCE_REQUIRES_DECOMPOSITION"
+    assert result.solver_log["operation_count"] == 2
+    assert result.solver_log["required_action"] == (
+        "run_bounded_subgraph_or_decomposition_solver"
+    )

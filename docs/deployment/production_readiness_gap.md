@@ -18,6 +18,7 @@ The current system has completed MVP development and is in controlled lab-trial 
 | Adapter security | Configurable adapters | Per-customer credentials, network allowlist, least privilege |
 | Writeback safety | Human confirmation workflow | Staging dry run, idempotency proof, manual recovery process |
 | Data retention | Persistent DB | Customer-approved retention and deletion policy |
+| Production gate | `/api/v1/planning/production-readiness/evaluate` separates replay/shadow/pilot/production | Requested deployment level must have no gate blockers |
 
 ## Non-Goals For Current Stage
 
@@ -38,3 +39,4 @@ Do not add these until customer pilot requirements justify them:
 - Customer-approved RBAC mapping.
 - Incident and writeback audit export.
 - Operational runbook for failed writeback and manual override.
+- Production readiness gate output at `controlled_pilot_ready` or above for any live writeback.

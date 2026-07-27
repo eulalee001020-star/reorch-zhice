@@ -14,7 +14,7 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 from app.models.enums import IncidentSeverity
-from app.models.schedule import Operation, Resource, ScheduleSnapshot, WorkOrder
+from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
 
 
 class CanonicalWorkOrder(ReOrchModel):
@@ -269,9 +269,11 @@ def build_schedule_snapshot(
         ops_by_order.setdefault(operation.work_order_id, []).append(operation)
 
     schedule_work_orders: list[WorkOrder] = []
+    raw_work_orders: list[dict[str, Any]] = []
     for work_order in work_orders:
         cursor = reference_time
         schedule_ops: list[Operation] = []
+        raw_ops: list[dict[str, Any]] = []
         ordered_ops = sorted(
             ops_by_order.get(work_order.work_order_id, []),
             key=lambda item: (item.sequence, item.operation_id),
@@ -292,6 +294,14 @@ def build_schedule_snapshot(
                     successor_ids=op.successors,
                 )
             )
+            raw_ops.append(
+                {
+                    "operation_id": op.operation_id,
+                    "eligible_resources": op.eligible_machine_ids,
+                    "machine_id": op.machine_id,
+                    "raw_payload": op.raw_payload,
+                }
+            )
         schedule_work_orders.append(
             WorkOrder(
                 work_order_id=work_order.work_order_id,
@@ -301,7 +311,23 @@ def build_schedule_snapshot(
                 priority=work_order.priority,
             )
         )
+        raw_work_orders.append(
+            {
+                "work_order_id": work_order.work_order_id,
+                "operations": raw_ops,
+                "raw_payload": work_order.raw_payload,
+            }
+        )
 
+    resources = [
+        {
+            "resource_id": machine.machine_id,
+            "capabilities": machine.capabilities,
+            "status": machine.status,
+            "raw_payload": machine.raw_payload,
+        }
+        for machine in machines
+    ]
     return ScheduleSnapshot(
         captured_at=reference_time,
         workshop_id=workshop_id,
@@ -309,6 +335,8 @@ def build_schedule_snapshot(
         work_orders=schedule_work_orders,
         raw_data={
             "machines": [machine.model_dump(mode="json") for machine in machines],
+            "resources": resources,
+            "work_orders": raw_work_orders,
             **(raw_data or {}),
         },
     )
@@ -372,7 +400,8 @@ def _as_str_list(value: Any) -> list[str]:
     if value is None or value == "":
         return []
     if isinstance(value, str):
-        return [item.strip() for item in value.split(",") if item.strip()]
+        normalized = value.replace("|", ",").replace(";", ",")
+        return [item.strip() for item in normalized.split(",") if item.strip()]
     if isinstance(value, list):
         return [str(item) for item in value if item is not None and item != ""]
     return [str(value)]

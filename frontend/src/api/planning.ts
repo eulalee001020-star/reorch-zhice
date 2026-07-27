@@ -1,14 +1,31 @@
 import apiClient from './client';
 import type {
+  AgentTraceCostSummary,
+  AgentTraceObserveRequest,
   CandidatePlan,
+  CompiledConstraintCalibration,
+  ConstraintCalibrationPack,
   DataReadinessReport,
+  DecisionGraphBuildRequest,
+  DecisionGraphBuildResponse,
+  DesignPartnerPreflightRequest,
+  DesignPartnerPreflightResponse,
   DigitalTwinRunResponse,
   EnterpriseImportRequest,
   EnterpriseImportResponse,
+  EvidenceGateRequest,
+  EvidenceGateResponse,
   InitialScheduleRequest,
   InitialScheduleResponse,
+  P0RealityHarnessResponse,
   PlanQualityGateResponse,
+  ReplayValidationRequest,
+  ReplayValidationResponse,
+  RecoveryOperatorRequest,
+  RecoveryOperatorResponse,
   ScheduleSnapshot,
+  ShadowCaseCaptureRequest,
+  ShadowCaseCaptureResponse,
   ValueTrackingInput,
   ValueTrackingReport,
   WritebackPreviewResponse,
@@ -54,11 +71,105 @@ export async function runPlanQualityGate(
   return data;
 }
 
+export async function evaluateReplayValidation(
+  request: ReplayValidationRequest,
+): Promise<ReplayValidationResponse> {
+  const { data } = await apiClient.post<ReplayValidationResponse>(
+    '/planning/replay-validation/evaluate',
+    request,
+  );
+  return data;
+}
+
+export async function captureShadowModeCase(
+  request: ShadowCaseCaptureRequest,
+): Promise<ShadowCaseCaptureResponse> {
+  const { data } = await apiClient.post<ShadowCaseCaptureResponse>(
+    '/planning/shadow-mode/capture',
+    request,
+  );
+  return data;
+}
+
+export async function summarizeAgentObservability(
+  request: AgentTraceObserveRequest,
+): Promise<AgentTraceCostSummary> {
+  const { data } = await apiClient.post<AgentTraceCostSummary>(
+    '/planning/agent-observability/summarize',
+    request,
+  );
+  return data;
+}
+
+export async function buildDecisionGraph(
+  request: DecisionGraphBuildRequest,
+): Promise<DecisionGraphBuildResponse> {
+  const { data } = await apiClient.post<DecisionGraphBuildResponse>(
+    '/planning/technical-kernel/decision-graph',
+    request,
+  );
+  return data;
+}
+
+export async function selectRecoveryOperators(
+  request: RecoveryOperatorRequest,
+): Promise<RecoveryOperatorResponse> {
+  const { data } = await apiClient.post<RecoveryOperatorResponse>(
+    '/planning/technical-kernel/recovery-operators',
+    request,
+  );
+  return data;
+}
+
+export async function evaluateEvidenceGates(
+  request: EvidenceGateRequest,
+): Promise<EvidenceGateResponse> {
+  const { data } = await apiClient.post<EvidenceGateResponse>(
+    '/planning/technical-kernel/evidence-gates',
+    request,
+  );
+  return data;
+}
+
 export async function normalizeEnterpriseImport(
   request: EnterpriseImportRequest,
 ): Promise<EnterpriseImportResponse> {
   const { data } = await apiClient.post<EnterpriseImportResponse>(
     '/planning/import/erp-aps',
+    request,
+  );
+  return data;
+}
+
+export async function runP0RealitySamplePack(): Promise<P0RealityHarnessResponse> {
+  const { data } = await apiClient.post<P0RealityHarnessResponse>(
+    '/planning/reality-harness/sample-pack',
+  );
+  return data;
+}
+
+export async function runDesignPartnerPreflight(
+  request: DesignPartnerPreflightRequest,
+): Promise<DesignPartnerPreflightResponse> {
+  const { data } = await apiClient.post<DesignPartnerPreflightResponse>(
+    '/planning/design-partner/preflight',
+    request,
+  );
+  return data;
+}
+
+export async function runDesignPartnerSamplePreflight(): Promise<DesignPartnerPreflightResponse> {
+  const { data } = await apiClient.post<DesignPartnerPreflightResponse>(
+    '/planning/design-partner/sample-preflight',
+  );
+  return data;
+}
+
+export async function compileConstraintCalibration(
+  request: ConstraintCalibrationPack,
+): Promise<CompiledConstraintCalibration> {
+  const { data } = await apiClient.post<CompiledConstraintCalibration>(
+    '/planning/constraint-calibration/compile',
     request,
   );
   return data;

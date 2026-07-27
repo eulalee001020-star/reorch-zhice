@@ -1,0 +1,44 @@
+{
+  "pack_id": "p0_ulster_mes",
+  "acquisition_status": "acquisition_blocked",
+  "missing_raw_files": [
+    "product_cycle_anonymised.csv",
+    "df_unit_level_cycle_downtime_anonymised.csv",
+    "order_analysis_anonymised.csv",
+    "stoppage_all_anonymised.csv",
+    "Manufacturing Operations Documentation.pdf"
+  ],
+  "canonical_status": "not_built",
+  "evidence_gate": {
+    "official_raw_file_count": 0,
+    "official_raw_expected_count": 5,
+    "real_mes_validated": false,
+    "real_shadow_validated": false,
+    "real_shadow_2_to_4_weeks_validated": false,
+    "real_roi_validated": false,
+    "production_writeback_authorized": false
+  },
+  "counts": {
+    "surrogate_work_orders": 3,
+    "surrogate_operations": 7,
+    "surrogate_resources": 5,
+    "surrogate_downtime_events": 2,
+    "digital_twin_work_orders": 1429,
+    "digital_twin_operations": 10000,
+    "digital_twin_incidents": 300,
+    "digital_twin_mes_receipts": 10000,
+    "digital_twin_cdc_events": 10000,
+    "admission_rehearsal_cases": 30,
+    "admission_rehearsal_dictionary_fields": 7,
+    "admission_rehearsal_planner_dispositions": 30,
+    "admission_rehearsal_execution_receipts": 30,
+    "real_customer_cases": 0
+  },
+  "digital_twin_status": "built_from_small_surrogate",
+  "limitations": [
+    "Official Ulster MES raw files are absent.",
+    "The only MES-shaped local seed contains 7 operations and 2 downtime events.",
+    "Digital-twin MES receipts are synthetic and cannot validate real Shadow or real ROI.",
+    "Thirty synthetic admission cases validate workflow shape only; real customer case count remains zero."
+  ]
+}

@@ -11,16 +11,22 @@ class PlanQualityGate:
 
     def evaluate(self, plan: CandidatePlan) -> PlanQualityGateReport:
         warnings: list[str] = []
-        hard_blockers = list(plan.constraint_report.violations) if (
-            plan.constraint_report
-            and (
-                plan.feasibility_status == "infeasible"
-                or not plan.constraint_report.is_feasible
+        hard_blockers = (
+            list(plan.constraint_report.violations)
+            if (
+                plan.constraint_report
+                and (
+                    plan.feasibility_status == "infeasible"
+                    or not plan.constraint_report.is_feasible
+                )
             )
-        ) else []
+            else []
+        )
 
         if plan.feasibility_status == "timeout_partial":
-            warnings.append("Solver timed out; plan is partial and requires planner review.")
+            warnings.append(
+                "Solver timed out; plan is partial and requires planner review."
+            )
         if plan.solver_metadata.degradation_occurred:
             warnings.append(
                 f"Solver degraded: {plan.solver_metadata.degradation_reason or 'no reason recorded'}."
@@ -49,7 +55,11 @@ class PlanQualityGate:
     ) -> str:
         if not pass_gate:
             return "blocked"
-        if plan.feasibility_status == "timeout_partial" or len(warnings) >= 2:
+        if (
+            plan.feasibility_status == "timeout_partial"
+            or len(plan.constraint_report.checked_constraints) < 3
+            or len(warnings) >= 2
+        ):
             return "low"
         if warnings:
             return "medium"

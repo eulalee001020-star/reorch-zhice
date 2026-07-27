@@ -37,6 +37,7 @@ export {
   getDecisionRecord,
   getWritebackStatus,
   getExecutionResult,
+  runSandboxWriteback,
 } from './confirmation';
 
 export {
@@ -58,11 +59,29 @@ export {
   assessSnapshotReadiness,
   generateInitialSchedules,
   runPlanQualityGate,
+  evaluateReplayValidation,
+  captureShadowModeCase,
+  summarizeAgentObservability,
+  buildDecisionGraph,
+  selectRecoveryOperators,
+  evaluateEvidenceGates,
   estimatePocValue,
   normalizeEnterpriseImport,
+  runP0RealitySamplePack,
+  runDesignPartnerPreflight,
+  runDesignPartnerSamplePreflight,
+  compileConstraintCalibration,
   buildWritebackPreview,
   runDigitalTwinSample,
 } from './planning';
 
 export { runNgsLabDemo, runNgsLabBatchReplay, recordNgsPlannerDecision, listNgsPlannerDecisions } from './ngs';
 export { getEvidenceCenter } from './evidence';
+export { runProductionValidation } from './runtime';
+export {
+  getIntegrationControlOverview,
+  listIntegrationAssets,
+  listIntegrationQuarantine,
+  listIntegrationAudit,
+  runIntegrationControlValidation,
+} from './integrationControl';

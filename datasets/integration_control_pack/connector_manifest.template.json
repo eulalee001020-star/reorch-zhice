@@ -1,0 +1,38 @@
+{
+  "tenant_id": "CUSTOMER_TENANT",
+  "manifest": {
+    "connector_id": "customer-mes-connector",
+    "source_system": "CUSTOMER_MES",
+    "connector_version": "1.0.0",
+    "sdk_version": "1.0",
+    "target_environment": "readonly",
+    "capabilities": [
+      "health_check",
+      "schema_discovery",
+      "snapshot_read",
+      "incremental_read"
+    ],
+    "entity_schemas": {
+      "operation": {
+        "fields": {
+          "operation_id": {"data_type": "string", "required": true, "nullable": false},
+          "work_order_id": {"data_type": "string", "required": true, "nullable": false},
+          "resource_id": {"data_type": "string", "required": true, "nullable": false},
+          "status": {"data_type": "string", "required": true, "nullable": false},
+          "planned_start": {"data_type": "datetime", "required": true, "nullable": false},
+          "planned_end": {"data_type": "datetime", "required": true, "nullable": false}
+        }
+      }
+    },
+    "lineage_fields": ["source_system", "source_record_id", "observed_at"],
+    "timestamp_semantics": "utc",
+    "incremental_cursor": true,
+    "idempotent_reads": true,
+    "idempotent_writes": false,
+    "compare_and_swap": false,
+    "durable_outbox": false,
+    "execution_receipts": false,
+    "reconciliation": false,
+    "compensation": false
+  }
+}

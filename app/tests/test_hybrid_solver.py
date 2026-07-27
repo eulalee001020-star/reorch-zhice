@@ -12,16 +12,13 @@ Covers:
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Awaitable, Callable
 from uuid import uuid4
 
 import pytest
 
 from app.models.enums import (
     DeliveryRiskLevel,
-    IncidentSeverity,
     NeighborhoodType,
     RepairMode,
     RuleApplicableStage,
@@ -33,8 +30,6 @@ from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
 from app.models.solver import (
     CandidatePlan,
     ConstraintValidationReport,
-    SolverChain,
-    SolverMetadata,
 )
 from app.models.strategy import (
     NeighborhoodConfig,
@@ -44,6 +39,7 @@ from app.models.strategy import (
     StrategyRecommendation,
 )
 from app.services.hybrid_solver import HybridSolver
+from app.services.production_digital_twin import ProductionDigitalTwinFactory
 
 
 # ── Fixtures ────────────────────────────────────────────────────────
@@ -303,6 +299,47 @@ class TestHybridSolverBasic:
             assert len(plan.solver_chain.stages) > 0
 
     @pytest.mark.asyncio
+    async def test_large_instance_routes_to_bounded_decomposition(self, monkeypatch):
+        from app.core.config import settings
+
+        snapshot = ProductionDigitalTwinFactory().build_snapshot(100)
+        first_operation = snapshot.work_orders[0].operations[0]
+        affected = AffectedOperation(
+            operation_id=first_operation.operation_id,
+            work_order_id=first_operation.work_order_id,
+            resource_id=first_operation.resource_id,
+            is_direct=True,
+            estimated_delay_minutes=2,
+        )
+        impact = ImpactReport(
+            incident_id=uuid4(),
+            schedule_snapshot_id=snapshot.snapshot_id,
+            analysis_reference_time=snapshot.captured_at,
+            affected_operations=[affected],
+            affected_work_orders=[
+                AffectedWorkOrder(
+                    work_order_id=snapshot.work_orders[0].work_order_id,
+                    product_name=snapshot.work_orders[0].product_name,
+                    due_date=snapshot.work_orders[0].due_date,
+                    delivery_risk_level=DeliveryRiskLevel.WARNING,
+                    remaining_buffer_minutes=60,
+                    affected_operations=[affected],
+                )
+            ],
+        )
+        monkeypatch.setattr(settings.solver, "max_model_operations", 10)
+        bundle = _FakeBundle(strategy_type=StrategyType.LOCAL_REPAIR)
+
+        plans = await HybridSolver().solve(bundle, impact, snapshot)
+
+        assert plans[0].feasibility_status == "feasible"
+        assert plans[0].solver_chain.solver_name.endswith(":decomposition")
+        assert plans[0].solver_metadata.incumbent_source == (
+            "decomposition_anytime_portfolio"
+        )
+        assert plans[0].constraint_report.is_feasible is True
+
+    @pytest.mark.asyncio
     async def test_solver_metadata_recorded(self):
         """Each CandidatePlan has SolverMetadata (Req 4.10)."""
         solver = HybridSolver()
@@ -523,3 +560,10 @@ class TestConstraintValidation:
             assert plan.constraint_report is not None
             assert isinstance(plan.constraint_report, ConstraintValidationReport)
             assert len(plan.constraint_report.checked_constraints) > 0
+            if plan.solver_chain.solver_name.startswith("cp_sat"):
+                assert {
+                    "operation_precedence",
+                    "resource_mutual_exclusion",
+                    "resource_eligibility",
+                    "frozen_operations",
+                }.issubset(plan.constraint_report.checked_constraints)
