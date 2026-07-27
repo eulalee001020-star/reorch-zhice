@@ -10,9 +10,9 @@ Implements the Layer 3 optimization solver that:
 6. Supports Solver_Portfolio degradation (primary → fallback → rule)
 7. Records SolverChain and SolverMetadata for each CandidatePlan
 
-For MVP, uses heuristic-based schedule variations (time shifts,
-resource swaps) rather than full CP-SAT modeling. The architecture
-and data flow are production-ready.
+The portfolio includes both heuristic schedule variations and an OR-Tools
+CP-SAT backend. This is an engineering MVP; production readiness still depends
+on customer constraint coverage, customer-like load tests, and field evidence.
 
 Requirements: 4.1–4.16
 """
@@ -22,13 +22,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from copy import deepcopy
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from app.core.config import settings
 from app.models.enums import StrategyType
 from app.models.impact import ImpactReport
+from app.models.production_runtime import (
+    DecompositionExecutionRequest,
+    RuntimeIncident,
+)
 from app.models.schedule import (
     Operation,
     ScheduleDetail,
@@ -42,8 +46,10 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.models.strategy import StrategyRecommendation
+from app.services.anytime_hybrid_scheduler import AnytimeHybridScheduler
 from app.services.cp_sat_scheduler import CpSatFjspScheduler
+from app.services.decomposition_executor import DecompositionExecutor
+from app.services.operational_constraint_validator import OperationalConstraintValidator
 
 if TYPE_CHECKING:
     from app.services.solver_policy_orchestrator import SolverPolicyBundle
@@ -91,9 +97,7 @@ class HybridSolver:
         )
 
         strategy_type = self._resolve_strategy_type(bundle.strategy.strategy_type)
-        affected_op_ids = [
-            op.operation_id for op in impact_report.affected_operations
-        ]
+        affected_op_ids = [op.operation_id for op in impact_report.affected_operations]
 
         solver_chain_config = bundle.solver_chain_config
         solvers_to_try = [
@@ -150,14 +154,16 @@ class HybridSolver:
 
         # If no candidates at all → infeasible report (Req 4.9)
         if not candidates:
-            return [self._build_infeasible_plan(
-                strategy_type=strategy_type,
-                solver_name=actual_solver_name,
-                bundle=bundle,
-                solve_time=solve_time,
-                degradation_occurred=degradation_occurred,
-                degradation_reason=degradation_reason,
-            )]
+            return [
+                self._build_infeasible_plan(
+                    strategy_type=strategy_type,
+                    solver_name=actual_solver_name,
+                    bundle=bundle,
+                    solve_time=solve_time,
+                    degradation_occurred=degradation_occurred,
+                    degradation_reason=degradation_reason,
+                )
+            ]
 
         # Stamp metadata on each candidate
         for plan in candidates:
@@ -222,30 +228,39 @@ class HybridSolver:
         )
 
         # 2. LNS optimization loop (Req 4.6, 4.12)
-        best_schedules, iteration_count, objective_trajectory, neighborhood_log = (
-            await self._lns_optimize(
-                initial_schedule=initial_schedule,
-                bundle=bundle,
-                impact_report=impact_report,
-                snapshot=snapshot,
-                strategy_type=strategy_type,
-                affected_op_ids=affected_op_ids,
-                timeout_seconds=timeout_seconds,
-                start_time=start_time,
-            )
+        (
+            best_schedules,
+            iteration_count,
+            objective_trajectory,
+            neighborhood_log,
+        ) = await self._lns_optimize(
+            initial_schedule=initial_schedule,
+            bundle=bundle,
+            impact_report=impact_report,
+            snapshot=snapshot,
+            strategy_type=strategy_type,
+            affected_op_ids=affected_op_ids,
+            timeout_seconds=timeout_seconds,
+            start_time=start_time,
         )
 
         # 3. Validate constraints and build CandidatePlans (Req 4.7)
         candidates: list[CandidatePlan] = []
         for schedule in best_schedules:
-            report = self._validate_constraints(schedule, snapshot, strategy_type, affected_op_ids)
+            report = self._validate_constraints(
+                schedule, snapshot, strategy_type, affected_op_ids
+            )
             feasibility = "feasible" if report.is_feasible else "infeasible"
 
             chain = SolverChain(
-                strategy_type=strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type,
+                strategy_type=strategy_type.value
+                if isinstance(strategy_type, StrategyType)
+                else strategy_type,
                 rule_selection=rule_names,
                 neighborhood_selection=neighborhood_log,
-                repair_policy=repair_config.repair_mode.value if hasattr(repair_config.repair_mode, "value") else str(repair_config.repair_mode),
+                repair_policy=repair_config.repair_mode.value
+                if hasattr(repair_config.repair_mode, "value")
+                else str(repair_config.repair_mode),
                 solver_name=solver_name,
                 key_parameters={
                     "timeout_seconds": timeout_seconds,
@@ -272,7 +287,9 @@ class HybridSolver:
 
             plan = CandidatePlan(
                 plan_id=uuid4(),
-                strategy_type=strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type,
+                strategy_type=strategy_type.value
+                if isinstance(strategy_type, StrategyType)
+                else strategy_type,
                 schedule_detail=schedule,
                 gantt_version="1.0",
                 solver_chain=chain,
@@ -306,13 +323,33 @@ class HybridSolver:
         rules = bundle.rules
         repair_config = bundle.repair_config
         rule_names = ", ".join(r.rule_name for r in rules) if rules else "default"
+        operation_count = sum(len(wo.operations) for wo in snapshot.work_orders)
+        if operation_count > settings.solver.max_model_operations:
+            return await asyncio.to_thread(
+                self._run_decomposed_solver,
+                solver_name=solver_name,
+                snapshot=snapshot,
+                impact_report=impact_report,
+                affected_op_ids=affected_op_ids,
+                timeout_seconds=timeout_seconds,
+                rule_names=rule_names,
+                repair_mode=(
+                    repair_config.repair_mode.value
+                    if hasattr(repair_config.repair_mode, "value")
+                    else str(repair_config.repair_mode)
+                ),
+            )
 
         neighborhood_log = "cp_sat_model"
         if bundle.get_neighborhood_config is not None:
             try:
                 # Invoke once so the policy layer still records runtime
                 # neighborhood intent for CP-SAT/LNS portfolio calls.
-                temp_schedule = ScheduleDetail(work_orders=[wo.model_copy(deep=True) for wo in snapshot.work_orders])
+                temp_schedule = ScheduleDetail(
+                    work_orders=[
+                        wo.model_copy(deep=True) for wo in snapshot.work_orders
+                    ]
+                )
                 temp_plan = CandidatePlan(
                     plan_id=uuid4(),
                     strategy_type=strategy_type.value,
@@ -357,13 +394,18 @@ class HybridSolver:
             except Exception as exc:
                 logger.warning("CP-SAT neighborhood policy callback failed: %s", exc)
 
-        scheduler = CpSatFjspScheduler()
+        anytime_scheduler = AnytimeHybridScheduler(max_alns_iterations=2)
+        cp_sat_scheduler = CpSatFjspScheduler()
+        independent_validator = OperationalConstraintValidator()
         candidate_target = max(1, repair_config.candidate_count_target)
         per_candidate_timeout = max(0.1, timeout_seconds / min(candidate_target, 3))
         candidates: list[CandidatePlan] = []
+        incumbent_schedule: ScheduleDetail | None = None
 
         for candidate_index in range(min(candidate_target, _TOP_K)):
-            result = scheduler.solve(
+            scheduler = anytime_scheduler if candidate_index == 0 else cp_sat_scheduler
+            result = await asyncio.to_thread(
+                scheduler.solve,
                 snapshot=snapshot,
                 impact_report=impact_report,
                 strategy_type=strategy_type,
@@ -371,21 +413,42 @@ class HybridSolver:
                 frozen_operation_ids=repair_config.frozen_operation_ids,
                 timeout_seconds=per_candidate_timeout,
                 candidate_index=candidate_index,
+                initial_solution=incumbent_schedule,
             )
             if not result.is_feasible or result.schedule_detail is None:
                 if candidate_index == 0:
-                    logger.info("CP-SAT backend did not find feasible plan: %s", result.status_name)
+                    logger.info(
+                        "CP-SAT backend did not find feasible plan: %s",
+                        result.status_name,
+                    )
                 break
 
-            report = self._validate_constraints(
+            all_operation_ids = {
+                operation.operation_id
+                for work_order in snapshot.work_orders
+                for operation in work_order.operations
+            }
+            effective_frozen = set(repair_config.frozen_operation_ids) | (
+                all_operation_ids - set(result.variable_operation_ids)
+            )
+            report = independent_validator.validate(
                 result.schedule_detail,
                 snapshot,
-                strategy_type,
-                affected_op_ids,
+                frozen_operation_ids=sorted(effective_frozen),
             )
             feasibility = "feasible" if report.is_feasible else "infeasible"
+            if not report.is_feasible:
+                logger.warning(
+                    "Independent validation rejected %s candidate %d",
+                    solver_name,
+                    candidate_index,
+                )
+                continue
+            incumbent_schedule = result.schedule_detail
             repair_mode = repair_config.repair_mode
-            repair_mode_value = repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
+            repair_mode_value = (
+                repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
+            )
             chain = SolverChain(
                 strategy_type=strategy_type.value,
                 rule_selection=rule_names,
@@ -397,6 +460,10 @@ class HybridSolver:
                     "timeout_seconds": per_candidate_timeout,
                     "candidate_index": candidate_index,
                     "objective_value": result.objective_value,
+                    "best_objective_bound": result.best_objective_bound,
+                    "relative_gap": result.relative_gap,
+                    "hint_applied": result.hint_applied,
+                    "hinted_operation_count": result.hinted_operation_count,
                     "cp_sat_status": result.status_name,
                     "branches": result.branches,
                     "conflicts": result.conflicts,
@@ -407,11 +474,13 @@ class HybridSolver:
                 constraint_validation_result=feasibility,
                 stages=[
                     "规则选择",
+                    "约束感知首解",
                     "CP-SAT建模",
+                    "Warm Start",
                     "可选设备选择",
                     "资源NoOverlap",
                     "前后序约束",
-                    "约束校验",
+                    "独立全量约束校验",
                 ],
             )
             metadata = SolverMetadata(
@@ -422,6 +491,13 @@ class HybridSolver:
                     if result.objective_value is not None
                     else 0.0
                 ],
+                best_objective_bound=result.best_objective_bound,
+                relative_gap=result.relative_gap,
+                hint_applied=result.hint_applied,
+                time_to_first_feasible_ms=result.solver_log.get(
+                    "time_to_first_feasible_ms"
+                ),
+                incumbent_source=result.solver_log.get("incumbent_source"),
             )
             candidates.append(
                 CandidatePlan(
@@ -439,6 +515,138 @@ class HybridSolver:
 
         feasible = [c for c in candidates if c.feasibility_status == "feasible"]
         return feasible if feasible else candidates
+
+    @staticmethod
+    def _run_decomposed_solver(
+        *,
+        solver_name: str,
+        snapshot: ScheduleSnapshot,
+        impact_report: ImpactReport,
+        affected_op_ids: list[str],
+        timeout_seconds: float,
+        rule_names: str,
+        repair_mode: str,
+    ) -> list[CandidatePlan]:
+        affected = list(impact_report.affected_operations)
+        first = affected[0] if affected else None
+        runtime_incident = RuntimeIncident(
+            incident_id=str(impact_report.incident_id),
+            incident_type="impact_report_recovery",
+            affected_operation_ids=affected_op_ids,
+            delay_minutes=max(
+                [int(round(item.estimated_delay_minutes)) for item in affected]
+                or [0]
+            ),
+            resource_id=first.resource_id if first else None,
+            work_order_id=first.work_order_id if first else None,
+            severity="P2",
+            occurred_at=impact_report.analysis_reference_time,
+        )
+        max_subproblem_operations = max(
+            5,
+            min(80, settings.solver.max_model_operations),
+        )
+        request = DecompositionExecutionRequest(
+            tenant_id=f"interactive:{snapshot.workshop_id}",
+            snapshot=snapshot,
+            incidents=[runtime_incident],
+            max_subproblem_operations=max_subproblem_operations,
+            neighborhood_hops=2,
+            max_parallelism=min(4, settings.solver.max_concurrent_jobs),
+            timeout_seconds=timeout_seconds,
+        )
+        response = DecompositionExecutor().execute(request)
+        is_feasible = response.status == "feasible" and response.final_schedule is not None
+        violation_models = [
+            ConstraintViolation.model_validate(item) for item in response.violations
+        ]
+        if not is_feasible and not violation_models:
+            operation_id = affected_op_ids[0] if affected_op_ids else "unknown"
+            violation_models = [
+                ConstraintViolation(
+                    constraint_type="decomposition_runtime",
+                    operation_id=operation_id,
+                    detail=blocker,
+                )
+                for blocker in response.blockers
+            ]
+        report = ConstraintValidationReport(
+            is_feasible=is_feasible,
+            violations=violation_models,
+            checked_constraints=response.checked_constraints,
+        )
+        objective_values = [
+            item.objective_value
+            for item in response.subproblem_results
+            if item.objective_value is not None
+        ]
+        first_feasible_values = [
+            float(item.solver_metadata["time_to_first_feasible_ms"])
+            for item in response.subproblem_results
+            if item.solver_metadata.get("time_to_first_feasible_ms") is not None
+        ]
+        relative_gaps = [
+            float(item.solver_metadata["cp_sat_relative_gap"])
+            for item in response.subproblem_results
+            if item.solver_metadata.get("cp_sat_relative_gap") is not None
+        ]
+        chain = SolverChain(
+            strategy_type=StrategyType.LOCAL_REPAIR.value,
+            rule_selection=rule_names,
+            neighborhood_selection="bounded_incident_subgraphs",
+            repair_policy=repair_mode,
+            solver_name=f"{solver_name}:decomposition",
+            key_parameters={
+                "operation_count": response.operation_count,
+                "subproblem_count": len(response.subproblem_results),
+                "requested_parallelism": response.requested_parallelism,
+                "observed_parallelism": response.observed_parallelism,
+                "merge_conflicts": response.merge_conflicts_detected,
+                "serial_repairs": response.serial_repairs_run,
+                "evidence_fingerprint": response.evidence_fingerprint,
+            },
+            search_budget_seconds=timeout_seconds,
+            constraint_validation_result=(
+                "feasible" if is_feasible else "infeasible"
+            ),
+            stages=[
+                "受影响子图分解",
+                "约束感知首解",
+                "并行CP-SAT修复",
+                "全局合并",
+                "独立全量约束校验",
+            ],
+        )
+        metadata = SolverMetadata(
+            solve_time_seconds=response.elapsed_ms / 1000.0,
+            iteration_count=sum(
+                int(item.solver_metadata.get("alns_attempts", 0))
+                for item in response.subproblem_results
+            ),
+            objective_trajectory=[float(value) for value in objective_values],
+            hint_applied=any(
+                bool(item.solver_metadata.get("cp_sat_hint_applied"))
+                for item in response.subproblem_results
+            ),
+            relative_gap=max(relative_gaps) if relative_gaps else None,
+            time_to_first_feasible_ms=(
+                min(first_feasible_values) if first_feasible_values else None
+            ),
+            incumbent_source="decomposition_anytime_portfolio",
+        )
+        return [
+            CandidatePlan(
+                plan_id=uuid4(),
+                strategy_type=StrategyType.LOCAL_REPAIR.value,
+                schedule_detail=response.final_schedule or ScheduleDetail(),
+                gantt_version="1.0",
+                solver_chain=chain,
+                feasibility_status="feasible" if is_feasible else "infeasible",
+                solver_metadata=metadata,
+                constraint_report=report,
+                created_at=datetime.now(tz=timezone.utc),
+            )
+        ]
 
     # ── Heuristic initial solution ──────────────────────────────────
 
@@ -469,6 +677,7 @@ class HybridSolver:
                     new_op.is_adjusted = True
                     # Apply heuristic: shift start/end by a small delta
                     from datetime import timedelta
+
                     shift = timedelta(minutes=15)
                     if strategy_type == StrategyType.WAIT_AND_REPAIR:
                         shift = timedelta(minutes=30)
@@ -480,12 +689,14 @@ class HybridSolver:
                     # Shift downstream ops (those with predecessors in affected set)
                     if affected_set & set(op.predecessor_ids):
                         from datetime import timedelta
+
                         new_op.is_adjusted = True
                         new_op.start_time = op.start_time + timedelta(minutes=10)
                         new_op.end_time = op.end_time + timedelta(minutes=10)
                 elif strategy_type == StrategyType.GLOBAL_RESCHEDULE:
                     # Global: small perturbation on all ops
                     from datetime import timedelta
+
                     new_op.is_adjusted = True
                     new_op.start_time = op.start_time + timedelta(minutes=5)
                     new_op.end_time = op.end_time + timedelta(minutes=5)
@@ -537,11 +748,15 @@ class HybridSolver:
                     # Build a temporary CandidatePlan for the callback
                     temp_plan = CandidatePlan(
                         plan_id=uuid4(),
-                        strategy_type=strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type,
+                        strategy_type=strategy_type.value
+                        if isinstance(strategy_type, StrategyType)
+                        else strategy_type,
                         schedule_detail=best_schedules[0],
                         gantt_version="1.0",
                         solver_chain=SolverChain(
-                            strategy_type=strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type,
+                            strategy_type=strategy_type.value
+                            if isinstance(strategy_type, StrategyType)
+                            else strategy_type,
                             rule_selection="",
                             neighborhood_selection="",
                             repair_policy="",
@@ -565,7 +780,9 @@ class HybridSolver:
                     perturbation = 0.5
                     if hasattr(bundle.repair_config, "allowed_perturbation_scope"):
                         scope_len = len(bundle.repair_config.allowed_perturbation_scope)
-                        perturbation = min(1.0, scope_len / max(len(affected_op_ids), 1))
+                        perturbation = min(
+                            1.0, scope_len / max(len(affected_op_ids), 1)
+                        )
 
                     neighborhood_configs = await bundle.get_neighborhood_config(
                         temp_plan,
@@ -611,17 +828,22 @@ class HybridSolver:
                     best_schedules.append(new_schedule)
 
             if stagnation_count >= _STAGNATION_LIMIT:
-                logger.info(
-                    "LNS stagnation limit reached at iteration %d", iteration
-                )
+                logger.info("LNS stagnation limit reached at iteration %d", iteration)
                 break
 
             # Yield control to event loop
             await asyncio.sleep(0)
 
-        neighborhood_log = ", ".join(neighborhood_types_used) if neighborhood_types_used else "default"
+        neighborhood_log = (
+            ", ".join(neighborhood_types_used) if neighborhood_types_used else "default"
+        )
 
-        return best_schedules[:candidate_target], iteration, objective_trajectory, neighborhood_log
+        return (
+            best_schedules[:candidate_target],
+            iteration,
+            objective_trajectory,
+            neighborhood_log,
+        )
 
     # ── Neighborhood application ────────────────────────────────────
 
@@ -646,9 +868,9 @@ class HybridSolver:
         # Determine shift magnitude from neighborhood intensity
         base_shift_minutes = 5
         if neighborhood_configs:
-            avg_intensity = sum(
-                nc.intensity for nc in neighborhood_configs
-            ) / len(neighborhood_configs)
+            avg_intensity = sum(nc.intensity for nc in neighborhood_configs) / len(
+                neighborhood_configs
+            )
             base_shift_minutes = max(1, int(avg_intensity * 20))
 
         # Vary shift by iteration to produce diverse solutions
@@ -664,9 +886,8 @@ class HybridSolver:
                 if strategy_type == StrategyType.GLOBAL_RESCHEDULE:
                     should_perturb = True
                 elif strategy_type == StrategyType.LOCAL_REPAIR:
-                    should_perturb = (
-                        op.operation_id in affected_set
-                        or bool(affected_set & set(op.predecessor_ids))
+                    should_perturb = op.operation_id in affected_set or bool(
+                        affected_set & set(op.predecessor_ids)
                     )
                 elif strategy_type == StrategyType.WAIT_AND_REPAIR:
                     should_perturb = op.operation_id in affected_set
@@ -678,8 +899,12 @@ class HybridSolver:
                         new_op.start_time = op.start_time + shift
                         new_op.end_time = op.end_time + shift
                     else:
-                        new_op.start_time = op.start_time - timedelta(minutes=max(1, shift_minutes // 2))
-                        new_op.end_time = op.end_time - timedelta(minutes=max(1, shift_minutes // 2))
+                        new_op.start_time = op.start_time - timedelta(
+                            minutes=max(1, shift_minutes // 2)
+                        )
+                        new_op.end_time = op.end_time - timedelta(
+                            minutes=max(1, shift_minutes // 2)
+                        )
 
                 new_ops.append(new_op)
 
@@ -738,15 +963,17 @@ class HybridSolver:
                 for pred_id in op.predecessor_ids:
                     pred = op_map.get(pred_id)
                     if pred and pred.end_time > op.start_time:
-                        violations.append(ConstraintViolation(
-                            constraint_type="process_order",
-                            operation_id=op.operation_id,
-                            resource_id=op.resource_id,
-                            detail=(
-                                f"Predecessor '{pred_id}' ends at {pred.end_time} "
-                                f"but successor '{op.operation_id}' starts at {op.start_time}"
-                            ),
-                        ))
+                        violations.append(
+                            ConstraintViolation(
+                                constraint_type="process_order",
+                                operation_id=op.operation_id,
+                                resource_id=op.resource_id,
+                                detail=(
+                                    f"Predecessor '{pred_id}' ends at {pred.end_time} "
+                                    f"but successor '{op.operation_id}' starts at {op.start_time}"
+                                ),
+                            )
+                        )
 
         # 2. Resource mutual exclusion (Req 20.3)
         checked.append("resource_mutual_exclusion")
@@ -759,17 +986,19 @@ class HybridSolver:
             sorted_ops = sorted(ops, key=lambda o: o.start_time)
             for i in range(len(sorted_ops) - 1):
                 if sorted_ops[i].end_time > sorted_ops[i + 1].start_time:
-                    violations.append(ConstraintViolation(
-                        constraint_type="resource_mutual_exclusion",
-                        operation_id=sorted_ops[i + 1].operation_id,
-                        resource_id=resource_id,
-                        detail=(
-                            f"Operation '{sorted_ops[i].operation_id}' on resource "
-                            f"'{resource_id}' ends at {sorted_ops[i].end_time} "
-                            f"overlapping with '{sorted_ops[i + 1].operation_id}' "
-                            f"starting at {sorted_ops[i + 1].start_time}"
-                        ),
-                    ))
+                    violations.append(
+                        ConstraintViolation(
+                            constraint_type="resource_mutual_exclusion",
+                            operation_id=sorted_ops[i + 1].operation_id,
+                            resource_id=resource_id,
+                            detail=(
+                                f"Operation '{sorted_ops[i].operation_id}' on resource "
+                                f"'{resource_id}' ends at {sorted_ops[i].end_time} "
+                                f"overlapping with '{sorted_ops[i + 1].operation_id}' "
+                                f"starting at {sorted_ops[i + 1].start_time}"
+                            ),
+                        )
+                    )
 
         # 3. Local-repair invariance (Req 20.5)
         affected_set = set(affected_op_ids)
@@ -784,17 +1013,22 @@ class HybridSolver:
                 if op_id not in affected_set and not op.is_adjusted:
                     snap_op = snapshot_op_map.get(op_id)
                     if snap_op:
-                        if op.start_time != snap_op.start_time or op.end_time != snap_op.end_time:
-                            violations.append(ConstraintViolation(
-                                constraint_type="local_repair_invariance",
-                                operation_id=op_id,
-                                resource_id=op.resource_id,
-                                detail=(
-                                    f"Unaffected operation '{op_id}' was modified: "
-                                    f"start {snap_op.start_time}→{op.start_time}, "
-                                    f"end {snap_op.end_time}→{op.end_time}"
-                                ),
-                            ))
+                        if (
+                            op.start_time != snap_op.start_time
+                            or op.end_time != snap_op.end_time
+                        ):
+                            violations.append(
+                                ConstraintViolation(
+                                    constraint_type="local_repair_invariance",
+                                    operation_id=op_id,
+                                    resource_id=op.resource_id,
+                                    detail=(
+                                        f"Unaffected operation '{op_id}' was modified: "
+                                        f"start {snap_op.start_time}→{op.start_time}, "
+                                        f"end {snap_op.end_time}→{op.end_time}"
+                                    ),
+                                )
+                            )
 
         return ConstraintValidationReport(
             is_feasible=len(violations) == 0,
@@ -814,9 +1048,15 @@ class HybridSolver:
         degradation_reason: str | None,
     ) -> CandidatePlan:
         """Build an infeasible report plan when no solution found (Req 4.9)."""
-        st_val = strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type
+        st_val = (
+            strategy_type.value
+            if isinstance(strategy_type, StrategyType)
+            else strategy_type
+        )
         repair_mode = bundle.repair_config.repair_mode
-        rm_val = repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
+        rm_val = (
+            repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
+        )
 
         chain = SolverChain(
             strategy_type=st_val,
@@ -824,10 +1064,17 @@ class HybridSolver:
             neighborhood_selection="none",
             repair_policy=rm_val,
             solver_name=solver_name,
-            key_parameters={"degradation_occurred": degradation_occurred},
+            key_parameters={
+                "degradation_occurred": degradation_occurred,
+                "recovery_required": True,
+                "restoration_endpoint": (
+                    "/api/v1/runtime/feasibility-restoration/evaluate"
+                ),
+                "writeback_allowed": False,
+            },
             search_budget_seconds=bundle.repair_config.search_time_budget_seconds,
             constraint_validation_result="infeasible",
-            stages=["规则选择", "初解生成", "求解失败"],
+            stages=["规则选择", "初解生成", "求解失败", "等待不可行恢复评估"],
         )
 
         metadata = SolverMetadata(
@@ -846,7 +1093,9 @@ class HybridSolver:
                     operation_id="*",
                     resource_id=None,
                     detail=(
-                        "No feasible solution found within time budget. "
+                        "No independently validated feasible solution is available. "
+                        "Preserve the baseline and run the feasibility-restoration "
+                        "endpoint before considering any constraint change. "
                         f"Degradation: {degradation_reason or 'none'}"
                     ),
                 )
@@ -881,4 +1130,6 @@ class HybridSolver:
     @staticmethod
     def _is_cp_sat_solver(solver_name: str) -> bool:
         normalized = solver_name.lower().replace("-", "_")
-        return "cp_sat" in normalized or "cpsat" in normalized or "ortools" in normalized
+        return (
+            "cp_sat" in normalized or "cpsat" in normalized or "ortools" in normalized
+        )

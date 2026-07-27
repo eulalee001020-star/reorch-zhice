@@ -17,6 +17,9 @@ from app.models.large_fjsp_replay import (
 from app.models.reality_harness import P0RealityHarnessRequest
 from app.models.schedule import Operation, ScheduleDetail, ScheduleSnapshot, WorkOrder
 from app.services.cp_sat_scheduler import CpSatFjspScheduler
+from app.services.customer_constraint_ingestion import CustomerConstraintIngestionService
+from app.services.machine_rank_service import MachineRankService
+from app.services.metaheuristic_backend import MetaheuristicBackend
 from app.services.reality_harness import P0RealityHarnessService
 
 
@@ -53,9 +56,13 @@ class LargeFjspReplayService:
         *,
         reality_harness: P0RealityHarnessService | None = None,
         scheduler: CpSatFjspScheduler | None = None,
+        metaheuristic: MetaheuristicBackend | None = None,
+        machine_ranker: MachineRankService | None = None,
     ) -> None:
         self._reality_harness = reality_harness or P0RealityHarnessService()
         self._scheduler = scheduler or CpSatFjspScheduler()
+        self._metaheuristic = metaheuristic or MetaheuristicBackend(self._scheduler)
+        self._machine_ranker = machine_ranker or MachineRankService()
 
     def run(self, request: LargeFjspReplayRequest) -> LargeFjspReplayResponse:
         normalized = _normalize_request(request)
@@ -83,6 +90,16 @@ class LargeFjspReplayService:
                 ],
                 claim_boundary=_CLAIM_BOUNDARY,
             )
+        snapshot = CustomerConstraintIngestionService().attach_to_snapshot(
+            snapshot,
+            CustomerConstraintIngestionService().build_pack(
+                material_availability=normalized.material_availability,
+                quality_holds=normalized.quality_holds,
+                tooling_calendar=normalized.tooling_calendar,
+                labor_skill_capacity=normalized.labor_skill_capacity,
+                urgent_order_constraints=normalized.urgent_order_constraints,
+            ),
+        )
 
         incidents = normalized.incidents[: request.max_incidents]
         frozen_ids = _frozen_operation_ids(normalized.schedule_rows)
@@ -242,12 +259,13 @@ class LargeFjspReplayService:
                 decision_boundary="Reference-only policy; do not write back.",
             )
 
-        result = self._scheduler.solve(
+        result = self._solve_with_portfolio(
             snapshot=snapshot,
-            impact_report=impact,
-            strategy_type=strategy,
-            affected_op_ids=[affected_operation_id],
+            impact=impact,
+            strategy=strategy,
+            affected_operation_id=affected_operation_id,
             frozen_operation_ids=solver_frozen_operation_ids,
+            kpi_frozen_operation_ids=kpi_frozen_operation_ids,
             timeout_seconds=timeout_seconds,
         )
         if not result.is_feasible or result.schedule_detail is None:
@@ -262,7 +280,7 @@ class LargeFjspReplayService:
                 kpi=LargeFjspStrategyKpi(),
                 pros=_pros(policy),
                 cons=[*_cons(policy), "solver did not return a feasible schedule"],
-                blockers=[result.status_name],
+                blockers=[result.status_name, *result.solver_log.get("portfolio_failures", [])],
                 decision_boundary="Keep as no-writeback evidence; escalate to planner.",
             )
 
@@ -290,12 +308,91 @@ class LargeFjspReplayService:
             ),
         )
 
+    def _solve_with_portfolio(
+        self,
+        *,
+        snapshot: ScheduleSnapshot,
+        impact: ImpactReport,
+        strategy: StrategyType,
+        affected_operation_id: str,
+        frozen_operation_ids: list[str],
+        kpi_frozen_operation_ids: list[str],
+        timeout_seconds: float,
+    ):
+        direct = self._scheduler.solve(
+            snapshot=snapshot,
+            impact_report=impact,
+            strategy_type=strategy,
+            affected_op_ids=[affected_operation_id],
+            frozen_operation_ids=frozen_operation_ids,
+            timeout_seconds=max(0.2, timeout_seconds * 0.45),
+        )
+        results = [direct]
+        if strategy in {StrategyType.LOCAL_REPAIR, StrategyType.GLOBAL_RESCHEDULE}:
+            meta = self._metaheuristic.solve(
+                snapshot=snapshot,
+                impact_report=impact,
+                strategy_type=strategy,
+                affected_op_ids=[affected_operation_id],
+                frozen_operation_ids=frozen_operation_ids,
+                machine_ranks=self._machine_ranker.rank(snapshot, impact),
+                timeout_seconds=max(0.2, timeout_seconds * 0.55),
+                candidate_count=3,
+            )
+            results.extend(meta.schedules)
+
+        feasible = [
+            result
+            for result in results
+            if result.is_feasible and result.schedule_detail is not None
+        ]
+        if not feasible:
+            direct.solver_log = {
+                **direct.solver_log,
+                "portfolio_failures": [
+                    result.status_name for result in results if not result.is_feasible
+                ],
+            }
+            return direct
+
+        def rank(result) -> tuple[float, float, float, float]:
+            assert result.schedule_detail is not None
+            kpi = _kpi(
+                baseline=snapshot,
+                candidate=result.schedule_detail,
+                affected_operation_id=affected_operation_id,
+                frozen_operation_ids=kpi_frozen_operation_ids,
+            )
+            return (
+                kpi.frozen_change_count,
+                max(0.0, kpi.affected_completion_delta_minutes),
+                kpi.total_start_shift_minutes,
+                result.wall_time_seconds,
+            )
+
+        best = min(feasible, key=rank)
+        best.solver_log = {
+            **best.solver_log,
+            "portfolio_backends": [
+                "direct_cp_sat",
+                "metaheuristic_lns_cp_sat",
+            ],
+            "portfolio_feasible_count": len(feasible),
+            "portfolio_attempt_count": len(results),
+        }
+        return best
+
 
 def _normalize_request(request: LargeFjspReplayRequest) -> LargeFjspReplayRequest:
     work_orders = [dict(row) for row in request.work_orders]
     operations = [dict(row) for row in request.operations]
     resources = [dict(row) for row in request.resources]
     incidents = [dict(row) for row in request.incidents]
+    material_availability = [dict(row) for row in request.material_availability]
+    quality_holds = [dict(row) for row in request.quality_holds]
+    tooling_calendar = [dict(row) for row in request.tooling_calendar]
+    labor_skill_capacity = [dict(row) for row in request.labor_skill_capacity]
+    urgent_order_constraints = [dict(row) for row in request.urgent_order_constraints]
     schedule_by_operation = {
         str(row.get("operation_id")): row for row in request.schedule_rows
     }
@@ -326,6 +423,11 @@ def _normalize_request(request: LargeFjspReplayRequest) -> LargeFjspReplayReques
         resources=resources,
         schedule_rows=[dict(row) for row in request.schedule_rows],
         incidents=incidents,
+        material_availability=material_availability,
+        quality_holds=quality_holds,
+        tooling_calendar=tooling_calendar,
+        labor_skill_capacity=labor_skill_capacity,
+        urgent_order_constraints=urgent_order_constraints,
         timezone_suffix=request.timezone_suffix,
         max_incidents=request.max_incidents,
         cp_sat_timeout_seconds=request.cp_sat_timeout_seconds,

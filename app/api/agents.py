@@ -13,6 +13,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.auth import CurrentUser, get_optional_current_user
+from app.core.config import settings
 from app.models.agent import (
     AgentDecisionFlowRequest,
     AgentDecisionFlowResponse,
@@ -39,6 +40,7 @@ from app.models.agent import (
 from app.services.agent_workflow import (
     AgentOrchestrator,
     AgentWorkflowNotFoundError,
+    AgentWorkflowStageError,
     CaseMemoryAgent,
     FeedbackAgent,
     IncidentAgent,
@@ -46,7 +48,8 @@ from app.services.agent_workflow import (
     PreferenceLearningAgent,
     RuleCandidateAgent,
 )
-from app.services.persistence import record_entity_version
+from app.services.persistence import persist_audit_log, record_entity_version
+from app.services.rule_candidate_replay import RuleCandidateReplayService
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 _rule_candidate_review_store: dict[str, RuleCandidateReviewRecord] = {}
@@ -84,14 +87,57 @@ async def run_agent_decision_flow(
     current_user: CurrentUser = Depends(get_optional_current_user),
 ) -> AgentDecisionFlowResponse:
     try:
-        return await AgentOrchestrator().run_decision_flow(
+        output = await AgentOrchestrator().run_decision_flow(
             body,
             user_id=current_user.user_id,
         )
+        version_persisted = await record_entity_version(
+            entity_type="agent_workflow_run",
+            entity_id=output.run_id,
+            data=output.model_dump(mode="json"),
+            changed_by=current_user.user_id,
+        )
+        audit_persisted = await persist_audit_log(
+            action="agent_decision_flow",
+            entity_type="agent_workflow_run",
+            entity_id=output.run_id,
+            user_id=current_user.user_id,
+            role=current_user.role.value,
+            result=output.workflow_status,
+            details={
+                "incident_id": str(output.incident.incident_id),
+                "input_fingerprint": output.input_fingerprint,
+                "admissible_plan_count": len(output.admissible_plan_ids),
+                "blocked_plan_count": len(output.blocked_plan_ids),
+                "requires_human_confirmation": output.requires_human_confirmation,
+            },
+        )
+        if settings.app.durable_persistence_required and not (
+            version_persisted and audit_persisted
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "durable_agent_trace_unavailable",
+                    "run_id": output.run_id,
+                    "retryable": True,
+                },
+            )
+        return output
     except AgentWorkflowNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
+        ) from exc
+    except AgentWorkflowStageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "agent_workflow_stage_failed",
+                "stage": exc.stage,
+                "reason": exc.reason,
+                "retryable": exc.retryable,
+            },
         ) from exc
 
 
@@ -409,36 +455,7 @@ def _run_rule_candidate_replay(
     record: RuleCandidateReviewRecord,
     request: RuleCandidateReplayRequest,
 ) -> RuleCandidateReplayResult:
-    candidate = record.candidate
-    notes = list(request.notes)
-    blocked_reason: str | None = None
-    if candidate.constraint_type == "review_note":
-        blocked_reason = "rule_type_or_scope_unclear"
-    elif candidate.confidence < 0.65:
-        blocked_reason = "candidate_confidence_below_replay_threshold"
-    elif candidate.constraint_type in {"calendar", "skill", "forbidden_assignment"}:
-        machine_ids = candidate.scope.get("machine_ids")
-        if not machine_ids:
-            blocked_reason = "missing_machine_scope"
-    elif "缺少明确" in (candidate.risk_note or ""):
-        blocked_reason = "risk_note_requires_more_scope"
-
-    pass_replay = blocked_reason is None
-    notes.append(
-        "Replay checks only validate historical/scenario behavior; production enablement still requires configuration review."
-    )
-    return RuleCandidateReplayResult(
-        pass_replay=pass_replay,
-        scenario_count=max(0, request.scenario_count),
-        blocked_reason=blocked_reason,
-        metrics={
-            "confidence": candidate.confidence,
-            "scenario_set": request.scenario_set,
-            "source_ref_count": len(candidate.source_refs),
-            "readonly_publish_required": True,
-        },
-        notes=notes,
-    )
+    return RuleCandidateReplayService().run(record.candidate, request)
 
 
 async def _record_rule_candidate_version(

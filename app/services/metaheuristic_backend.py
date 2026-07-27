@@ -9,11 +9,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from app.core.config import settings
 from app.models.enums import NeighborhoodType, StrategyType
 from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleSnapshot
+from app.services.constraint_aware_ssgs import ConstraintAwareSsgsScheduler
 from app.services.cp_sat_scheduler import CpSatFjspScheduler, CpSatScheduleResult
 from app.services.machine_rank_service import MachineRank
+from app.services.operational_constraint_validator import OperationalConstraintValidator
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,8 @@ class MetaheuristicBackend:
 
     def __init__(self, cp_sat_scheduler: CpSatFjspScheduler | None = None) -> None:
         self._cp_sat = cp_sat_scheduler or CpSatFjspScheduler()
+        self._validator = OperationalConstraintValidator()
+        self._heuristic = ConstraintAwareSsgsScheduler(self._validator)
 
     def solve(
         self,
@@ -55,23 +60,70 @@ class MetaheuristicBackend:
         )
         schedules: list[CpSatScheduleResult] = []
         explored: list[str] = []
-        per_neighborhood_timeout = max(0.2, timeout_seconds / max(1, min(candidate_count, len(neighborhoods))))
+        heuristic = self._heuristic.solve(
+            snapshot=snapshot,
+            impact_report=impact_report,
+            strategy_type=strategy_type,
+            affected_op_ids=affected_op_ids,
+            frozen_operation_ids=frozen_operation_ids,
+            timeout_seconds=min(
+                settings.solver.heuristic_max_seconds,
+                max(
+                    0.05,
+                    timeout_seconds * settings.solver.heuristic_budget_ratio,
+                ),
+            ),
+        )
+        initial_solution = heuristic.schedule_detail if heuristic.is_feasible else None
+        if initial_solution is not None:
+            schedules.append(
+                CpSatScheduleResult(
+                    schedule_detail=initial_solution,
+                    status_name=heuristic.status_name,
+                    is_feasible=True,
+                    objective_value=heuristic.objective_value,
+                    wall_time_seconds=heuristic.wall_time_seconds,
+                    variable_operation_ids=heuristic.variable_operation_ids,
+                    solver_log={
+                        "backend": "constraint_aware_ssgs",
+                        "checked_constraints": heuristic.checked_constraints,
+                    },
+                )
+            )
+        remaining_budget = max(0.1, timeout_seconds - heuristic.wall_time_seconds)
+        per_neighborhood_timeout = max(
+            0.2,
+            remaining_budget / max(1, min(candidate_count, len(neighborhoods))),
+        )
 
-        seen_signatures: set[str] = set()
+        seen_signatures = {
+            self._signature(result)
+            for result in schedules
+            if result.schedule_detail is not None
+        }
         for idx, neighborhood in enumerate(neighborhoods):
             if len(schedules) >= candidate_count:
                 break
             result = self._cp_sat.solve(
                 snapshot=snapshot,
                 impact_report=impact_report,
-                strategy_type=strategy_type,
+                strategy_type=(
+                    StrategyType.LOCAL_REPAIR
+                    if strategy_type == StrategyType.GLOBAL_RESCHEDULE
+                    else strategy_type
+                ),
                 affected_op_ids=neighborhood.target_operation_ids,
                 frozen_operation_ids=frozen_operation_ids,
                 timeout_seconds=per_neighborhood_timeout,
                 candidate_index=idx,
+                initial_solution=initial_solution,
             )
             explored.append(neighborhood.neighborhood_type.value)
-            if result.is_feasible and result.schedule_detail is not None:
+            if self._is_validated(
+                result,
+                snapshot,
+                frozen_operation_ids,
+            ):
                 signature = self._signature(result)
                 if signature not in seen_signatures:
                     seen_signatures.add(signature)
@@ -81,6 +133,35 @@ class MetaheuristicBackend:
             schedules=schedules,
             explored_neighborhoods=explored,
         )
+
+    def _is_validated(
+        self,
+        result: CpSatScheduleResult,
+        snapshot: ScheduleSnapshot,
+        frozen_operation_ids: list[str],
+    ) -> bool:
+        if not result.is_feasible or result.schedule_detail is None:
+            return False
+        all_operation_ids = {
+            operation.operation_id
+            for work_order in snapshot.work_orders
+            for operation in work_order.operations
+        }
+        effective_frozen = set(frozen_operation_ids) | (
+            all_operation_ids - set(result.variable_operation_ids)
+        )
+        report = self._validator.validate(
+            result.schedule_detail,
+            snapshot,
+            frozen_operation_ids=sorted(effective_frozen),
+        )
+        result.solver_log = {
+            **result.solver_log,
+            "independent_validation": (
+                "feasible" if report.is_feasible else "infeasible"
+            ),
+        }
+        return report.is_feasible
 
     @staticmethod
     def _build_neighborhoods(
@@ -169,4 +250,3 @@ class MetaheuristicBackend:
                     f"{op.operation_id}:{op.resource_id}:{op.start_time.isoformat()}:{op.end_time.isoformat()}"
                 )
         return "|".join(sorted(parts))
-

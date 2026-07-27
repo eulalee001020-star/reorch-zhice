@@ -37,6 +37,7 @@ export {
   getDecisionRecord,
   getWritebackStatus,
   getExecutionResult,
+  runSandboxWriteback,
 } from './confirmation';
 
 export {
@@ -67,6 +68,8 @@ export {
   estimatePocValue,
   normalizeEnterpriseImport,
   runP0RealitySamplePack,
+  runDesignPartnerPreflight,
+  runDesignPartnerSamplePreflight,
   compileConstraintCalibration,
   buildWritebackPreview,
   runDigitalTwinSample,
@@ -74,3 +77,11 @@ export {
 
 export { runNgsLabDemo, runNgsLabBatchReplay, recordNgsPlannerDecision, listNgsPlannerDecisions } from './ngs';
 export { getEvidenceCenter } from './evidence';
+export { runProductionValidation } from './runtime';
+export {
+  getIntegrationControlOverview,
+  listIntegrationAssets,
+  listIntegrationQuarantine,
+  listIntegrationAudit,
+  runIntegrationControlValidation,
+} from './integrationControl';

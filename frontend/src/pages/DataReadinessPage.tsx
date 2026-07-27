@@ -439,11 +439,47 @@ const DataReadinessPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="demo-page">
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <div className="demo-hero">
+          <Row gutter={[18, 18]} align="middle">
+            <Col xs={24} lg={11}>
+              <div className="hero-eyebrow">DataGate / before any recovery recommendation</div>
+              <h1 className="hero-title">先判断客户数据能不能支持 replay 和 shadow</h1>
+              <div className="hero-subtitle">
+                ReOrch 不在字段缺失、引用断裂或权限不足时生成“看起来正确”的重排方案；数据就绪决定系统允许走到哪一步。
+              </div>
+            </Col>
+            <Col xs={24} lg={13}>
+              <div className="metric-strip">
+                <div className="metric-tile">
+                  <div className="metric-label">1. Data repair</div>
+                  <div className="metric-value">Block</div>
+                  <div className="metric-note">只输出缺口</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">2. Historical replay</div>
+                  <div className="metric-value">Read</div>
+                  <div className="metric-note">只读回放</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">3. Shadow mode</div>
+                  <div className="metric-value">Watch</div>
+                  <div className="metric-note">并行复核</div>
+                </div>
+                <div className="metric-tile">
+                  <div className="metric-label">4. Dry-run writeback</div>
+                  <div className="metric-value">Approve</div>
+                  <div className="metric-note">人工确认</div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+
         <Card
           size="small"
-          title="Data Readiness"
+          title="Data Readiness Gate"
           extra={
             <Space>
               <Button icon={<WarningOutlined />} onClick={() => run(blockedRequest)}>

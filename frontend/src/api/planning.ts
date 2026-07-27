@@ -8,6 +8,8 @@ import type {
   DataReadinessReport,
   DecisionGraphBuildRequest,
   DecisionGraphBuildResponse,
+  DesignPartnerPreflightRequest,
+  DesignPartnerPreflightResponse,
   DigitalTwinRunResponse,
   EnterpriseImportRequest,
   EnterpriseImportResponse,
@@ -142,6 +144,23 @@ export async function normalizeEnterpriseImport(
 export async function runP0RealitySamplePack(): Promise<P0RealityHarnessResponse> {
   const { data } = await apiClient.post<P0RealityHarnessResponse>(
     '/planning/reality-harness/sample-pack',
+  );
+  return data;
+}
+
+export async function runDesignPartnerPreflight(
+  request: DesignPartnerPreflightRequest,
+): Promise<DesignPartnerPreflightResponse> {
+  const { data } = await apiClient.post<DesignPartnerPreflightResponse>(
+    '/planning/design-partner/preflight',
+    request,
+  );
+  return data;
+}
+
+export async function runDesignPartnerSamplePreflight(): Promise<DesignPartnerPreflightResponse> {
+  const { data } = await apiClient.post<DesignPartnerPreflightResponse>(
+    '/planning/design-partner/sample-preflight',
   );
   return data;
 }

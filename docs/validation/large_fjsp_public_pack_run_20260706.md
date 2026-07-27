@@ -2,9 +2,8 @@
 
 ## Input Pack
 
-Path used locally:
-
-`/Users/lishuangjiang/Downloads/reorch_large_fjsp_public_anomaly_pack_v0_1.zip`
+Reproducible inputs and provenance are stored under
+`datasets/public_reliability_packs/`.
 
 Pack contents include:
 

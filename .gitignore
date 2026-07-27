@@ -24,6 +24,9 @@ env/
 frontend/node_modules/
 frontend/dist/
 node_modules/
+.next/
+.wrangler/
+.playwright-cli/
 
 # Local environment and secrets
 .env
@@ -39,11 +42,12 @@ node_modules/
 *.log
 logs/
 demo/runtime/
+output/
+outputs/
 *.sqlite
 *.sqlite3
 *.db
 
 # IDE local state
 .idea/
-.vscode/*
-!.vscode/settings.json
+.vscode/

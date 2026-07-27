@@ -19,6 +19,11 @@ class LargeFjspReplayRequest(ReOrchModel):
     resources: list[dict] = Field(default_factory=list)
     schedule_rows: list[dict] = Field(default_factory=list)
     incidents: list[dict] = Field(default_factory=list)
+    material_availability: list[dict] = Field(default_factory=list)
+    quality_holds: list[dict] = Field(default_factory=list)
+    tooling_calendar: list[dict] = Field(default_factory=list)
+    labor_skill_capacity: list[dict] = Field(default_factory=list)
+    urgent_order_constraints: list[dict] = Field(default_factory=list)
     timezone_suffix: str = "+00:00"
     max_incidents: int = Field(default=30, gt=0, le=200)
     cp_sat_timeout_seconds: float = Field(default=5.0, gt=0.0, le=60.0)

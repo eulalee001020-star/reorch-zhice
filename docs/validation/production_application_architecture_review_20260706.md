@@ -48,9 +48,8 @@
 
 ### 2.1 大规模 FJSP replay 实测
 
-本轮使用本地数据包：
-
-`/Users/lishuangjiang/Downloads/reorch_large_fjsp_public_anomaly_pack_v0_1.zip`
+本轮使用公开基准衍生的 Large FJSP 异常注入包；可复现输入与构建脚本见
+`datasets/public_reliability_packs/`。
 
 重要边界：该包 README 表明它是 public benchmark-derived anomaly injection pack。除非客户另行提供 provenance note，否则不能把它包装为真实客户生产证据。
 

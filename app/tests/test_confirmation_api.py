@@ -2,6 +2,7 @@
 
 Covers:
 - POST /api/v1/incidents/{incident_id}/confirm
+- POST /api/v1/incidents/{incident_id}/sandbox-writeback
 - GET  /api/v1/incidents/{incident_id}/decision-record
 - GET  /api/v1/incidents/{incident_id}/writeback-status
 - GET  /api/v1/incidents/{incident_id}/execution-result
@@ -307,8 +308,8 @@ async def test_get_decision_record_404():
 
 
 @pytest.mark.asyncio
-async def test_get_writeback_status():
-    """GET /writeback-status returns status after confirmation."""
+async def test_confirmation_does_not_trigger_writeback():
+    """Confirmation records the decision without contacting MES."""
     incident_id, plan_id = _seed_incident_and_plans()
 
     transport = ASGITransport(app=app)
@@ -326,9 +327,140 @@ async def test_get_writeback_status():
             f"/api/v1/incidents/{incident_id}/writeback-status"
         )
 
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "success"
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_sandbox_writeback_dry_run_only_builds_instructions():
+    """A dry-run previews instructions but still creates no writeback job."""
+    incident_id, plan_id = _seed_incident_and_plans()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        confirm = await client.post(
+            f"/api/v1/incidents/{incident_id}/confirm",
+            json={
+                "action": "accept",
+                "selected_plan_id": str(plan_id),
+                "confirmed_by": "planner-1",
+            },
+        )
+        decision_record_id = confirm.json()["decision_record_id"]
+
+        preview = await client.post(
+            f"/api/v1/incidents/{incident_id}/sandbox-writeback",
+            json={
+                "decision_record_id": decision_record_id,
+                "dry_run": True,
+            },
+        )
+        status_response = await client.get(
+            f"/api/v1/incidents/{incident_id}/writeback-status"
+        )
+
+    assert preview.status_code == 200
+    body = preview.json()
+    assert body["status"] == "dry_run_ready"
+    assert body["dry_run"] is True
+    assert body["instruction_count"] == len(body["instructions"])
+    assert "No external system was changed" in body["claim_boundary"]
+    assert status_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_sandbox_writeback_execution_requires_controlled_environment():
+    """An unauthenticated local actor cannot execute external writeback."""
+    incident_id, plan_id = _seed_incident_and_plans()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        confirm = await client.post(
+            f"/api/v1/incidents/{incident_id}/confirm",
+            json={
+                "action": "accept",
+                "selected_plan_id": str(plan_id),
+                "confirmed_by": "planner-1",
+            },
+        )
+        response = await client.post(
+            f"/api/v1/incidents/{incident_id}/sandbox-writeback",
+            json={
+                "decision_record_id": confirm.json()["decision_record_id"],
+                "dry_run": False,
+                "approval_note": "Approved for sandbox verification only",
+            },
+        )
+
+    assert response.status_code == 403
+    assert "AUTH_REQUIRE_API_KEY" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_sandbox_writeback_uses_second_approval_and_idempotency_key(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A configured sandbox sends only changed operations with a signed permit."""
+    import importlib
+
+    from app.api.solver import _plan_index
+    from app.core.config import settings
+    from app.services.writeback_module import WritebackModule
+
+    class CapturingAdapter:
+        def __init__(self) -> None:
+            self.payloads: list[dict] = []
+
+        async def send_instruction(self, instruction, **kwargs) -> bool:
+            assert kwargs["execution_permit"] is not None
+            self.payloads.append(instruction.as_payload())
+            return True
+
+    confirmation_api = importlib.import_module("app.api.confirmation")
+    adapter = CapturingAdapter()
+    monkeypatch.setattr(
+        confirmation_api,
+        "_writeback_module",
+        WritebackModule(mes_adapter=adapter),
+    )
+    monkeypatch.setattr(settings.auth, "require_api_key", True)
+    monkeypatch.setattr(
+        settings.auth,
+        "writeback_permit_secret",
+        "sandbox-api-test-secret-with-at-least-32-characters",
+    )
+    monkeypatch.setattr(settings.integration, "writeback_mode", "sandbox")
+    monkeypatch.setattr(settings.integration, "mes_target_environment", "sandbox")
+    monkeypatch.setattr(settings.integration, "mes_base_url", "https://mes-sandbox.test")
+
+    incident_id, plan_id = _seed_incident_and_plans()
+    _plan_index[str(plan_id)].schedule_detail.work_orders[0].operations[0].is_affected = True
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        confirm = await client.post(
+            f"/api/v1/incidents/{incident_id}/confirm",
+            headers={"X-API-Key": "planner-key-001"},
+            json={
+                "action": "accept",
+                "selected_plan_id": str(plan_id),
+                "confirmed_by": "planner-1",
+            },
+        )
+        response = await client.post(
+            f"/api/v1/incidents/{incident_id}/sandbox-writeback",
+            headers={"X-API-Key": "mgmt-key-001"},
+            json={
+                "decision_record_id": confirm.json()["decision_record_id"],
+                "dry_run": False,
+                "approval_note": "Approved for isolated sandbox contract test",
+            },
+        )
+
+    assert confirm.status_code == 200
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+    assert len(adapter.payloads) == 1
+    assert adapter.payloads[0]["idempotency_key"] == f"reorch:{plan_id}:OP-1"
 
 
 # ── Test: GET /writeback-status 404 ────────────────────────────────

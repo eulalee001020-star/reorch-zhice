@@ -1,0 +1,5 @@
+machine_id,name,capabilities,status
+TANK-B1,B1,surface_treatment_batch,available
+TANK-B2,B2,surface_treatment_batch,available
+TANK-B6,B6,surface_treatment_batch,available
+TANK-LTS30,LTS30,surface_treatment_batch,available

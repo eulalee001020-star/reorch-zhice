@@ -1,0 +1,4 @@
+machine_id,name,capabilities,status
+MAQ118,MAQ118,Harden[0.5]|Harden[1.5]|Harden[1]|Harden[2]|Ironing,available
+MAQ119,MAQ119,Harden[0.5]|Harden[1.5]|Harden[1]|Ironing,available
+MAQ120,MAQ120,Anti-Shrinkage|Ironing|Sublimation,available

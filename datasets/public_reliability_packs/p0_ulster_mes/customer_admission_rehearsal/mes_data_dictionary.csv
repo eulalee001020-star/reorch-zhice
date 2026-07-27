@@ -1,0 +1,8 @@
+source_object,source_field,canonical_object,canonical_field,type,required,authority
+ERP_WORK_ORDER,work_order_id,WorkOrder,work_order_id,string,True,order_authority
+ERP_WORK_ORDER,due_time,WorkOrder,due_time,datetime-tz,True,order_authority
+MES_OPERATION,operation_id,Operation,operation_id,string,True,execution_authority
+MES_OPERATION,machine_id,Operation,machine_id,string,True,execution_authority
+MES_INCIDENT,start_time,Incident,start_time,datetime-tz,True,execution_authority
+MES_RECEIPT,status,ExecutionFeedback,status,enum,True,execution_authority
+PLANNER_DECISION,disposition,DecisionRecord,planner_disposition,enum,True,schedule_authority

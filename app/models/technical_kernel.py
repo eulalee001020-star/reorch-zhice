@@ -82,7 +82,9 @@ class RecoveryOperatorRecommendation(ReOrchModel):
     why_selected: list[str] = Field(default_factory=list)
     required_gates: list[str] = Field(default_factory=list)
     expected_metrics: list[str] = Field(default_factory=list)
-    llm_role: str = "No final scheduling authority; explanation and rule-candidate support only."
+    llm_role: str = (
+        "No final scheduling authority; explanation and rule-candidate support only."
+    )
 
 
 class RecoveryOperatorResponse(ReOrchModel):
@@ -118,6 +120,9 @@ class EvidenceGateRequest(ReOrchModel):
     replay_validation: ReplayValidationResponse | None = None
     shadow_capture: ShadowCaseCaptureResponse | None = None
     planner_confirmed: bool = False
+    sandbox_dry_run_passed: bool = False
+    approval_refs: list[str] = Field(default_factory=list)
+    writeback_authorization_ref: str | None = None
 
 
 class EvidenceGateResponse(ReOrchModel):

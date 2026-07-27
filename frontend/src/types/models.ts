@@ -349,6 +349,10 @@ export interface AgentTraceStep {
   latency_ms?: number | null;
   input_tokens?: number | null;
   output_tokens?: number | null;
+  attempt_count?: number;
+  stage_status?: 'completed' | 'degraded' | 'blocked' | 'timed_out';
+  input_fingerprint?: string | null;
+  evidence_refs?: string[];
   fallback_reason?: string | null;
   deterministic_tools: string[];
   guardrail: string;
@@ -387,7 +391,11 @@ export interface AgentDecisionFlowRequest {
 }
 
 export interface AgentDecisionFlowResponse {
+  run_id: string;
+  workflow_status: 'completed' | 'degraded' | 'blocked';
+  input_fingerprint: string;
   incident: Incident;
+  data_readiness?: DataReadinessReport | null;
   impact_report: ImpactReport;
   strategy: StrategyRecommendation;
   candidate_plans: CandidatePlan[];
@@ -396,6 +404,8 @@ export interface AgentDecisionFlowResponse {
   recommendation?: PlanSelectionOutput | null;
   recommendation_explanation?: RecommendationExplanation | null;
   solver_chain_explanation?: SolverChainExplanation | null;
+  admissible_plan_ids: string[];
+  blocked_plan_ids: string[];
   requires_human_confirmation: boolean;
   trace: AgentTraceStep[];
 }
@@ -450,6 +460,8 @@ export interface RuleCandidateReplayResult {
   pass_replay: boolean;
   checked_at: string;
   scenario_count: number;
+  scenario_results: RuleReplayScenarioResult[];
+  evidence_scope_counts: Record<string, number>;
   blocked_reason?: string | null;
   metrics: Record<string, unknown>;
   notes: string[];
@@ -492,12 +504,98 @@ export interface RuleCandidateReviewRequest {
 export interface RuleCandidateReplayRequest {
   scenario_set?: string;
   scenario_count?: number;
+  scenarios?: RuleReplayScenario[];
   notes?: string[];
+}
+
+export interface RuleReplayScenario {
+  scenario_id: string;
+  evidence_scope: 'digital_twin' | 'customer_historical' | 'customer_shadow' | 'customer_production';
+  snapshot_ref: string;
+  source_refs: string[];
+  facts: Record<string, unknown>;
+  expected_outcome: 'allow' | 'avoid' | 'block' | 'review';
+}
+
+export interface RuleReplayScenarioResult {
+  scenario_id: string;
+  evidence_scope: string;
+  snapshot_ref: string;
+  source_refs: string[];
+  expected_outcome: string;
+  observed_outcome: string;
+  rule_triggered: boolean;
+  quality_gate_passed: boolean;
+  passed: boolean;
+  blockers: string[];
+  result_fingerprint: string;
 }
 
 export interface RuleCandidatePublishRequest {
   publisher_id?: string;
   release_note?: string | null;
+}
+
+export interface ProductionValidationRunRequest {
+  scale_repetitions?: number;
+}
+
+export interface ProductionScaleResult {
+  operation_count: number;
+  repetitions: number;
+  all_runs_feasible: boolean;
+  p50_elapsed_ms: number;
+  p95_elapsed_ms: number;
+  max_observed_parallelism: number;
+  max_global_violation_count: number;
+  joint_incident_group_verified: boolean;
+  subproblem_limit: number;
+  evidence_fingerprints: string[];
+  evidence_scope: string;
+}
+
+export interface RecoveryEvidenceCaseSummary {
+  case_id: string;
+  evidence_scope: string;
+  incident: {
+    incident_id: string;
+    incident_type: string;
+    severity: string;
+  };
+  planner_decision: Record<string, unknown>;
+  system_recovery: Record<string, unknown>;
+  execution_outcome: Record<string, unknown>;
+  roi: Record<string, unknown>;
+  evidence_fingerprint: string;
+}
+
+export interface RecoveryEvidenceLedgerSummary {
+  ledger_id: string;
+  evidence_scope: string;
+  cases: RecoveryEvidenceCaseSummary[];
+  case_count: number;
+  planner_baseline_complete: boolean;
+  execution_outcome_complete: boolean;
+  roi_is_proxy: boolean;
+  customer_evidence_gate_passed: boolean;
+  aggregate_roi: Record<string, number | string | boolean>;
+  blockers: string[];
+  ledger_fingerprint: string;
+  claim_boundary: string;
+}
+
+export interface ProductionValidationRunResponse {
+  run_id: string;
+  generated_at: string;
+  evidence_scope: string;
+  checks: Record<string, Record<string, unknown>>;
+  scale_results: ProductionScaleResult[];
+  evidence_ledger: RecoveryEvidenceLedgerSummary;
+  all_digital_twin_checks_passed: boolean;
+  customer_evidence_gate_passed: boolean;
+  blockers: string[];
+  artifact_fingerprint: string;
+  claim_boundary: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -565,6 +663,86 @@ export interface WritebackStatusResponse {
   failed_count: number;
   failed_instructions: Record<string, unknown>[];
   timestamp: string;
+}
+
+export type DesignPartnerPreflightRequest = Record<string, unknown>;
+
+export interface DesignPartnerEvidenceCheck {
+  check_id: string;
+  category: string;
+  status: 'passed' | 'warning' | 'blocked' | 'not_provided';
+  finding: string;
+  evidence_refs: string[];
+  required_action?: string | null;
+}
+
+export interface DesignPartnerRoiSummary {
+  currency: string;
+  evidence_level:
+    | 'none'
+    | 'replay_counterfactual'
+    | 'shadow_observed'
+    | 'execution_measured'
+    | 'finance_validated_execution';
+  submitted_case_count: number;
+  eligible_case_count: number;
+  estimated_case_savings: number;
+  realized_case_savings: number;
+  finance_validated: boolean;
+  roi_ratio?: number | null;
+  claim_allowed: string;
+}
+
+export interface DesignPartnerMoatLayer {
+  layer:
+    | 'data_integration'
+    | 'constraint_translation'
+    | 'validation_assets'
+    | 'workflow_embedding';
+  evidence_coverage_score: number;
+  status: 'nascent' | 'building' | 'validated';
+  customer_private_asset_count: number;
+  reusable_deidentified_asset_count: number;
+  strengths: string[];
+  gaps: string[];
+}
+
+export interface DesignPartnerPreflightResponse {
+  preflight_id: string;
+  generated_at: string;
+  evidence_scope: 'customer_provided' | 'synthetic_sample';
+  customer_ref: string;
+  site_id: string;
+  workshop_id: string;
+  data_fingerprint: string;
+  stage: 'data_repair' | 'replay_ready' | 'shadow_ready';
+  checks: DesignPartnerEvidenceCheck[];
+  roi_summary: DesignPartnerRoiSummary;
+  moat_layers: DesignPartnerMoatLayer[];
+  allowed_actions: string[];
+  blocked_actions: string[];
+  required_next_actions: string[];
+  generated_deliverables: string[];
+  claim_boundary: string;
+}
+
+export interface SandboxWritebackRequest {
+  decision_record_id: string;
+  target_environment?: 'sandbox';
+  dry_run?: boolean;
+  approval_note?: string;
+}
+
+export interface SandboxWritebackResponse {
+  incident_id: string;
+  decision_record_id: string;
+  target_environment: 'sandbox';
+  dry_run: boolean;
+  status: string;
+  instruction_count: number;
+  instructions: Record<string, unknown>[];
+  approved_by?: string | null;
+  claim_boundary: string;
 }
 
 export interface CaseRecord {

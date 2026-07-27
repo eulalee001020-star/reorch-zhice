@@ -36,6 +36,11 @@ class SolverMetadata(ReOrchModel):
     objective_trajectory: list[float] = Field(default_factory=list)
     degradation_occurred: bool = False
     degradation_reason: str | None = None
+    best_objective_bound: float | None = None
+    relative_gap: float | None = None
+    hint_applied: bool = False
+    time_to_first_feasible_ms: float | None = None
+    incumbent_source: str | None = None
 
 
 class ConstraintViolation(ReOrchModel):

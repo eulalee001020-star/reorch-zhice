@@ -1,0 +1,105 @@
+{
+  "pack_id": "p0_ulster_mes",
+  "tier": "P0",
+  "title": "Ulster University Manufacturing Operations Dataset",
+  "source_url": "https://mdep.smdh.uk/en/dataset/ulster-university--manufacturing-operations-dataset",
+  "license": "Other (Non-Commercial)",
+  "provenance": "real_anonymized_mes",
+  "claim_boundary": "Engineering reliability evidence only; not customer production reliability, ROI, planner adoption, or writeback authorization.",
+  "critical_conclusion": "Local p0_ulster_mes has no real anonymized MES raw files; all 5 expected files are missing and acquisition_status is acquisition_blocked. Available MES-shaped evidence is a 7-operation, 2-downtime-event surrogate plus digital-twin MES receipts. This does not validate real MES data, real Shadow, or real ROI.",
+  "gate_interpretation": {
+    "overall_result": "4 complete public packs pass; Ulster MES strict source gate fails",
+    "system_failure": false,
+    "digital_twin_engineering_consistency": "pass",
+    "official_anonymized_mes_source": "fail",
+    "real_mes_validation": false,
+    "real_shadow": false,
+    "real_shadow_2_to_4_weeks": false,
+    "real_roi": false,
+    "production_writeback_authorization": false
+  },
+  "acquisition_status": "acquisition_blocked",
+  "generated_at": "2026-07-13T00:00:00+08:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3187,
+      "sha256": "ce783e62f05de8e2c076ed77e803f88d4606204b6f14c35e9f03930e36967c4a"
+    },
+    {
+      "path": "customer_admission_rehearsal/admission_gate.json",
+      "bytes": 298,
+      "sha256": "4fa7ff8164f502237c0341d3dcd1873490f1672af3a473496bd43b9a2bc2c950"
+    },
+    {
+      "path": "customer_admission_rehearsal/execution_receipts.csv",
+      "bytes": 3540,
+      "sha256": "db01c574d5f478db0ba6303a007fa7e631a8e2e6c3eda023b3c20ad6e3985911"
+    },
+    {
+      "path": "customer_admission_rehearsal/historical_incident_cases_30.json",
+      "bytes": 29002,
+      "sha256": "bb3cf36ade23313c966a7aa412b9b4aa0d4097db95c65d36e3cbe8ea8fee219e"
+    },
+    {
+      "path": "customer_admission_rehearsal/mes_data_dictionary.csv",
+      "bytes": 657,
+      "sha256": "5a9ae1120ceaed2fce7e39a1187cb43cfc0dc6227fd6e7b2ef93de11e53760d2"
+    },
+    {
+      "path": "customer_admission_rehearsal/planner_dispositions.csv",
+      "bytes": 4128,
+      "sha256": "c41118b0690f5a92c800290655b49afb17d8cc0a95df2a3a45534eba81bd7f37"
+    },
+    {
+      "path": "digital_twin/cdc_events_10000.jsonl",
+      "bytes": 2828894,
+      "sha256": "98293aae385e2ef27443932ed594f09e0e1ffed1215af6351d1794f12a4e4b44"
+    },
+    {
+      "path": "digital_twin/generation_contract.json",
+      "bytes": 634,
+      "sha256": "b758ba22018444a4f47c111416086cae8061b5fa5b2b0cbf3e1e2ff44a1a0ff9"
+    },
+    {
+      "path": "digital_twin/incidents_300.csv",
+      "bytes": 40790,
+      "sha256": "35227b35b16bd7c8e982668cf56c9e14fe97b9231e8fe4b9e12be197cf18dd54"
+    },
+    {
+      "path": "digital_twin/mes_terminal_receipts_10k.csv",
+      "bytes": 1628803,
+      "sha256": "eddfb28ec6bba78e84dd7b7bc8017409e82f1cbf18166a3b042bbcbb4da32e44"
+    },
+    {
+      "path": "digital_twin/operations_10k.csv",
+      "bytes": 1554419,
+      "sha256": "489ca50e3d25a59d256e39c98c3274077b1b4d862b8b5a40b4152e7a7013636a"
+    },
+    {
+      "path": "digital_twin/work_orders_10k.csv",
+      "bytes": 176826,
+      "sha256": "55d47e7f46e44f3d2fe2d8205c29143dc72403e3fe7536b661442012b84690a8"
+    },
+    {
+      "path": "surrogate_sample/aps_resources.csv",
+      "bytes": 338,
+      "sha256": "7651e4023f03d48061bb3aac1cbd15fc15571ab95ddb2b0e53b7a9d8ddd5ac7c"
+    },
+    {
+      "path": "surrogate_sample/erp_work_orders.csv",
+      "bytes": 308,
+      "sha256": "359da6d2a976450566d5e99397d9af5d58fa7ced03ed59ad494ced39010e7004"
+    },
+    {
+      "path": "surrogate_sample/mes_downtime_events.csv",
+      "bytes": 429,
+      "sha256": "a530ea5179cbe86bb935088810ef4363c4c71071acc2fcca2cb78b648036f369"
+    },
+    {
+      "path": "surrogate_sample/mes_operations.csv",
+      "bytes": 1260,
+      "sha256": "f75d33745c205fb4d2d73919804f947b2618a1a8c1a17e9037d00d6fe5a63244"
+    }
+  ]
+}

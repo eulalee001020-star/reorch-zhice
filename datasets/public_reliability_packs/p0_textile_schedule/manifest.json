@@ -1,0 +1,58 @@
+{
+  "pack_id": "p0_textile_schedule",
+  "tier": "P0",
+  "title": "Production line dataset for task scheduling and energy optimization",
+  "source_url": "https://zenodo.org/records/4106746",
+  "license": "MIT",
+  "provenance": "real_company_schedule",
+  "claim_boundary": "Engineering reliability evidence only; not customer production reliability, ROI, planner adoption, or writeback authorization.",
+  "acquisition_status": "complete",
+  "generated_at": "2026-07-13T00:00:00+08:00",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 468,
+      "sha256": "66f3cb69f905ce4e0806fdef5f39385771c1ce124c67ec2333aa99a03540f143"
+    },
+    {
+      "path": "canonical/current_schedule.csv",
+      "bytes": 32336,
+      "sha256": "eabb93ebf4775ff531e5d91e16907476d2075489e91896890374d83fab0818dc"
+    },
+    {
+      "path": "canonical/operations.csv",
+      "bytes": 3220,
+      "sha256": "6f028d87df96992f598bab7f5406c398a06a47a55d0e15afcfb4ff8ab4dd035c"
+    },
+    {
+      "path": "canonical/resources.csv",
+      "bytes": 241,
+      "sha256": "f52cf3d16a3476323fcf3ed8e7930e4916f7ac4aa6e126ee7c9f98a90718bece"
+    },
+    {
+      "path": "canonical/work_orders.csv",
+      "bytes": 1445,
+      "sha256": "7139f0eb57196fb5574d84ff813f0d515e682fe5ecf5b454f9c4aac451a1e1f0"
+    },
+    {
+      "path": "raw/Input_JSON_Schedule_Optimization.json",
+      "bytes": 26049,
+      "sha256": "5cecb2eb95437d6b789726f302860cefb446731af9eadba2a8379af5644ed169"
+    },
+    {
+      "path": "raw/Output_JSON_Schedule_Optimization.json",
+      "bytes": 386320,
+      "sha256": "b2a9d8d12f705d55c75d60ead3f8dfb963114ae0282e57ba41cbd499922ef041"
+    },
+    {
+      "path": "raw/Output_Statistics_Schedule_Optimization.xlsx",
+      "bytes": 967842,
+      "sha256": "cad1747c4f6b6d47f75dcf5891a67cd1eef59faaa0c702e42c84b84335e5b6c0"
+    },
+    {
+      "path": "scenarios/incidents.json",
+      "bytes": 826,
+      "sha256": "fd2eecc01511a406d609dee820c98fb0ee7bdfd0b967be3d840a19d6829f61db"
+    }
+  ]
+}

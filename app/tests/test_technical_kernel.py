@@ -9,14 +9,30 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
-from app.models.enums import IncidentSeverity, IncidentStatus, IncidentType, ReportSource
+from app.models.enums import (
+    IncidentSeverity,
+    IncidentStatus,
+    IncidentType,
+    ReportSource,
+)
 from app.models.incident import Incident
 from app.models.planning import (
     DataReadinessReport,
     ReadinessIssue,
 )
-from app.models.schedule import Operation, Resource, ScheduleDetail, ScheduleSnapshot, WorkOrder
-from app.models.solver import CandidatePlan, ConstraintValidationReport, SolverChain, SolverMetadata
+from app.models.schedule import (
+    Operation,
+    Resource,
+    ScheduleDetail,
+    ScheduleSnapshot,
+    WorkOrder,
+)
+from app.models.solver import (
+    CandidatePlan,
+    ConstraintValidationReport,
+    SolverChain,
+    SolverMetadata,
+)
 from app.models.technical_kernel import (
     DecisionGraphBuildRequest,
     EvidenceGateRequest,
@@ -73,7 +89,11 @@ def test_recovery_operator_portfolio_selects_equipment_repair_paths() -> None:
     assert "alternative_machine_repair" in operator_types
     assert "local_insertion" in operator_types
     assert response.recommendations[0].rank == 1
-    assert all("Gate" in gate for item in response.recommendations for gate in item.required_gates)
+    assert all(
+        "Gate" in gate
+        for item in response.recommendations
+        for gate in item.required_gates
+    )
 
 
 def test_evidence_gate_blocks_writeback_without_confirmation_and_source_refs() -> None:
@@ -135,6 +155,56 @@ def test_evidence_gate_stops_solve_when_data_has_blockers() -> None:
     assert response.recommendation_policy == "do_not_recommend"
 
 
+def test_evidence_gate_fails_closed_when_required_gate_evidence_is_missing() -> None:
+    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    response = EvidenceGateService().evaluate(
+        EvidenceGateRequest(
+            candidate_plans=[_candidate_plan(_schedule(start))],
+            source_refs=["snapshot:S1"],
+            planner_confirmed=True,
+        )
+    )
+
+    assert response.allow_solve is False
+    assert response.allow_recommendation is False
+    assert response.allow_shadow is False
+    assert response.allow_writeback is False
+    by_gate = {finding.gate_name: finding for finding in response.findings}
+    assert by_gate["DataGate"].severity == "blocker"
+    assert by_gate["PolicyGate"].severity == "blocker"
+    assert by_gate["ReplayGate"].status == "fail"
+
+
+def test_evidence_gate_requires_sandbox_dual_approval_and_authorization_for_writeback() -> (
+    None
+):
+    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    plan = _candidate_plan(_schedule(start))
+    quality = PlanQualityGate().evaluate(plan)
+    response = EvidenceGateService().evaluate(
+        EvidenceGateRequest(
+            data_readiness=DataReadinessReport(
+                is_ready=True,
+                readiness_score=0.95,
+                required_inputs=[],
+                recommendations=[],
+            ),
+            candidate_plans=[plan],
+            quality_gates=[quality],
+            source_refs=["snapshot:S1"],
+            planner_confirmed=True,
+            sandbox_dry_run_passed=True,
+            approval_refs=["approval:planner", "approval:manager"],
+        )
+    )
+
+    assert response.allow_writeback is False
+    writeback = next(
+        finding for finding in response.findings if finding.gate_name == "WritebackGate"
+    )
+    assert "authorization" in writeback.message.lower()
+
+
 @pytest.mark.asyncio
 async def test_technical_kernel_api() -> None:
     start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
@@ -162,7 +232,10 @@ async def test_technical_kernel_api() -> None:
 
     assert graph_response.status_code == 200
     assert recovery_response.status_code == 200
-    assert recovery_response.json()["recommendations"][0]["operator_type"] == "wait_and_shift"
+    assert (
+        recovery_response.json()["recommendations"][0]["operator_type"]
+        == "wait_and_shift"
+    )
 
 
 def _snapshot(start: datetime) -> ScheduleSnapshot:

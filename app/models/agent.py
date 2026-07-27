@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -15,7 +16,7 @@ from app.models.execution import ExecutionResult
 from app.models.explanation import RecommendationExplanation, SolverChainExplanation
 from app.models.impact import ImpactReport
 from app.models.incident import Incident, IncidentCreateRequest
-from app.models.planning import PlanQualityGateReport
+from app.models.planning import DataReadinessReport, PlanQualityGateReport
 from app.models.recommendation import PlanSelectionOutput
 from app.models.solver import CandidatePlan
 from app.models.strategy import StrategyRecommendation
@@ -35,6 +36,10 @@ class AgentTraceStep(ReOrchModel):
     latency_ms: float | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
+    attempt_count: int = 1
+    stage_status: Literal["completed", "degraded", "blocked", "timed_out"] = "completed"
+    input_fingerprint: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
     fallback_reason: str | None = None
     deterministic_tools: list[str] = Field(default_factory=list)
     guardrail: str
@@ -81,7 +86,11 @@ class AgentDecisionFlowRequest(ReOrchModel):
 class AgentDecisionFlowResponse(ReOrchModel):
     """End-to-end controlled workflow output."""
 
+    run_id: str
+    workflow_status: Literal["completed", "degraded", "blocked"]
+    input_fingerprint: str
     incident: Incident
+    data_readiness: DataReadinessReport | None = None
     impact_report: ImpactReport
     strategy: StrategyRecommendation
     candidate_plans: list[CandidatePlan] = Field(default_factory=list)
@@ -90,6 +99,8 @@ class AgentDecisionFlowResponse(ReOrchModel):
     recommendation: PlanSelectionOutput | None = None
     recommendation_explanation: RecommendationExplanation | None = None
     solver_chain_explanation: SolverChainExplanation | None = None
+    admissible_plan_ids: list[UUID] = Field(default_factory=list)
+    blocked_plan_ids: list[UUID] = Field(default_factory=list)
     requires_human_confirmation: bool = True
     trace: list[AgentTraceStep] = Field(default_factory=list)
 
@@ -133,6 +144,8 @@ class RuleCandidateReplayResult(ReOrchModel):
     pass_replay: bool
     checked_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
     scenario_count: int = 0
+    scenario_results: list["RuleReplayScenarioResult"] = Field(default_factory=list)
+    evidence_scope_counts: dict[str, int] = Field(default_factory=dict)
     blocked_reason: str | None = None
     metrics: dict[str, float | int | str | bool] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
@@ -143,7 +156,9 @@ class RuleCandidatePublicationRecord(ReOrchModel):
 
     release_id: str
     candidate_id: str
-    published_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    published_at: datetime = Field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
     published_by: str
     release_note: str | None = None
     readonly: bool = True
@@ -184,8 +199,42 @@ class RuleCandidateReplayRequest(ReOrchModel):
     """Run deterministic replay checks for a reviewed rule candidate."""
 
     scenario_set: str = "lab_replay_acceptance"
-    scenario_count: int = 3
+    scenarios: list["RuleReplayScenario"] = Field(default_factory=list)
+    scenario_count: int | None = Field(
+        default=None,
+        description="Deprecated and ignored; actual scenario results determine coverage.",
+    )
     notes: list[str] = Field(default_factory=list)
+
+
+class RuleReplayScenario(ReOrchModel):
+    """Scenario facts executed by the server-side deterministic rule evaluator."""
+
+    scenario_id: str
+    evidence_scope: Literal[
+        "digital_twin",
+        "customer_historical",
+        "customer_shadow",
+        "customer_production",
+    ] = "digital_twin"
+    snapshot_ref: str
+    source_refs: list[str] = Field(min_length=1)
+    facts: dict = Field(default_factory=dict)
+    expected_outcome: Literal["allow", "avoid", "block", "review"]
+
+
+class RuleReplayScenarioResult(ReOrchModel):
+    scenario_id: str
+    evidence_scope: str
+    snapshot_ref: str
+    source_refs: list[str] = Field(default_factory=list)
+    expected_outcome: str
+    observed_outcome: str
+    rule_triggered: bool
+    quality_gate_passed: bool
+    passed: bool
+    blockers: list[str] = Field(default_factory=list)
+    result_fingerprint: str
 
 
 class RuleCandidatePublishRequest(ReOrchModel):

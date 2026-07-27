@@ -22,6 +22,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
+from app.services.writeback_policy import WritebackExecutionPermit, WritebackPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,12 @@ class MESAdapter:
 
     # ── Send with retry (Req 18.3, 18.5) ──────────────────────────
 
-    async def send_instruction(self, instruction: MESInstruction) -> MESWritebackResult:
+    async def send_instruction(
+        self,
+        instruction: MESInstruction,
+        *,
+        execution_permit: WritebackExecutionPermit | None = None,
+    ) -> MESWritebackResult:
         """Send a single instruction to MES with retry and queue fallback.
 
         - Up to MAX_RETRIES attempts with exponential backoff
@@ -178,15 +184,19 @@ class MESAdapter:
             logger.warning("MES unavailable, queued instruction %s", instruction.instruction_id)
             return result
 
-        return await self._send_with_retry(instruction)
+        return await self._send_with_retry(instruction, execution_permit)
 
-    async def _send_with_retry(self, instruction: MESInstruction) -> MESWritebackResult:
+    async def _send_with_retry(
+        self,
+        instruction: MESInstruction,
+        execution_permit: WritebackExecutionPermit | None,
+    ) -> MESWritebackResult:
         """Attempt to send with exponential backoff retry."""
         last_error: str | None = None
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                success = await self._do_send(instruction)
+                success = await self._do_send(instruction, execution_permit)
                 if success:
                     result = MESWritebackResult(
                         instruction_id=instruction.instruction_id,
@@ -221,12 +231,25 @@ class MESAdapter:
         )
         return result
 
-    async def _do_send(self, instruction: MESInstruction) -> bool:
+    async def _do_send(
+        self,
+        instruction: MESInstruction,
+        execution_permit: WritebackExecutionPermit | None,
+    ) -> bool:
         """Send to configured MES endpoint, or local PoC simulator."""
         if instruction.instruction_id in self._fail_ids:
             return False
         if self._base_url:
-            headers = {"Content-Type": "application/json"}
+            WritebackPolicy.assert_adapter_send_allowed(
+                execution_permit=execution_permit,
+            )
+            headers = {
+                "Content-Type": "application/json",
+                "Idempotency-Key": str(
+                    instruction.metadata.get("idempotency_key")
+                    or instruction.instruction_id
+                ),
+            }
             if self._api_key:
                 headers["X-API-Key"] = self._api_key
             async with httpx.AsyncClient(
@@ -243,14 +266,18 @@ class MESAdapter:
 
     # ── Queue recovery (Req 18.5) ──────────────────────────────────
 
-    async def retry_queued(self) -> list[MESWritebackResult]:
-        """Retry all queued instructions. Call when MES recovers."""
+    async def retry_queued(
+        self,
+        *,
+        execution_permit: WritebackExecutionPermit | None = None,
+    ) -> list[MESWritebackResult]:
+        """Retry queued instructions; external targets require a fresh permit."""
         results: list[MESWritebackResult] = []
         retry_items = list(self._local_queue)
         self._local_queue.clear()
 
         for instruction in retry_items:
-            result = await self._send_with_retry(instruction)
+            result = await self._send_with_retry(instruction, execution_permit)
             results.append(result)
             if not result.success:
                 # Re-queue if still failing

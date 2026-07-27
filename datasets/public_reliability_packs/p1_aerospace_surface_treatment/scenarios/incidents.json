@@ -1,0 +1,26 @@
+[
+  {
+    "scenario_id": "aero_tank_down",
+    "incident_type": "machine_down",
+    "machine_id": "TANK-B2",
+    "occurred_at": "2026-06-11T08:00:00+00:00",
+    "duration_min": 480,
+    "provenance": "synthetic_incident_on_real_demand"
+  },
+  {
+    "scenario_id": "aero_fixture_shortage",
+    "incident_type": "capacity_degradation",
+    "machine_id": "TANK-B1",
+    "occurred_at": "2026-06-11T09:00:00+00:00",
+    "capacity_ratio": 0.5,
+    "duration_min": 360,
+    "provenance": "synthetic_incident_on_real_demand"
+  },
+  {
+    "scenario_id": "aero_double_demand",
+    "incident_type": "urgent_order_insert",
+    "occurred_at": "2026-06-11T10:00:00+00:00",
+    "stress_source": "canonical/simulated_stress_cases.csv",
+    "provenance": "publisher_simulated_stress"
+  }
+]

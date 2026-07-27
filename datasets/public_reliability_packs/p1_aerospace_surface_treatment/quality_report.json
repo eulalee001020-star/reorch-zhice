@@ -1,0 +1,17 @@
+{
+  "pack_id": "p1_aerospace_surface_treatment",
+  "acquisition_status": "complete",
+  "missing_raw_files": [],
+  "canonical_status": "built",
+  "counts": {
+    "work_orders": 696,
+    "operations": 696,
+    "resources": 4,
+    "real_demand_rows": 696,
+    "stress_rows": 932
+  },
+  "scenario_count": 3,
+  "limitations": [
+    "Dataset contains demand and capacity constraints, not an MES execution timeline or planner decision history."
+  ]
+}

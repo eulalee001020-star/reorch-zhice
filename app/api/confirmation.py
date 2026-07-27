@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUser, get_optional_current_user
+from app.core.config import settings
 from app.models.agent import FeedbackStructuringRequest
 from app.models.decision import ConfirmRequest, ConfirmResponse, DecisionRecord
 from app.models.enums import ConfirmAction, WritebackStatus
@@ -44,6 +46,7 @@ from app.services.persistence import (
 )
 from app.services.agent_workflow import FeedbackAgent
 from app.services.writeback_module import WritebackModule
+from app.services.writeback_policy import WritebackPolicy, WritebackPolicyError
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +92,31 @@ class WritebackStatusResponse(BaseModel):
     failed_count: int = 0
     failed_instructions: list[dict] = Field(default_factory=list)
     timestamp: str = ""
+
+
+class SandboxWritebackRequest(BaseModel):
+    """Explicit second step after plan confirmation; never targets production."""
+
+    decision_record_id: UUID
+    target_environment: Literal["sandbox"] = "sandbox"
+    dry_run: bool = True
+    approval_note: str = ""
+    adapter_id: str | None = None
+    certification_id: str | None = None
+
+
+class SandboxWritebackResponse(BaseModel):
+    incident_id: str
+    decision_record_id: str
+    target_environment: Literal["sandbox"] = "sandbox"
+    dry_run: bool
+    status: str
+    adapter_id: str | None = None
+    certification_id: str | None = None
+    instruction_count: int
+    instructions: list[dict] = Field(default_factory=list)
+    approved_by: str | None = None
+    claim_boundary: str
 
 
 class ErrorResponse(BaseModel):
@@ -280,9 +308,6 @@ async def confirm_plan(
                 changed_by=current_user.user_id,
             )
 
-        # 8. Trigger writeback
-        await _writeback_module.writeback_to_mes(selected_plan, record)
-
     logger.info(
         "Confirmation for incident %s: action=%s, confirmed_plan=%s",
         key,
@@ -290,6 +315,165 @@ async def confirm_plan(
         response.confirmed_plan_id,
     )
     return response
+
+
+@router.post(
+    "/api/v1/incidents/{incident_id}/sandbox-writeback",
+    response_model=SandboxWritebackResponse,
+    summary="生成或执行 Sandbox 回写",
+    description=(
+        "方案确认后的独立步骤。dry-run 只生成指令；实际 sandbox 执行要求"
+        "启用 API Key、由第二位 Management/IT_Admin 审批，并由服务端开启 sandbox。"
+    ),
+)
+async def sandbox_writeback(
+    incident_id: UUID,
+    body: SandboxWritebackRequest,
+    current_user: CurrentUser = Depends(get_optional_current_user),
+) -> SandboxWritebackResponse:
+    key = str(incident_id)
+    record = _decision_record_store.get(key)
+    if record is None:
+        record = await fetch_decision_record_by_incident(incident_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No decision record for incident {incident_id}.",
+        )
+    if record.decision_record_id != body.decision_record_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="decision_record_id does not match the confirmed incident decision",
+        )
+    if record.is_override:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Rejected decisions cannot be written back",
+        )
+
+    plan = _confirmation_module.get_confirmed_plan(record.confirmed_plan_id)
+    if plan is None:
+        from app.api.solver import _candidate_plans_store
+
+        candidates = _candidate_plans_store.get(key) or await list_candidate_plans_from_db(
+            incident_id
+        )
+        plan = next(
+            (
+                item
+                for item in candidates
+                if item.plan_id in {record.confirmed_plan_id, record.derived_from_plan_id}
+            ),
+            None,
+        )
+    if plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Confirmed plan version is unavailable; regenerate the confirmation record",
+        )
+
+    instructions = WritebackModule.preview_instructions(plan)
+    if body.dry_run:
+        await persist_audit_log(
+            action="sandbox_writeback_dry_run",
+            entity_type="decision_record",
+            entity_id=str(record.decision_record_id),
+            user_id=current_user.user_id,
+            role=current_user.role.value,
+            details={
+                "incident_id": key,
+                "instruction_count": len(instructions),
+                "target_environment": "sandbox",
+            },
+        )
+        return SandboxWritebackResponse(
+            incident_id=key,
+            decision_record_id=str(record.decision_record_id),
+            dry_run=True,
+            status="dry_run_ready",
+            instruction_count=len(instructions),
+            instructions=instructions,
+            approved_by=current_user.user_id if current_user.user_id != "system" else None,
+            claim_boundary="No external system was changed; this is a sandbox instruction preview.",
+        )
+
+    adapter_id = body.adapter_id or settings.integration.writeback_adapter_id
+    certification_id = body.certification_id or ""
+    if settings.integration.require_certified_writeback_adapter or certification_id:
+        from app.api.production_runtime import get_operational_store
+        from app.services.integration_registry import (
+            IntegrationRegistryError,
+            IntegrationRegistryService,
+        )
+
+        try:
+            certification = IntegrationRegistryService(
+                get_operational_store()
+            ).assert_active_writeback_certification(
+                current_user.tenant_id,
+                adapter_id,
+                certification_id or None,
+            )
+            certification_id = certification.certification_id
+        except IntegrationRegistryError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(exc),
+            ) from exc
+
+    try:
+        execution_permit = WritebackPolicy.authorize_sandbox_execution(
+            decision_record=record,
+            approver=current_user,
+            approval_note=body.approval_note,
+            adapter_id=adapter_id,
+            certification_id=certification_id,
+        )
+    except WritebackPolicyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+    if not instructions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No adjusted or affected operations are available for sandbox writeback",
+        )
+
+    writeback_status = await _writeback_module.writeback_to_mes(
+        plan,
+        record,
+        execution_permit=execution_permit,
+        only_adjusted_operations=True,
+    )
+    await persist_audit_log(
+        action="sandbox_writeback_execute",
+        entity_type="decision_record",
+        entity_id=str(record.decision_record_id),
+        user_id=current_user.user_id,
+        role=current_user.role.value,
+        details={
+            "incident_id": key,
+            "approval_note": body.approval_note,
+            "status": writeback_status.value,
+            "target_environment": "sandbox",
+            "adapter_id": adapter_id,
+            "certification_id": certification_id or None,
+        },
+    )
+    return SandboxWritebackResponse(
+        incident_id=key,
+        decision_record_id=str(record.decision_record_id),
+        dry_run=False,
+        status=writeback_status.value,
+        adapter_id=adapter_id,
+        certification_id=certification_id or None,
+        instruction_count=len(instructions),
+        instructions=instructions,
+        approved_by=current_user.user_id,
+        claim_boundary="Executed only against the configured sandbox endpoint; production writeback remains blocked.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -383,7 +567,6 @@ async def get_writeback_status(incident_id: UUID) -> WritebackStatusResponse:
     responses={404: {"description": "执行结果不存在"}},
 )
 async def get_execution_result(incident_id: UUID) -> ExecutionResult:
-    key = str(incident_id)
     result = _writeback_module.get_execution_result(incident_id)
     if result is None:
         result = await fetch_execution_result_by_incident(incident_id)

@@ -75,6 +75,7 @@ class FieldMappingCompiler:
     """Suggest adapter mapping fields from customer sample rows."""
 
     def compile(self, request: FieldMappingCompileRequest) -> FieldMappingCompileResponse:
+        defaults = FieldMapping()
         work_order_mapping, work_order_suggestions = _compile_entity(
             "work_order", _headers(request.raw_work_orders)
         )
@@ -91,10 +92,10 @@ class FieldMappingCompiler:
         profile = AdapterMappingProfile(
             source_system=request.source_system,
             field_mapping=FieldMapping(
-                work_order=work_order_mapping,
-                operation=operation_mapping,
-                machine=machine_mapping,
-                incident=incident_mapping,
+                work_order={**defaults.work_order, **work_order_mapping},
+                operation={**defaults.operation, **operation_mapping},
+                machine={**defaults.machine, **machine_mapping},
+                incident={**defaults.incident, **incident_mapping},
             ),
         )
         suggestions = [
@@ -168,4 +169,3 @@ def _headers(rows: list[dict]) -> set[str]:
 
 def _normalize(value: str) -> str:
     return "".join(ch for ch in value.lower() if ch.isalnum())
-

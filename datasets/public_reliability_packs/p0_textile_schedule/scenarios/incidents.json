@@ -1,0 +1,28 @@
+[
+  {
+    "scenario_id": "textile_machine_down",
+    "incident_type": "machine_down",
+    "machine_id": "MAQ118",
+    "occurred_at": "2026-01-06T08:00:00+00:00",
+    "duration_min": 180,
+    "provenance": "synthetic_incident_on_real_schedule"
+  },
+  {
+    "scenario_id": "textile_capacity_degradation",
+    "incident_type": "capacity_degradation",
+    "machine_id": "MAQ120",
+    "occurred_at": "2026-01-06T11:00:00+00:00",
+    "capacity_ratio": 0.5,
+    "duration_min": 240,
+    "provenance": "synthetic_incident_on_real_schedule"
+  },
+  {
+    "scenario_id": "textile_urgent_order",
+    "incident_type": "urgent_order_insert",
+    "occurred_at": "2026-01-06T14:00:00+00:00",
+    "product_id": "WOVEN LABEL OURELA FABRIC",
+    "quantity": 2,
+    "due_in_min": 360,
+    "provenance": "synthetic_incident_on_real_schedule"
+  }
+]

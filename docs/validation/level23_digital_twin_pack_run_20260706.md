@@ -2,9 +2,8 @@
 
 ## Input Pack
 
-Local workbook:
-
-`/Users/lishuangjiang/Downloads/reorch_level2_3_digital_twin_data_pack_v0_2.xlsx`
+The replay workbook is a synthetic Level 2/3 validation fixture. Its schema and
+reproducible evaluation path are documented in this repository.
 
 Pack positioning:
 

@@ -1,0 +1,26 @@
+[
+  {
+    "scenario_id": "tablets_packaging_robot_down",
+    "incident_type": "machine_down",
+    "machine_id": "OPER001",
+    "occurred_at": "2018-06-01T08:00:00+00:00",
+    "duration_min": 1440,
+    "provenance": "synthetic_incident_on_real_anonymized_planning_data"
+  },
+  {
+    "scenario_id": "tablets_material_hold",
+    "incident_type": "quality_hold",
+    "affected_material_id": "P005",
+    "occurred_at": "2018-07-01T08:00:00+00:00",
+    "release_in_min": 720,
+    "provenance": "synthetic_incident_on_real_anonymized_planning_data"
+  },
+  {
+    "scenario_id": "tablets_demand_surge",
+    "incident_type": "urgent_order_insert",
+    "source_work_order_id": "TABLET-WO-00001",
+    "quantity_multiplier": 2,
+    "occurred_at": "2018-08-01T08:00:00+00:00",
+    "provenance": "synthetic_incident_on_real_anonymized_planning_data"
+  }
+]

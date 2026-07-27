@@ -95,12 +95,14 @@ class DecisionGraphService:
             for op_id in repairable
             if op_id in operation_map
         }
-        metrics = {
+        metrics: dict[str, int | float | str] = {
             "node_count": len(graph.nodes),
             "edge_count": len(graph.edges),
             "affected_operation_count": len(affected),
             "repairable_frontier_count": len(repairable),
-            "alternative_resource_options": sum(len(values) for values in alternatives.values()),
+            "alternative_resource_options": sum(
+                len(values) for values in alternatives.values()
+            ),
         }
         return DecisionGraphBuildResponse(
             graph=graph,
@@ -118,7 +120,8 @@ class RecoveryOperatorPortfolioService:
     def select(self, request: RecoveryOperatorRequest) -> RecoveryOperatorResponse:
         affected_count = len(request.decision_graph.affected_operation_ids)
         alternative_count = sum(
-            len(values) for values in request.decision_graph.alternative_resources.values()
+            len(values)
+            for values in request.decision_graph.alternative_resources.values()
         )
         scope = _repair_scope(affected_count, alternative_count)
         candidates = _operator_candidates(
@@ -197,7 +200,11 @@ def _resources(snapshot: ScheduleSnapshot) -> list[Resource]:
         if resources:
             return resources
     resource_ids = sorted(
-        {operation.resource_id for work_order in snapshot.work_orders for operation in work_order.operations}
+        {
+            operation.resource_id
+            for work_order in snapshot.work_orders
+            for operation in work_order.operations
+        }
     )
     return [
         Resource(resource_id=resource_id, name=resource_id, capabilities=[])
@@ -348,9 +355,16 @@ def _operator_candidates(
             "minimal_perturbation",
             "heuristic_then_constraint_check",
             scope,
-            ["Affects a bounded operation set.", "Keeps the plan stable when delay is tolerable."],
+            [
+                "Affects a bounded operation set.",
+                "Keeps the plan stable when delay is tolerable.",
+            ],
             ["DataGate", "ConstraintGate", "PolicyGate"],
-            ["urgent_order_delay_min", "changed_operation_count", "total_tardiness_delta"],
+            [
+                "urgent_order_delay_min",
+                "changed_operation_count",
+                "total_tardiness_delta",
+            ],
         )
     ]
     if incident_type == IncidentType.EQUIPMENT_FAILURE.value:
@@ -364,7 +378,11 @@ def _operator_candidates(
                     scope,
                     ["Alternative resources exist for repairable operations."],
                     ["DataGate", "ConstraintGate", "EvidenceGate"],
-                    ["resource_switch_count", "setup_change_delta", "repair_latency_seconds"],
+                    [
+                        "resource_switch_count",
+                        "setup_change_delta",
+                        "repair_latency_seconds",
+                    ],
                 )
             )
         common.extend(
@@ -375,9 +393,15 @@ def _operator_candidates(
                     "sequence_repair",
                     "cp_sat_lns",
                     scope,
-                    [f"{affected_count} affected operations can be isolated as a subgraph."],
+                    [
+                        f"{affected_count} affected operations can be isolated as a subgraph."
+                    ],
                     ["ConstraintGate", "QualityGate"],
-                    ["changed_operation_count", "perturbation_delta", "hard_constraint_violation_count"],
+                    [
+                        "changed_operation_count",
+                        "perturbation_delta",
+                        "hard_constraint_violation_count",
+                    ],
                 ),
                 _operator(
                     "rolling_window_repair",
@@ -414,7 +438,11 @@ def _operator_candidates(
                 scope,
                 ["Local and rolling-window repair may be insufficient."],
                 ["DataGate", "ConstraintGate", "EvidenceGate", "WritebackGate"],
-                ["objective_gap", "solve_time_seconds", "hard_constraint_violation_count"],
+                [
+                    "objective_gap",
+                    "solve_time_seconds",
+                    "hard_constraint_violation_count",
+                ],
             )
         )
     return common
@@ -448,10 +476,24 @@ def _data_gate(
     findings: list[EvidenceGateFinding],
 ) -> bool:
     if request.data_readiness is None:
-        findings.append(_finding("DataGate", "warning", "warning", "No data readiness report supplied."))
-        return True
+        findings.append(
+            _finding(
+                "DataGate",
+                "fail",
+                "blocker",
+                "No data readiness report supplied; solving is not allowed.",
+            )
+        )
+        return False
     if request.data_readiness.blockers:
-        findings.append(_finding("DataGate", "fail", "blocker", "Data blockers exist; solving is not allowed."))
+        findings.append(
+            _finding(
+                "DataGate",
+                "fail",
+                "blocker",
+                "Data blockers exist; solving is not allowed.",
+            )
+        )
         return False
     findings.append(_finding("DataGate", "pass", "info", "No data blockers found."))
     return True
@@ -463,12 +505,30 @@ def _constraint_gate(
 ) -> bool:
     plans = request.candidate_plans
     if not plans:
-        findings.append(_finding("ConstraintGate", "fail", "blocker", "No candidate plans supplied."))
+        findings.append(
+            _finding(
+                "ConstraintGate", "fail", "blocker", "No candidate plans supplied."
+            )
+        )
         return False
     if any(not plan.constraint_report.is_feasible for plan in plans):
-        findings.append(_finding("ConstraintGate", "fail", "blocker", "At least one candidate has hard constraint violations."))
+        findings.append(
+            _finding(
+                "ConstraintGate",
+                "fail",
+                "blocker",
+                "At least one candidate has hard constraint violations.",
+            )
+        )
         return False
-    findings.append(_finding("ConstraintGate", "pass", "info", "All supplied candidates are hard-feasible."))
+    findings.append(
+        _finding(
+            "ConstraintGate",
+            "pass",
+            "info",
+            "All supplied candidates are hard-feasible.",
+        )
+    )
     return True
 
 
@@ -477,9 +537,21 @@ def _evidence_gate(
     findings: list[EvidenceGateFinding],
 ) -> bool:
     if not request.source_refs:
-        findings.append(_finding("EvidenceGate", "fail", "warning", "Source references are missing."))
+        findings.append(
+            _finding(
+                "EvidenceGate", "fail", "warning", "Source references are missing."
+            )
+        )
         return False
-    findings.append(_finding("EvidenceGate", "pass", "info", "Source references are present.", request.source_refs))
+    findings.append(
+        _finding(
+            "EvidenceGate",
+            "pass",
+            "info",
+            "Source references are present.",
+            request.source_refs,
+        )
+    )
     return True
 
 
@@ -488,12 +560,28 @@ def _replay_gate(
     findings: list[EvidenceGateFinding],
 ) -> bool:
     if request.replay_validation is None:
-        findings.append(_finding("ReplayGate", "warning", "warning", "Replay validation is not supplied."))
-        return True
-    if not request.replay_validation.top_n_hit:
-        findings.append(_finding("ReplayGate", "fail", "warning", "Replay Top-N did not meet the acceptance threshold."))
+        findings.append(
+            _finding(
+                "ReplayGate",
+                "fail",
+                "warning",
+                "Replay validation is not supplied; shadow mode is not allowed.",
+            )
+        )
         return False
-    findings.append(_finding("ReplayGate", "pass", "info", "Replay Top-N hit is valid."))
+    if not request.replay_validation.top_n_hit:
+        findings.append(
+            _finding(
+                "ReplayGate",
+                "fail",
+                "warning",
+                "Replay Top-N did not meet the acceptance threshold.",
+            )
+        )
+        return False
+    findings.append(
+        _finding("ReplayGate", "pass", "info", "Replay Top-N hit is valid.")
+    )
     return True
 
 
@@ -502,12 +590,33 @@ def _policy_gate(
     findings: list[EvidenceGateFinding],
 ) -> bool:
     if not request.quality_gates:
-        findings.append(_finding("PolicyGate", "warning", "warning", "No quality-gate reports supplied."))
-        return True
-    if any(not gate.pass_gate for gate in request.quality_gates):
-        findings.append(_finding("PolicyGate", "fail", "blocker", "A quality gate blocked recommendation."))
+        findings.append(
+            _finding(
+                "PolicyGate",
+                "fail",
+                "blocker",
+                "No quality-gate reports supplied; recommendation is not allowed.",
+            )
+        )
         return False
-    findings.append(_finding("PolicyGate", "pass", "info", "Quality gates allow planner-facing recommendation."))
+    if any(not gate.pass_gate for gate in request.quality_gates):
+        findings.append(
+            _finding(
+                "PolicyGate",
+                "fail",
+                "blocker",
+                "A quality gate blocked recommendation.",
+            )
+        )
+        return False
+    findings.append(
+        _finding(
+            "PolicyGate",
+            "pass",
+            "info",
+            "Quality gates allow planner-facing recommendation.",
+        )
+    )
     return True
 
 
@@ -516,12 +625,64 @@ def _writeback_gate(
     findings: list[EvidenceGateFinding],
 ) -> bool:
     if not request.planner_confirmed:
-        findings.append(_finding("WritebackGate", "fail", "warning", "Planner confirmation is required before writeback."))
+        findings.append(
+            _finding(
+                "WritebackGate",
+                "fail",
+                "warning",
+                "Planner confirmation is required before writeback.",
+            )
+        )
         return False
     if request.shadow_capture and request.shadow_capture.writeback_blocked:
-        findings.append(_finding("WritebackGate", "fail", "warning", "Shadow mode explicitly blocks writeback."))
+        findings.append(
+            _finding(
+                "WritebackGate",
+                "fail",
+                "warning",
+                "Shadow mode explicitly blocks writeback.",
+            )
+        )
         return False
-    findings.append(_finding("WritebackGate", "pass", "info", "Planner confirmation is present and no shadow block exists."))
+    if not request.sandbox_dry_run_passed:
+        findings.append(
+            _finding(
+                "WritebackGate",
+                "fail",
+                "blocker",
+                "A successful sandbox dry-run is required before controlled writeback.",
+            )
+        )
+        return False
+    if len(set(request.approval_refs)) < 2:
+        findings.append(
+            _finding(
+                "WritebackGate",
+                "fail",
+                "blocker",
+                "Two distinct approval references are required before controlled writeback.",
+            )
+        )
+        return False
+    if not request.writeback_authorization_ref:
+        findings.append(
+            _finding(
+                "WritebackGate",
+                "fail",
+                "blocker",
+                "A short-lived writeback authorization reference is required.",
+            )
+        )
+        return False
+    findings.append(
+        _finding(
+            "WritebackGate",
+            "pass",
+            "info",
+            "Planner confirmation, sandbox evidence, dual approval, and authorization are present.",
+            [request.writeback_authorization_ref, *request.approval_refs],
+        )
+    )
     return True
 
 

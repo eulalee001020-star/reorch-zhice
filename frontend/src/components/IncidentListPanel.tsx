@@ -14,6 +14,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  App as AntdApp,
   Button,
   Card,
   Checkbox,
@@ -27,7 +28,6 @@ import {
   Statistic,
   Space,
   DatePicker,
-  message,
   Tabs,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -64,6 +64,7 @@ function elapsed(occurredAt: string): string {
 }
 
 export const IncidentListPanel: React.FC = () => {
+  const { message } = AntdApp.useApp();
   const incidents = useIncidentStore((s) => s.incidents);
   const loading = useIncidentStore((s) => s.loading);
   const filters = useIncidentStore((s) => s.filters);
@@ -160,9 +161,9 @@ export const IncidentListPanel: React.FC = () => {
       upsertIncident(incident);
       setAgentText('');
       await switchIncident(incident.incident_id);
-      message.success('异常已创建并进入 Agent 决策流');
+      message.success('异常已创建并进入结构化决策流');
     } catch {
-      message.error('AI 异常接入失败');
+      message.error('异常文本接入失败');
     } finally {
       setAgentLoading(false);
     }
@@ -272,7 +273,7 @@ export const IncidentListPanel: React.FC = () => {
       title="异常事件列表"
       size="small"
       style={{ height: '100%' }}
-      bodyStyle={{ padding: 8 }}
+      styles={{ body: { padding: 8 } }}
     >
       {/* Stats row */}
       <Row gutter={8} style={{ marginBottom: 8 }}>
@@ -287,7 +288,7 @@ export const IncidentListPanel: React.FC = () => {
         items={[
           {
             key: 'agent_text',
-            label: 'AI 文本',
+            label: '异常文本',
             children: (
               <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
                 <TextArea
@@ -297,7 +298,7 @@ export const IncidentListPanel: React.FC = () => {
                   placeholder="M2 设备下午坏了，估计要修三个小时"
                 />
                 <Button type="primary" loading={agentLoading} onClick={handleAgentIntake}>
-                  AI 接入
+                  结构化接入
                 </Button>
               </Space.Compact>
             ),

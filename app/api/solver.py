@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
@@ -23,8 +22,8 @@ from pydantic import BaseModel, Field
 
 from app.models.case import PreferenceProfile
 from app.models.enums import GoalMode
-from app.models.recommendation import PlanSelectionInput, PlanSelectionOutput
-from app.models.schedule import GanttDiffPayload, ScheduleDetail
+from app.models.recommendation import PlanSelectionOutput
+from app.models.schedule import ScheduleDetail
 from app.models.solver import CandidatePlan, SolverChain
 
 logger = logging.getLogger(__name__)
@@ -304,7 +303,11 @@ async def recommend_plan(
         list_candidate_plans_from_db,
         persist_plan_recommendation,
     )
-    from app.services.plan_recommendation_engine import PlanRecommendationEngine
+    from app.services.plan_recommendation_engine import (
+        NoFeasiblePlanError,
+        PlanRecommendationEngine,
+    )
+    from app.services.plan_quality_gate import PlanQualityGate
     from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
 
     key = str(incident_id)
@@ -334,6 +337,23 @@ async def recommend_plan(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No candidate plans for incident {incident_id}. Trigger solve first.",
+        )
+    quality_gate = PlanQualityGate()
+    candidates = [
+        candidate
+        for candidate in candidates
+        if (
+            (report := quality_gate.evaluate(candidate)).pass_gate
+            and report.recommendation_policy != "show_as_reference_only"
+        )
+    ]
+    if not candidates:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "no_admissible_candidate",
+                "message": "All candidates are blocked or reference-only.",
+            },
         )
 
     # 3. Find snapshot
@@ -369,7 +389,24 @@ async def recommend_plan(
 
     # 6. Run recommendation engine
     engine = PlanRecommendationEngine()
-    output = await engine.recommend(selection_input)
+    try:
+        output = await engine.recommend(selection_input)
+    except NoFeasiblePlanError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "no_feasible_candidate",
+                "message": str(exc),
+            },
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "invalid_manual_weights",
+                "message": str(exc),
+            },
+        ) from exc
 
     # 7. Store result
     _recommendation_store[key] = output

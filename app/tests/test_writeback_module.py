@@ -11,13 +11,15 @@ Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8
 
 from __future__ import annotations
 
-import asyncio
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import pytest
 
 from app.models.decision import DecisionRecord
+from app.core.auth import CurrentUser, Role
+from app.core.config import settings
 from app.models.enums import WritebackStatus
 from app.models.schedule import (
     Operation,
@@ -35,6 +37,7 @@ from app.services.writeback_module import (
     MESAdapter,
     WritebackModule,
 )
+from app.services.writeback_policy import WritebackPolicy, WritebackPolicyError
 
 
 # ── Fixtures ────────────────────────────────────────────────────────
@@ -123,6 +126,67 @@ def _make_decision_record(
     )
 
 
+def _configure_external_sandbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings.auth, "require_api_key", True)
+    monkeypatch.setattr(
+        settings.auth,
+        "writeback_permit_secret",
+        "sandbox-test-secret-with-at-least-32-characters",
+    )
+    monkeypatch.setattr(settings.integration, "writeback_mode", "sandbox")
+    monkeypatch.setattr(settings.integration, "mes_target_environment", "sandbox")
+    monkeypatch.setattr(settings.integration, "mes_base_url", "https://mes-sandbox.test")
+
+
+def test_writeback_policy_issues_bound_short_lived_permit(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A valid second approval produces a permit bound to one decision and plan."""
+    _configure_external_sandbox(monkeypatch)
+    record = _make_decision_record()
+    approver = CurrentUser(user_id="mgmt-1", role=Role.MANAGEMENT)
+
+    permit = WritebackPolicy.authorize_sandbox_execution(
+        decision_record=record,
+        approver=approver,
+        approval_note="Approved for sandbox contract verification",
+    )
+
+    WritebackPolicy.assert_adapter_send_allowed(
+        execution_permit=permit,
+        decision_record_id=str(record.decision_record_id),
+        confirmed_plan_id=str(record.confirmed_plan_id),
+    )
+
+    with pytest.raises(WritebackPolicyError, match="plan_mismatch"):
+        WritebackPolicy.assert_adapter_send_allowed(
+            execution_permit=permit,
+            decision_record_id=str(record.decision_record_id),
+            confirmed_plan_id=str(uuid4()),
+        )
+
+
+def test_writeback_policy_rejects_missing_or_tampered_permit(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """External adapters cannot send without the API-issued signed capability."""
+    _configure_external_sandbox(monkeypatch)
+    record = _make_decision_record()
+    permit = WritebackPolicy.authorize_sandbox_execution(
+        decision_record=record,
+        approver=CurrentUser(user_id="admin-1", role=Role.IT_ADMIN),
+        approval_note="Approved for isolated sandbox verification",
+    )
+
+    with pytest.raises(WritebackPolicyError, match="requires_execution_permit"):
+        WritebackPolicy.assert_adapter_send_allowed()
+
+    with pytest.raises(WritebackPolicyError, match="signature_is_invalid"):
+        WritebackPolicy.assert_adapter_send_allowed(
+            execution_permit=replace(permit, approver_user_id="unknown-user"),
+        )
+
+
 # ── Test: Writeback all success (Req 8.1, 8.3) ────────────────────
 
 
@@ -142,6 +206,21 @@ async def test_writeback_all_success():
     assert report.total_instructions == 1
     assert report.success_count == 1
     assert report.failed_count == 0
+
+
+def test_writeback_preview_contains_only_changed_operations() -> None:
+    """Sandbox previews do not include unchanged schedule rows."""
+    plan = _make_candidate_plan()
+
+    assert WritebackModule.preview_instructions(plan) == []
+
+    operation = plan.schedule_detail.work_orders[0].operations[0]
+    operation.is_adjusted = True
+    preview = WritebackModule.preview_instructions(plan)
+
+    assert len(preview) == 1
+    assert preview[0]["operation_id"] == "OP-1"
+    assert preview[0]["idempotency_key"] == f"reorch:{plan.plan_id}:OP-1"
 
 
 # ── Test: Writeback partial failure (Req 8.4) ─────────────────────

@@ -5,27 +5,23 @@ Validates: Requirements 29.1–29.12
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import pytest
 
-from app.models.enums import (
-    GoalMode,
-    IncidentSeverity,
-    IncidentType,
-    ReportSource,
-)
-from app.models.incident import Incident
 from app.models.recommendation import PlanSelectionInput, PlanSelectionOutput
-from app.models.schedule import ScheduleDetail
+from app.models.schedule import Operation, ScheduleDetail, WorkOrder
 from app.models.solver import (
     CandidatePlan,
     ConstraintValidationReport,
     SolverChain,
     SolverMetadata,
 )
-from app.services.plan_recommendation_engine import PlanRecommendationEngine
+from app.services.plan_recommendation_engine import (
+    NoFeasiblePlanError,
+    PlanRecommendationEngine,
+)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -78,6 +74,37 @@ def _plan(
         ),
         constraint_report=_report(feasibility != "infeasible"),
     )
+
+
+def _tradeoff_plan(*, on_time: bool, adjusted: bool) -> CandidatePlan:
+    start = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+    due = start + timedelta(minutes=60)
+    plan = _plan()
+    plan.schedule_detail = ScheduleDetail(
+        work_orders=[
+            WorkOrder(
+                work_order_id=f"WO-{plan.plan_id}",
+                product_name="A",
+                due_date=due,
+                priority=5,
+                operations=[
+                    Operation(
+                        operation_id=f"OP-{plan.plan_id}",
+                        work_order_id=f"WO-{plan.plan_id}",
+                        resource_id="M1",
+                        start_time=start,
+                        end_time=(
+                            start + timedelta(minutes=30)
+                            if on_time
+                            else start + timedelta(minutes=180)
+                        ),
+                        is_adjusted=adjusted,
+                    )
+                ],
+            )
+        ]
+    )
+    return plan
 
 
 def _input(
@@ -133,6 +160,7 @@ class TestRecommendBasic:
         engine = PlanRecommendationEngine()
         result = await engine.recommend(_input(goal_mode="delivery_priority"))
         assert result.goal_mode_used == "delivery_priority"
+        assert result.weights_used["delayed_order_count"] == 0.30
 
     @pytest.mark.asyncio
     async def test_audit_metadata_present(self):
@@ -157,13 +185,12 @@ class TestFilterInfeasible:
         assert result.recommended_plan_id == good.plan_id
 
     @pytest.mark.asyncio
-    async def test_all_infeasible_falls_back_to_all(self):
-        """If all plans are infeasible, use them anyway as fallback."""
+    async def test_all_infeasible_fails_closed(self):
         p1 = _plan(feasibility="infeasible")
         p2 = _plan(feasibility="infeasible")
         engine = PlanRecommendationEngine()
-        result = await engine.recommend(_input(candidates=[p1, p2]))
-        assert result.recommended_plan_id in (p1.plan_id, p2.plan_id)
+        with pytest.raises(NoFeasiblePlanError):
+            await engine.recommend(_input(candidates=[p1, p2]))
 
 
 class TestRankingAndAlternatives:
@@ -219,9 +246,9 @@ class TestAutoPreselection:
     @pytest.mark.asyncio
     async def test_no_auto_preselect_when_low_confidence(self):
         """No auto-preselect when confidence < 0.5 (Req 29.8)."""
-        # All infeasible → low confidence
+        # A timeout-partial plan stays reference-only and cannot auto-preselect.
         engine = PlanRecommendationEngine()
-        p1 = _plan(feasibility="infeasible")
+        p1 = _plan(feasibility="timeout_partial")
         result = await engine.recommend(_input(candidates=[p1]))
         assert result.recommendation_confidence < 0.5
         assert result.auto_preselected is False
@@ -291,6 +318,28 @@ class TestWeightsAndCases:
         engine = PlanRecommendationEngine()
         result = await engine.recommend(_input())
         assert "spi" in result.weights_used
+
+    @pytest.mark.asyncio
+    async def test_goal_mode_changes_actual_recommendation_ranking(self):
+        delivery_plan = _tradeoff_plan(on_time=True, adjusted=True)
+        stable_plan = _tradeoff_plan(on_time=False, adjusted=False)
+        engine = PlanRecommendationEngine()
+
+        delivery = await engine.recommend(
+            _input(
+                candidates=[delivery_plan, stable_plan],
+                goal_mode="delivery_priority",
+            )
+        )
+        stability = await engine.recommend(
+            _input(
+                candidates=[delivery_plan, stable_plan],
+                goal_mode="stability_priority",
+            )
+        )
+
+        assert delivery.recommended_plan_id == delivery_plan.plan_id
+        assert stability.recommended_plan_id == stable_plan.plan_id
 
     @pytest.mark.asyncio
     async def test_matched_case_ids_extracted(self):

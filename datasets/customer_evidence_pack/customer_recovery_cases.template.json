@@ -1,0 +1,50 @@
+{
+  "rows": [
+    {
+      "case_id": "CUSTOMER-CASE-001",
+      "evidence_scope": "customer_historical",
+      "source_refs": [
+        "MES:incident:001",
+        "APS:snapshot:001",
+        "MES:execution:001"
+      ],
+      "incident": {
+        "incident_id": "INC-001",
+        "incident_type": "equipment_failure",
+        "affected_operation_ids": ["OP-1001"],
+        "delay_minutes": 45,
+        "resource_id": "M-01",
+        "work_order_id": "WO-001",
+        "severity": "P1",
+        "occurred_at": "2026-07-06T08:30:00+08:00"
+      },
+      "planner_baseline": {
+        "baseline_decision_ref": "APS:decision:001",
+        "provenance_confirmed": true,
+        "policy": "manual_reassignment",
+        "planner_minutes": 25,
+        "baseline_loss_amount": 5600.0,
+        "currency": "CNY"
+      },
+      "system_recovery": {
+        "solve_status": "feasible",
+        "plan_ref": "REORCH:plan:001",
+        "predicted_delay_minutes": 18,
+        "planner_review_minutes": 7
+      },
+      "planner_decision": {
+        "decision_status": "accepted",
+        "planner_id": "planner-001",
+        "decided_at": "2026-07-06T08:39:00+08:00",
+        "override_reason": null
+      },
+      "execution_outcome": {
+        "status": "completed",
+        "source_event_ids": ["MES-EVENT-1001", "MES-EVENT-1002"],
+        "actual_loss_amount": 2600.0,
+        "actual_delay_minutes": 20,
+        "quality_state": "released"
+      }
+    }
+  ]
+}

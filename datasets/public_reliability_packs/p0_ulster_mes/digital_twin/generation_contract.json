@@ -1,0 +1,29 @@
+{
+  "generation_seed": 20260713,
+  "parent_dataset": "datasets/p0_reality_pack",
+  "parent_shape": {
+    "operations": 7,
+    "downtime_events": 2
+  },
+  "profiles": {
+    "operations": 10000,
+    "incidents": 300,
+    "mes_terminal_receipts": 10000,
+    "cdc_events": 10000
+  },
+  "provenance": "synthetic_digital_twin",
+  "allowed_claims": [
+    "engineering_stability",
+    "throughput",
+    "idempotency",
+    "cdc_sequence",
+    "receipt_state_machine"
+  ],
+  "forbidden_claims": [
+    "real_mes_validation",
+    "real_shadow",
+    "real_roi",
+    "customer_production_reliability",
+    "production_writeback_authorization"
+  ]
+}

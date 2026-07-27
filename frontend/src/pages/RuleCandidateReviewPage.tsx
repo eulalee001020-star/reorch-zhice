@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  App as AntdApp,
   Button,
   Card,
   Col,
@@ -13,7 +14,6 @@ import {
   Table,
   Tag,
   Typography,
-  message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -30,7 +30,7 @@ import {
   replayRuleCandidate,
   reviewRuleCandidate,
 } from '@/api';
-import type { RuleCandidateReviewRecord } from '@/types';
+import type { ConstraintCandidate, RuleCandidateReviewRecord, RuleReplayScenario } from '@/types';
 
 const { Text, Paragraph } = Typography;
 
@@ -50,7 +50,38 @@ function statusTag(status: string) {
 const defaultRuleText =
   'M4 operator unavailable after 16:00, urgent jobs should avoid it';
 
+function replayScenarios(candidate: ConstraintCandidate): RuleReplayScenario[] {
+  const machineIds = Array.isArray(candidate.scope.machine_ids) ? candidate.scope.machine_ids : [];
+  const operationIds = Array.isArray(candidate.scope.operation_ids) ? candidate.scope.operation_ids : [];
+  const machine = String(machineIds[0] ?? 'M4');
+  const operation = String(operationIds[0] ?? 'OP-7');
+  const base = {
+    evidence_scope: 'digital_twin' as const,
+    snapshot_ref: `digital-twin:rule:${candidate.candidate_id}`,
+  };
+  if (candidate.constraint_type === 'quality') {
+    return [
+      { ...base, scenario_id: `${candidate.candidate_id}-held`, source_refs: ['digital-twin:qms:held'], facts: { operation_id: operation, qms_status: 'held' }, expected_outcome: 'block' },
+      { ...base, scenario_id: `${candidate.candidate_id}-released`, source_refs: ['digital-twin:qms:released'], facts: { operation_id: operation, qms_status: 'released' }, expected_outcome: 'allow' },
+      { ...base, scenario_id: `${candidate.candidate_id}-other`, source_refs: ['digital-twin:qms:other'], facts: { operation_id: 'OP-OTHER', qms_status: 'held' }, expected_outcome: 'allow' },
+    ];
+  }
+  if (candidate.constraint_type === 'skill') {
+    return [
+      { ...base, scenario_id: `${candidate.candidate_id}-missing`, source_refs: ['digital-twin:mes:skill-missing'], facts: { machine_id: machine, operator_available: false }, expected_outcome: 'avoid' },
+      { ...base, scenario_id: `${candidate.candidate_id}-available`, source_refs: ['digital-twin:mes:skill-available'], facts: { machine_id: machine, operator_available: true }, expected_outcome: 'allow' },
+      { ...base, scenario_id: `${candidate.candidate_id}-other`, source_refs: ['digital-twin:mes:skill-other'], facts: { machine_id: 'M-OTHER', operator_available: false }, expected_outcome: 'allow' },
+    ];
+  }
+  return [
+    { ...base, scenario_id: `${candidate.candidate_id}-after`, source_refs: ['digital-twin:mes:calendar-after'], facts: { machine_id: machine, operation_start_time: '17:00' }, expected_outcome: 'avoid' },
+    { ...base, scenario_id: `${candidate.candidate_id}-before`, source_refs: ['digital-twin:mes:calendar-before'], facts: { machine_id: machine, operation_start_time: '15:00' }, expected_outcome: 'allow' },
+    { ...base, scenario_id: `${candidate.candidate_id}-other`, source_refs: ['digital-twin:mes:calendar-other'], facts: { machine_id: 'M-OTHER', operation_start_time: '17:00' }, expected_outcome: 'allow' },
+  ];
+}
+
 const RuleCandidateReviewPage: React.FC = () => {
+  const { message } = AntdApp.useApp();
   const [records, setRecords] = useState<RuleCandidateReviewRecord[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -161,6 +192,9 @@ const RuleCandidateReviewPage: React.FC = () => {
               {row.replay_result.pass_replay ? 'pass' : 'fail'}
             </Tag>
             <Text type="secondary">{row.replay_result.blocked_reason ?? 'no blocker'}</Text>
+            <Text type="secondary">
+              {row.replay_result.scenario_count} results / {Object.keys(row.replay_result.evidence_scope_counts).join(', ')}
+            </Text>
           </Space>
         );
       },
@@ -203,7 +237,10 @@ const RuleCandidateReviewPage: React.FC = () => {
             onClick={() =>
               runAction(
                 `${row.candidate.candidate_id}-replay`,
-                () => replayRuleCandidate(row.candidate.candidate_id, { scenario_count: 3 }),
+                () => replayRuleCandidate(row.candidate.candidate_id, {
+                  scenario_set: 'digital_twin_rule_acceptance',
+                  scenarios: replayScenarios(row.candidate),
+                }),
                 'Replay 已完成',
               )
             }

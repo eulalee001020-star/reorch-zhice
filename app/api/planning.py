@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from starlette.concurrency import run_in_threadpool
+
+from app.core.auth import CurrentUser, get_optional_current_user
 
 from app.models.agent_observability import (
     AgentTraceCostSummary,
@@ -11,6 +14,10 @@ from app.models.agent_observability import (
 from app.models.constraint_calibration import (
     CompiledConstraintCalibration,
     ConstraintCalibrationPack,
+)
+from app.models.design_partner import (
+    DesignPartnerPreflightRequest,
+    DesignPartnerPreflightResponse,
 )
 from app.models.flexible_shop import (
     CounterfactualReplayMatrixRequest,
@@ -88,6 +95,7 @@ from app.models.technical_kernel import (
 from app.services.agent_observability import AgentObservabilityService
 from app.services.constraint_calibration import ConstraintCalibrationService
 from app.services.data_readiness import DataReadinessService
+from app.services.design_partner_preflight import DesignPartnerPreflightService
 from app.services.digital_twin_runner import DigitalTwinRunner
 from app.services.enterprise_integration import EnterpriseIntegrationService
 from app.services.field_mapping_compiler import FieldMappingCompiler
@@ -108,6 +116,7 @@ from app.services.initial_scheduler import InitialScheduler
 from app.services.large_fjsp_replay import LargeFjspReplayService
 from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
 from app.services.plan_quality_gate import PlanQualityGate
+from app.services.persistence import persist_audit_log
 from app.services.production_readiness import ProductionReadinessGate
 from app.services.reality_harness import P0RealityHarnessService
 from app.services.replay_validation import ReplayValidationService
@@ -203,6 +212,60 @@ async def suggest_reality_harness_mapping(
     body: FieldMappingCompileRequest,
 ) -> FieldMappingCompileResponse:
     return FieldMappingCompiler().compile(body)
+
+
+@router.post(
+    "/design-partner/preflight",
+    response_model=DesignPartnerPreflightResponse,
+    summary="运行 Design Partner 数据、治理、ROI 与交付证据预检",
+)
+async def assess_design_partner_preflight(
+    body: DesignPartnerPreflightRequest,
+    current_user: CurrentUser = Depends(get_optional_current_user),
+) -> DesignPartnerPreflightResponse:
+    response = DesignPartnerPreflightService().assess(body)
+    await persist_audit_log(
+        action="design_partner_preflight",
+        entity_type="design_partner_preflight",
+        entity_id=response.preflight_id,
+        user_id=current_user.user_id,
+        role=current_user.role.value,
+        details={
+            "customer_ref": response.customer_ref,
+            "site_id": response.site_id,
+            "data_fingerprint": response.data_fingerprint,
+            "stage": response.stage,
+            "evidence_scope": response.evidence_scope,
+            "raw_rows_logged": False,
+        },
+    )
+    return response
+
+
+@router.post(
+    "/design-partner/sample-preflight",
+    response_model=DesignPartnerPreflightResponse,
+    summary="运行内置合成 Design Partner 预检样例",
+)
+async def run_design_partner_sample_preflight(
+    current_user: CurrentUser = Depends(get_optional_current_user),
+) -> DesignPartnerPreflightResponse:
+    service = DesignPartnerPreflightService()
+    response = service.assess(service.build_synthetic_sample_request())
+    await persist_audit_log(
+        action="design_partner_sample_preflight",
+        entity_type="design_partner_preflight",
+        entity_id=response.preflight_id,
+        user_id=current_user.user_id,
+        role=current_user.role.value,
+        details={
+            "data_fingerprint": response.data_fingerprint,
+            "stage": response.stage,
+            "evidence_scope": response.evidence_scope,
+            "raw_rows_logged": False,
+        },
+    )
+    return response
 
 
 @router.post(
@@ -436,7 +499,7 @@ async def ingest_flexible_shop_execution_feedback(
 async def run_large_fjsp_replay(
     body: LargeFjspReplayRequest,
 ) -> LargeFjspReplayResponse:
-    return LargeFjspReplayService().run(body)
+    return await run_in_threadpool(LargeFjspReplayService().run, body)
 
 
 @router.post(

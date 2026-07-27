@@ -1,0 +1,16 @@
+{
+  "pack_id": "p0_textile_schedule",
+  "acquisition_status": "complete",
+  "missing_raw_files": [],
+  "canonical_status": "built",
+  "counts": {
+    "work_orders": 15,
+    "operations": 36,
+    "resources": 3,
+    "schedule": 275
+  },
+  "scenario_count": 3,
+  "limitations": [
+    "Published schedule assignments cannot be deterministically joined to source work-order instances."
+  ]
+}

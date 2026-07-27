@@ -291,7 +291,7 @@ NGS 论文和 NGS Lab demo 应放在 Recovery Policy Graph 的垂直验证层：
 不能说：
 
 - 当前已经完成企业级策略图谱商业验证。
-- 历史 replay 可以直接证明真实 ROI。
+- 历史 replay 只能验证工程行为和业务代理指标，不能直接证明真实 ROI。
 - 计划员历史选择等于最优策略。
 - NGS 论文等于 NGS 实验室商业落地。
 - 企业接入 ReOrch 后立即不需要其他排产系统。
