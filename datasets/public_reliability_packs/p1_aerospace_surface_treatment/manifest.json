@@ -1855,11 +1855,6 @@
       "sha256": "8afc8c837f0df917f896418454225844406298ec219bc620fc8bbd8160df6278"
     },
     {
-      "path": "raw/extracted/Aerospace_Production_Scheduling/GRASP/src/src/__pycache__/grasp.cpython-313.pyc",
-      "bytes": 43664,
-      "sha256": "e8a68c6ee3941856300aab9d5f75c4da2abf1b1806eed56eec87fb2ccf7e36fc"
-    },
-    {
       "path": "raw/extracted/Aerospace_Production_Scheduling/GRASP/src/src/batch.py",
       "bytes": 17183,
       "sha256": "832abed476afcd32dc33aaa2472545ec60b3c15623bf83510379d60665a4c755"

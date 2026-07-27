@@ -649,7 +649,12 @@ def sha256(path: Path) -> str:
 def file_inventory(pack: Path) -> list[dict[str, Any]]:
     inventory = []
     for path in sorted(pack.rglob("*")):
-        if path.is_file() and path.name not in {"manifest.json", "quality_report.json"}:
+        if (
+            path.is_file()
+            and path.name not in {"manifest.json", "quality_report.json"}
+            and "__pycache__" not in path.parts
+            and path.suffix != ".pyc"
+        ):
             inventory.append({"path": str(path.relative_to(pack)), "bytes": path.stat().st_size, "sha256": sha256(path)})
     return inventory
 
