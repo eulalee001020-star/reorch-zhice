@@ -21,8 +21,8 @@ from app.core.auth import CurrentUser, get_optional_current_user
 from app.core.config import settings
 from app.models.enums import IncidentSeverity, IncidentStatus, IncidentType
 from app.models.incident import Incident, IncidentCreateRequest
-from app.services.persistence import fetch_incident, list_incidents_from_db, persist_incident
-from app.services.anomaly_intake_center import (
+from app.services.storage.persistence import fetch_incident, list_incidents_from_db, persist_incident
+from app.services.intake.anomaly_intake_center import (
     AnomalyIntakeCenter,
     IntakeValidationError,
     SourceNotAllowedError,

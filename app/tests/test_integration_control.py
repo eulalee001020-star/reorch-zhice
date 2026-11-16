@@ -17,19 +17,19 @@ from app.models.integration_control import (
     SourceAuthorityMatrixDraft,
     SourceAuthorityRule,
 )
-from app.services.decision_readiness import (
+from app.services.data_gate.decision_readiness import (
     DecisionReadinessError,
     DecisionReadinessService,
 )
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.integration_registry import (
+from app.services.data_gate.integration_registry import (
     IntegrationRegistryError,
     IntegrationRegistryService,
 )
-from app.services.operational_store import RelationalOperationalStore
-from app.services.schema_drift_guard import SchemaDriftGuard
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.data_gate.schema_drift_guard import SchemaDriftGuard
 from app.models.integration_control import SchemaObservationRequest
 
 

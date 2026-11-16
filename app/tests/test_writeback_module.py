@@ -33,11 +33,11 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.writeback_module import (
+from app.services.governance.writeback_module import (
     MESAdapter,
     WritebackModule,
 )
-from app.services.writeback_policy import WritebackPolicy, WritebackPolicyError
+from app.services.governance.writeback_policy import WritebackPolicy, WritebackPolicyError
 
 
 # ── Fixtures ────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ It answers investor and customer due-diligence questions:
 | Item | Implementation |
 | --- | --- |
 | Kernel models | `app/models/technical_kernel.py` |
-| Kernel services | `app/services/technical_kernel.py` |
+| Kernel services | `app/services/solver/technical_kernel.py` |
 | API endpoints | `POST /api/v1/planning/technical-kernel/*` |
 | Tests | `app/tests/test_technical_kernel.py` |
 | Architecture doc | `docs/architecture/constraint_to_recovery_technical_stack.md` |
@@ -45,7 +45,7 @@ It answers investor and customer due-diligence questions:
 
 ```bash
 pytest app/tests/test_technical_kernel.py -q
-python -m ruff check app/models/technical_kernel.py app/services/technical_kernel.py app/api/planning.py app/tests/test_technical_kernel.py
+python -m ruff check app/models/technical_kernel.py app/services/solver/technical_kernel.py app/api/planning.py app/tests/test_technical_kernel.py
 ```
 
 Expected:

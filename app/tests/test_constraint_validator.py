@@ -31,7 +31,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.constraint_validator import ConstraintValidator
+from app.services.constraints.constraint_validator import ConstraintValidator
 
 NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
 

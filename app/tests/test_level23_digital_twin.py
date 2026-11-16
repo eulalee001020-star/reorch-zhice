@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.level23_digital_twin import Level23DigitalTwinReplayRequest
-from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
+from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
 
 
 def test_level23_digital_twin_evaluator_scores_rehearsal_pack() -> None:

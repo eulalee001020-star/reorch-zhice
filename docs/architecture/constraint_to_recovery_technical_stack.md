@@ -26,8 +26,8 @@ Reality Data Layer
 
 - canonical schema: `schemas/canonical/`
 - P0 CSV 样例包: `datasets/p0_reality_pack/`
-- 字段 mapping 建议: `app/services/field_mapping_compiler.py`
-- 数据闸门: `app/services/reality_harness.py`
+- 字段 mapping 建议: `app/services/data_gate/field_mapping_compiler.py`
+- 数据闸门: `app/services/data_gate/reality_harness.py`
 - API:
   - `POST /api/v1/planning/reality-harness/assess`
   - `POST /api/v1/planning/reality-harness/sample-pack`
@@ -49,7 +49,7 @@ Reality Data Layer
 当前实现：
 
 - 模型: `app/models/technical_kernel.py`
-- 服务: `app/services/technical_kernel.py`
+- 服务: `app/services/solver/technical_kernel.py`
 - API: `POST /api/v1/planning/technical-kernel/decision-graph`
 
 当前算法：
@@ -78,7 +78,7 @@ Reality Data Layer
 当前实现：
 
 - 模型: `app/models/constraint_calibration.py`
-- 服务: `app/services/constraint_calibration.py`
+- 服务: `app/services/constraints/constraint_calibration.py`
 - API: `POST /api/v1/planning/constraint-calibration/compile`
 
 安全规则：
@@ -94,8 +94,8 @@ Reality Data Layer
 
 当前实现：
 
-- 影响分析: `app/services/impact_analysis_engine.py`
-- Incident Agent: `app/services/agent_workflow.py`
+- 影响分析: `app/services/intake/impact_analysis_engine.py`
+- Incident Agent: `app/services/agent/agent_workflow.py`
 - API: `GET /api/v1/incidents/{incident_id}/impact-report`
 
 当前算法：
@@ -146,7 +146,7 @@ Reality Data Layer
 
 当前实现：
 
-- 质量门: `app/services/plan_quality_gate.py`
+- 质量门: `app/services/recommendation/plan_quality_gate.py`
 - 证据门合并: `EvidenceGateService`
 - API: `POST /api/v1/planning/technical-kernel/evidence-gates`
 
@@ -175,9 +175,9 @@ Reality Data Layer
 
 当前实现：
 
-- Replay validation: `app/services/replay_validation.py`
-- Shadow capture: `app/services/shadow_mode.py`
-- Agent observability: `app/services/agent_observability.py`
+- Replay validation: `app/services/validation/replay_validation.py`
+- Shadow capture: `app/services/validation/shadow_mode.py`
+- Agent observability: `app/services/agent/agent_observability.py`
 - API:
   - `POST /api/v1/planning/replay-validation/evaluate`
   - `POST /api/v1/planning/shadow-mode/capture`

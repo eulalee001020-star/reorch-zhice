@@ -24,7 +24,7 @@ from app.models.enums import (
 )
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.strategy import RepairPolicyConfig, StrategyRecommendation
-from app.services.repair_policy_advisor import (
+from app.services.solver.repair_policy_advisor import (
     MODULE_VERSION,
     RepairPolicyAdvisor,
     RepairPolicyTemplate,

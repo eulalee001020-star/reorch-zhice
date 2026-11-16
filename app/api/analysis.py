@@ -21,8 +21,8 @@ from app.models.case import PreferenceProfile
 from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleSnapshot
 from app.models.strategy import StrategyRecommendation
-from app.services.impact_analysis_engine import ImpactAnalysisEngine
-from app.services.persistence import (
+from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.storage.persistence import (
     assign_snapshot_version,
     fetch_any_snapshot,
     fetch_impact_report,
@@ -32,7 +32,7 @@ from app.services.persistence import (
     persist_schedule_snapshot,
     persist_strategy_recommendation,
 )
-from app.services.strategy_selector import StrategySelector
+from app.services.solver.strategy_selector import StrategySelector
 
 logger = logging.getLogger(__name__)
 

@@ -35,7 +35,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.confirmation_module import (
+from app.services.governance.confirmation_module import (
     ConfirmationModule,
     ConstraintViolationError,
     OverrideReasonRequiredError,

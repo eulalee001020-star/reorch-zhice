@@ -18,7 +18,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.replay_validation import ReplayValidationService
+from app.services.validation.replay_validation import ReplayValidationService
 
 
 def test_replay_validation_hits_historical_acceptance_envelope() -> None:

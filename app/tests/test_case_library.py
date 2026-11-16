@@ -23,7 +23,7 @@ from app.models.case import CaseRecord
 from app.models.decision import DecisionRecord
 from app.models.execution import ExecutionResult
 from app.models.solver import SolverChain
-from app.services.case_library import CaseLibrary, _cosine_similarity
+from app.services.evidence.case_library import CaseLibrary, _cosine_similarity
 
 
 def _make_solver_chain(**overrides) -> SolverChain:

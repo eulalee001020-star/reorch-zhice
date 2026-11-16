@@ -36,7 +36,7 @@ Fixes:
 - `build_schedule_snapshot()` now preserves `eligible_resources` under
   `snapshot.raw_data["work_orders"][...]["operations"]`, so the CP-SAT FJSP
   backend can use alternative machines.
-- `app/services/reality_harness.py` now deducts warning penalties by unique
+- `app/services/data_gate/reality_harness.py` now deducts warning penalties by unique
   warning code instead of by row count; blockers still hard-stop permission.
 
 ## Rerun Results

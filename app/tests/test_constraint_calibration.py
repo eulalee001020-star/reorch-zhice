@@ -22,7 +22,7 @@ from app.models.planning import (
     PlanningResourceInput,
     PlanningWorkOrderInput,
 )
-from app.services.constraint_calibration import ConstraintCalibrationService
+from app.services.constraints.constraint_calibration import ConstraintCalibrationService
 
 
 def test_approved_constraints_compile_into_initial_request() -> None:

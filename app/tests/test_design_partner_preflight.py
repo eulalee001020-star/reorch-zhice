@@ -18,8 +18,8 @@ from app.models.design_partner import (
     RoiCostModel,
     WorkflowEvidence,
 )
-from app.services.design_partner_preflight import DesignPartnerPreflightService
-from app.services.reality_harness import P0RealityHarnessService
+from app.services.data_gate.design_partner_preflight import DesignPartnerPreflightService
+from app.services.data_gate.reality_harness import P0RealityHarnessService
 
 _NOW = datetime(2026, 7, 10, 9, 0, tzinfo=timezone.utc)
 

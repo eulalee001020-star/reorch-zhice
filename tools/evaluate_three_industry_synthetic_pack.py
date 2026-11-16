@@ -13,7 +13,7 @@ from typing import Any
 import pandas as pd
 
 from app.models.synthetic_replay_evidence import SyntheticScenarioPack
-from app.services.synthetic_replay_evidence import SyntheticReplayEvidenceEvaluator
+from app.services.evidence.synthetic_replay_evidence import SyntheticReplayEvidenceEvaluator
 
 
 SCENARIO_PREFIXES = {

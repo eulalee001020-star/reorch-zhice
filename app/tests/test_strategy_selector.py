@@ -20,7 +20,7 @@ from app.models.case import CaseRecord, PreferenceProfile
 from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.impact import AffectedWorkOrder, ImpactReport
 from app.models.solver import SolverChain
-from app.services.strategy_selector import StrategySelector
+from app.services.solver.strategy_selector import StrategySelector
 
 
 # ── Fixtures ────────────────────────────────────────────────────────

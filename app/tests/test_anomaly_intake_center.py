@@ -24,7 +24,7 @@ from app.models.enums import (
     ReportSource,
 )
 from app.models.incident import Incident, IncidentCreateRequest
-from app.services.anomaly_intake_center import (
+from app.services.intake.anomaly_intake_center import (
     ALLOWED_SOURCES,
     AnomalyIntakeCenter,
     IntakeSeverityClassifier,

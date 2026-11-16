@@ -22,7 +22,7 @@ The harness answers five questions before any candidate plan is trusted:
 | Canonical schema files | `schemas/canonical/*.schema.json` |
 | P0 sample data pack | `datasets/p0_reality_pack/` |
 | Harness models | `app/models/reality_harness.py` |
-| Harness service | `app/services/reality_harness.py` |
+| Harness service | `app/services/data_gate/reality_harness.py` |
 | API endpoints | `POST /api/v1/planning/reality-harness/assess`, `POST /api/v1/planning/reality-harness/sample-pack` |
 | Frontend entry | `Data Readiness -> 运行 P0 样例包` |
 | Tests | `app/tests/test_reality_harness.py` |

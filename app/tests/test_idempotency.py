@@ -5,7 +5,7 @@ Validates: Requirements 1.3, 7.6, 8.1, 17.2
 
 import pytest
 
-from app.services.idempotency import (
+from app.services.governance.idempotency import (
     IdempotencyRecord,
     IdempotencyStore,
     check_idempotency,

@@ -9,9 +9,9 @@ from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.large_fjsp_replay import LargeFjspReplayRequest
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.cp_sat_scheduler import CpSatFjspScheduler
-from app.services.customer_constraint_ingestion import CustomerConstraintIngestionService
-from app.services.large_fjsp_replay import LargeFjspReplayService
+from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
+from app.services.constraints.customer_constraint_ingestion import CustomerConstraintIngestionService
+from app.services.solver.large_fjsp_replay import LargeFjspReplayService
 
 
 NOW = datetime(2026, 7, 6, 8, 0, tzinfo=timezone.utc)

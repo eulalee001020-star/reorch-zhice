@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from app.models.large_fjsp_replay import LargeFjspReplayRequest
-from app.services.large_fjsp_replay import LargeFjspReplayService
+from app.services.solver.large_fjsp_replay import LargeFjspReplayService
 
 
 def run_load_gate(

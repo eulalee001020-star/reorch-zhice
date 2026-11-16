@@ -28,7 +28,7 @@ from app.models.solver import (
     SolverMetadata,
 )
 from app.models.strategy import NeighborhoodConfig, StrategyRecommendation
-from app.services.neighborhood_selector import (
+from app.services.solver.neighborhood_selector import (
     MODULE_VERSION,
     NeighborhoodSelector,
     _STAGNATION_ESCALATION_THRESHOLD,

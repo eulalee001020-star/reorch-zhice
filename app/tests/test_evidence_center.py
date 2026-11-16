@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.services.evidence_center import EvidenceCenterService
+from app.services.evidence.evidence_center import EvidenceCenterService
 
 
 def test_evidence_center_contains_required_evidence_categories():

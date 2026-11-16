@@ -17,7 +17,7 @@ from uuid import uuid4
 import pytest
 
 from app.models.case import CaseTemplate
-from app.services.case_template_manager import (
+from app.services.evidence.case_template_manager import (
     CaseTemplateManager,
     TemplateAlreadyPublishedError,
     TemplateNotFoundError,

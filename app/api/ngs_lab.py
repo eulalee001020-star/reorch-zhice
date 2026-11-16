@@ -14,7 +14,7 @@ from app.models.ngs import (
     NgsPlannerDecisionRequest,
     NgsPlannerDecisionResponse,
 )
-from app.services.ngs_lab import NgsProtectedPortfolioService
+from app.services.ngs.ngs_lab import NgsProtectedPortfolioService
 
 router = APIRouter(prefix="/api/v1/ngs-lab", tags=["ngs-lab"])
 _ngs_planner_decisions: list[NgsPlannerDecisionRecord] = []

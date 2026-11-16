@@ -42,12 +42,12 @@ from app.models.strategy import (
     SolverChainConfig,
     StrategyRecommendation,
 )
-from app.services.solver_policy_orchestrator import (
+from app.services.solver.solver_policy_orchestrator import (
     MODULE_VERSION as ORCH_VERSION,
     SolverPolicyBundle,
     SolverPolicyOrchestrator,
 )
-from app.services.solver_portfolio import (
+from app.services.solver.solver_portfolio import (
     MODULE_VERSION as SP_VERSION,
     SolverPortfolio,
 )

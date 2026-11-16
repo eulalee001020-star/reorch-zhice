@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.models.evidence import EvidenceCenterResponse
-from app.services.evidence_center import EvidenceCenterService
+from app.services.evidence.evidence_center import EvidenceCenterService
 
 router = APIRouter(prefix="/api/v1/evidence", tags=["evidence"])
 

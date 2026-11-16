@@ -9,7 +9,7 @@ from app.models.integration_control import (
     ConformanceCheck,
     ConnectorConformanceReport,
 )
-from app.services.integration_registry import fingerprint_payload
+from app.services.data_gate.integration_registry import fingerprint_payload
 
 
 class ConnectorConformanceRunner:

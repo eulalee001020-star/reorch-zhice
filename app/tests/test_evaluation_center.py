@@ -24,7 +24,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.evaluation_center import EvaluationCenter
+from app.services.recommendation.evaluation_center import EvaluationCenter
 
 
 # ── Helpers ──────────────────────────────────────────────────────────

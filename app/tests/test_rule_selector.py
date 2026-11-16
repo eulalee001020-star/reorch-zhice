@@ -30,7 +30,7 @@ from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.incident import Incident
 from app.models.solver import SolverChain
 from app.models.strategy import RuleSelectionResult, StrategyRecommendation
-from app.services.rule_selector import (
+from app.services.solver.rule_selector import (
     MODULE_VERSION,
     RuleConstraint,
     RuleSelector,

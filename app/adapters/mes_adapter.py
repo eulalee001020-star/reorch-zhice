@@ -22,7 +22,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
-from app.services.writeback_policy import WritebackExecutionPermit, WritebackPolicy
+from app.services.governance.writeback_policy import WritebackExecutionPermit, WritebackPolicy
 
 logger = logging.getLogger(__name__)
 

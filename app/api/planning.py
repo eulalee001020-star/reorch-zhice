@@ -92,14 +92,14 @@ from app.models.technical_kernel import (
     RecoveryOperatorRequest,
     RecoveryOperatorResponse,
 )
-from app.services.agent_observability import AgentObservabilityService
-from app.services.constraint_calibration import ConstraintCalibrationService
-from app.services.data_readiness import DataReadinessService
-from app.services.design_partner_preflight import DesignPartnerPreflightService
-from app.services.digital_twin_runner import DigitalTwinRunner
-from app.services.enterprise_integration import EnterpriseIntegrationService
-from app.services.field_mapping_compiler import FieldMappingCompiler
-from app.services.flexible_shop_capability import (
+from app.services.agent.agent_observability import AgentObservabilityService
+from app.services.constraints.constraint_calibration import ConstraintCalibrationService
+from app.services.data_gate.data_readiness import DataReadinessService
+from app.services.data_gate.design_partner_preflight import DesignPartnerPreflightService
+from app.services.validation.digital_twin_runner import DigitalTwinRunner
+from app.services.data_gate.enterprise_integration import EnterpriseIntegrationService
+from app.services.data_gate.field_mapping_compiler import FieldMappingCompiler
+from app.services.solver.flexible_shop_capability import (
     CounterfactualReplayMatrixService,
     CounterfactualReplayRunner,
     DecompositionDynamicSolver,
@@ -112,21 +112,21 @@ from app.services.flexible_shop_capability import (
     ProductionWritebackSafetyService,
     RealDataIntegrationService,
 )
-from app.services.initial_scheduler import InitialScheduler
-from app.services.large_fjsp_replay import LargeFjspReplayService
-from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
-from app.services.plan_quality_gate import PlanQualityGate
-from app.services.persistence import persist_audit_log
-from app.services.production_readiness import ProductionReadinessGate
-from app.services.reality_harness import P0RealityHarnessService
-from app.services.replay_validation import ReplayValidationService
-from app.services.shadow_mode import ShadowModeService
-from app.services.technical_kernel import (
+from app.services.solver.initial_scheduler import InitialScheduler
+from app.services.solver.large_fjsp_replay import LargeFjspReplayService
+from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
+from app.services.storage.persistence import persist_audit_log
+from app.services.validation.production_readiness import ProductionReadinessGate
+from app.services.data_gate.reality_harness import P0RealityHarnessService
+from app.services.validation.replay_validation import ReplayValidationService
+from app.services.validation.shadow_mode import ShadowModeService
+from app.services.solver.technical_kernel import (
     DecisionGraphService,
     EvidenceGateService,
     RecoveryOperatorPortfolioService,
 )
-from app.services.value_tracking import ValueTrackingService
+from app.services.evidence.value_tracking import ValueTrackingService
 
 router = APIRouter(prefix="/api/v1/planning", tags=["planning"])
 

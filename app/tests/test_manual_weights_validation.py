@@ -9,7 +9,7 @@ Covers:
 
 import pytest
 
-from app.services.manual_weights_validator import (
+from app.services.constraints.manual_weights_validator import (
     DEFAULT_WEIGHTS,
     VALID_WEIGHT_KEYS,
     ManualWeightsValidator,

@@ -37,7 +37,7 @@ from app.models.agent import (
     RuleCandidateReviewRecord,
     RuleCandidateReviewRequest,
 )
-from app.services.agent_workflow import (
+from app.services.agent.agent_workflow import (
     AgentOrchestrator,
     AgentWorkflowNotFoundError,
     AgentWorkflowStageError,
@@ -48,8 +48,8 @@ from app.services.agent_workflow import (
     PreferenceLearningAgent,
     RuleCandidateAgent,
 )
-from app.services.persistence import persist_audit_log, record_entity_version
-from app.services.rule_candidate_replay import RuleCandidateReplayService
+from app.services.storage.persistence import persist_audit_log, record_entity_version
+from app.services.evidence.rule_candidate_replay import RuleCandidateReplayService
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 _rule_candidate_review_store: dict[str, RuleCandidateReviewRecord] = {}

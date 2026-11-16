@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from app.services.recovery_evidence_ledger import RecoveryEvidenceLedgerService
+from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
 
 
 ROOT = Path(__file__).resolve().parents[2]

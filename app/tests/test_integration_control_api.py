@@ -9,11 +9,11 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.models.production_runtime import SolveJobSubmitRequest
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.operational_store import RelationalOperationalStore
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
 
 ADMIN_HEADERS = {"X-API-Key": "admin-key-001"}

@@ -7,8 +7,8 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.models.production_runtime import SolveJobSubmitRequest
-from app.services.operational_store import RelationalOperationalStore
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
 
 @pytest.mark.asyncio

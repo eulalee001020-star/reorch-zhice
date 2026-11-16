@@ -25,14 +25,14 @@ from app.models.agent import FeedbackStructuringRequest
 from app.models.decision import ConfirmRequest, ConfirmResponse, DecisionRecord
 from app.models.enums import ConfirmAction, WritebackStatus
 from app.models.execution import ExecutionResult
-from app.services.confirmation_module import (
+from app.services.governance.confirmation_module import (
     ConfirmationModule,
     ConstraintViolationError,
     OverrideReasonRequiredError,
     PermissionDeniedError,
 )
-from app.services.export_service import ExportService
-from app.services.persistence import (
+from app.services.governance.export_service import ExportService
+from app.services.storage.persistence import (
     fetch_any_snapshot,
     fetch_decision_record_by_id,
     fetch_decision_record_by_incident,
@@ -44,9 +44,9 @@ from app.services.persistence import (
     persist_decision_record,
     record_entity_version,
 )
-from app.services.agent_workflow import FeedbackAgent
-from app.services.writeback_module import WritebackModule
-from app.services.writeback_policy import WritebackPolicy, WritebackPolicyError
+from app.services.agent.agent_workflow import FeedbackAgent
+from app.services.governance.writeback_module import WritebackModule
+from app.services.governance.writeback_policy import WritebackPolicy, WritebackPolicyError
 
 logger = logging.getLogger(__name__)
 
@@ -401,7 +401,7 @@ async def sandbox_writeback(
     certification_id = body.certification_id or ""
     if settings.integration.require_certified_writeback_adapter or certification_id:
         from app.api.production_runtime import get_operational_store
-        from app.services.integration_registry import (
+        from app.services.data_gate.integration_registry import (
             IntegrationRegistryError,
             IntegrationRegistryService,
         )

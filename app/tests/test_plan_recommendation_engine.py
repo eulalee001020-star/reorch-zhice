@@ -18,7 +18,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.plan_recommendation_engine import (
+from app.services.recommendation.plan_recommendation_engine import (
     NoFeasiblePlanError,
     PlanRecommendationEngine,
 )

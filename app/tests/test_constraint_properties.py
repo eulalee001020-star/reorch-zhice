@@ -25,7 +25,7 @@ from app.models.schedule import (
     ScheduleSnapshot,
     WorkOrder,
 )
-from app.services.constraint_validator import ConstraintValidator
+from app.services.constraints.constraint_validator import ConstraintValidator
 
 # ── Constants ───────────────────────────────────────────────────────
 

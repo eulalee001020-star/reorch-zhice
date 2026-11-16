@@ -20,7 +20,7 @@ from app.models.enums import (
 )
 from app.models.incident import Incident
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
 
 
 # ── helpers ──────────────────────────────────────────────────────────

@@ -19,7 +19,7 @@ from app.models.agent import (
     IncidentUnderstandingRequest,
     RuleCandidateRequest,
 )
-from app.services.agent_workflow import FeedbackAgent, IncidentAgent, RuleCandidateAgent
+from app.services.agent.agent_workflow import FeedbackAgent, IncidentAgent, RuleCandidateAgent
 
 
 INCIDENT_CASES = [

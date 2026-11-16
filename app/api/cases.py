@@ -22,13 +22,13 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.models.case import CaseRecord, CaseTemplate, PreferenceProfile
-from app.services.case_library import CaseLibrary
-from app.services.case_template_manager import (
+from app.services.evidence.case_library import CaseLibrary
+from app.services.evidence.case_template_manager import (
     CaseTemplateManager,
     TemplateAlreadyPublishedError,
     TemplateNotFoundError,
 )
-from app.services.persistence import (
+from app.services.storage.persistence import (
     fetch_case_record,
     fetch_case_template,
     fetch_preference_profile,

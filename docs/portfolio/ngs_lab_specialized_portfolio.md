@@ -233,7 +233,7 @@ ReOrch NGS Lab
 | 能力 | 当前实现 |
 | --- | --- |
 | NGS domain adapter | `app/models/ngs.py` 定义 samples、entities、operations、resources、reagents、pools、runs、events、gate report、repair candidate、agent trace |
-| Protected hard gate | `app/services/ngs_lab.py` 检查 reference closure、DAG、QC route、reagent、hold-time、pool/run、index、resource calendar、frozen-zone、zone compatibility、traceability |
+| Protected hard gate | `app/services/ngs/ngs_lab.py` 检查 reference closure、DAG、QC route、reagent、hold-time、pool/run、index、resource calendar、frozen-zone、zone compatibility、traceability |
 | Protected portfolio | 同一服务生成 dispatch baseline、reagent/run rescue、event-local repair、stage-first redistribution，并只让 hard-feasible 候选进入 soft-score 排序 |
 | NGS API | `POST /api/v1/ngs-lab/demo-run` 返回 impact report、feasible candidates、rejected candidates、recommended candidate、audit package 和 agent trace |
 | 前端入口 | `NGS Lab` 页面直接调用 API，展示 Top-K 可执行候选、被拒候选、质量门、影响范围、审计状态和 Agent trace |

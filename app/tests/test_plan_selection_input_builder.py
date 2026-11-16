@@ -28,7 +28,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
+from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
 
 
 # ── Fixtures ────────────────────────────────────────────────────────

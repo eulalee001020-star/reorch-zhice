@@ -38,8 +38,8 @@ from app.models.technical_kernel import (
     EvidenceGateRequest,
     RecoveryOperatorRequest,
 )
-from app.services.plan_quality_gate import PlanQualityGate
-from app.services.technical_kernel import (
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
+from app.services.solver.technical_kernel import (
     DecisionGraphService,
     EvidenceGateService,
     RecoveryOperatorPortfolioService,

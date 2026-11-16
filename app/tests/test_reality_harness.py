@@ -10,7 +10,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.reality_harness import P0RealityHarnessRequest
-from app.services.reality_harness import P0RealityHarnessService
+from app.services.data_gate.reality_harness import P0RealityHarnessService
 
 
 def test_p0_sample_pack_is_shadow_ready_without_writeback() -> None:

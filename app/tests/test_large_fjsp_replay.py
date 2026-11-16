@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.large_fjsp_replay import LargeFjspReplayRequest
-from app.services.large_fjsp_replay import LargeFjspReplayService
+from app.services.solver.large_fjsp_replay import LargeFjspReplayService
 
 
 def test_large_fjsp_replay_generates_multiple_solver_backed_options() -> None:

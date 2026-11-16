@@ -14,13 +14,13 @@ from app.models.production_runtime import (
     SolveJobSubmitRequest,
     TenantSolveQuota,
 )
-from app.services.cdc_consistency import CdcConsistencyService
-from app.services.oidc_auth import OIDCTokenVerifier, OIDCVerificationError
-from app.services.operational_store import RelationalOperationalStore
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
-from app.services.runtime_backup import RuntimeBackupService
-from app.services.shadow_execution import ReadOnlyShadowRunner
-from app.services.solve_job_runtime import DurableSolveQueue, SolveJobWorker
+from app.services.data_gate.cdc_consistency import CdcConsistencyService
+from app.services.governance.oidc_auth import OIDCTokenVerifier, OIDCVerificationError
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.storage.runtime_backup import RuntimeBackupService
+from app.services.validation.shadow_execution import ReadOnlyShadowRunner
+from app.services.solver.solve_job_runtime import DurableSolveQueue, SolveJobWorker
 
 
 NOW = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)

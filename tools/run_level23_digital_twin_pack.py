@@ -37,7 +37,7 @@ SHEET_TO_FIELD = {
 
 
 def main() -> None:
-    from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
+    from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workbook", type=Path)
@@ -57,7 +57,7 @@ def main() -> None:
 
 def load_request(path: Path):
     from app.models.level23_digital_twin import Level23DigitalTwinReplayRequest
-    from app.services.level23_digital_twin import workbook_pack_id
+    from app.services.validation.level23_digital_twin import workbook_pack_id
 
     workbook = pd.ExcelFile(path)
     values: dict[str, Any] = {

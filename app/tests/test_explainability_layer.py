@@ -23,7 +23,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.explainability_layer import ExplainabilityLayer
+from app.services.recommendation.explainability_layer import ExplainabilityLayer
 
 _NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
 

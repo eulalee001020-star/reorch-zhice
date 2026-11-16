@@ -199,9 +199,9 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_full_intake_to_strategy_chain(self, redis, kafka, snapshot):
         """Simulate MES reporting equipment failure → full chain to strategy."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.strategy_selector import StrategySelector
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.solver.strategy_selector import StrategySelector
 
         # Step 1: Receive event via AnomalyIntakeCenter (Req 1.1)
         center = AnomalyIntakeCenter(
@@ -276,8 +276,8 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_severity_upgrade_on_breach(self, redis, kafka):
         """Impact analysis upgrades severity when Breach risk is found."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
 
         # Create incident with P3 severity (general resource)
         async def general_provider(rid: str):
@@ -320,7 +320,7 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_dedup_and_kafka_publish(self, redis, kafka):
         """Deduplication merges events; Kafka receives the primary."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
 
         center = AnomalyIntakeCenter(
             redis_client=redis,
@@ -380,8 +380,8 @@ class TestE2ESolveEvaluateRecommendExplain:
 
     async def _run_intake_and_analysis(self, incident, snapshot, preference):
         """Helper: run impact analysis + strategy selection, return (report, strategy)."""
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.strategy_selector import StrategySelector
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.solver.strategy_selector import StrategySelector
 
         engine = ImpactAnalysisEngine()
         report = await engine.analyze(incident, snapshot)
@@ -399,12 +399,12 @@ class TestE2ESolveEvaluateRecommendExplain:
     @pytest.mark.asyncio
     async def test_full_solve_to_explain_chain(self, snapshot, incident, preference):
         """Full chain: SolverPolicy → Solve → Evaluate → Recommend → Explain."""
-        from app.services.evaluation_center import EvaluationCenter
-        from app.services.explainability_layer import ExplainabilityLayer
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.plan_recommendation_engine import PlanRecommendationEngine
-        from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
+        from app.services.recommendation.evaluation_center import EvaluationCenter
+        from app.services.recommendation.explainability_layer import ExplainabilityLayer
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
+        from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
 
         report, strategy = await self._run_intake_and_analysis(
             incident, snapshot, preference
@@ -509,8 +509,8 @@ class TestE2ESolveEvaluateRecommendExplain:
     @pytest.mark.asyncio
     async def test_solver_records_metadata(self, snapshot, incident, preference):
         """Verify SolverChain and SolverMetadata are recorded on each plan."""
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
 
         report, strategy = await self._run_intake_and_analysis(
             incident, snapshot, preference
@@ -577,12 +577,12 @@ class TestE2EConfirmWritebackCase:
 
     async def _produce_candidates(self, incident, snapshot, preference):
         """Helper: run full chain up to candidate generation."""
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.plan_recommendation_engine import PlanRecommendationEngine
-        from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
-        from app.services.strategy_selector import StrategySelector
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
+        from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
+        from app.services.solver.strategy_selector import StrategySelector
 
         engine = ImpactAnalysisEngine()
         report = await engine.analyze(incident, snapshot)
@@ -623,9 +623,9 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_accept_confirm_writeback_case(self, snapshot, incident, preference):
         """Accept plan → writeback → track execution → create case → update preference."""
-        from app.services.case_library import CaseLibrary
-        from app.services.confirmation_module import ConfirmationModule
-        from app.services.writeback_module import WritebackModule
+        from app.services.evidence.case_library import CaseLibrary
+        from app.services.governance.confirmation_module import ConfirmationModule
+        from app.services.governance.writeback_module import WritebackModule
 
         candidates, output, report, strategy = await self._produce_candidates(
             incident, snapshot, preference
@@ -707,7 +707,7 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_micro_adjustment_confirm(self, snapshot, incident, preference):
         """Accept-with-adjustment creates a derived plan version or raises constraint error."""
-        from app.services.confirmation_module import ConfirmationModule, ConstraintViolationError
+        from app.services.governance.confirmation_module import ConfirmationModule, ConstraintViolationError
 
         candidates, output, report, strategy = await self._produce_candidates(
             incident, snapshot, preference
@@ -751,9 +751,9 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_override_confirm_updates_preference(self, snapshot, incident, preference):
         """Override (reject_and_reselect) records reason and updates preference."""
-        from app.services.case_library import CaseLibrary
-        from app.services.confirmation_module import ConfirmationModule
-        from app.services.writeback_module import WritebackModule
+        from app.services.evidence.case_library import CaseLibrary
+        from app.services.governance.confirmation_module import ConfirmationModule
+        from app.services.governance.writeback_module import WritebackModule
 
         candidates, output, report, strategy = await self._produce_candidates(
             incident, snapshot, preference

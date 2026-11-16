@@ -34,19 +34,19 @@ from app.models.production_runtime import (
     SolveJobSubmitResponse,
     TenantSolveQuota,
 )
-from app.services.cdc_consistency import CdcConsistencyService
-from app.services.decomposition_executor import DecompositionExecutor
-from app.services.decision_readiness import (
+from app.services.data_gate.cdc_consistency import CdcConsistencyService
+from app.services.solver.decomposition_executor import DecompositionExecutor
+from app.services.data_gate.decision_readiness import (
     DecisionReadinessError,
     DecisionReadinessService,
 )
-from app.services.operational_store import RelationalOperationalStore
-from app.services.feasibility_restoration import FeasibilityRestorationEngine
-from app.services.production_validation_harness import ProductionValidationHarness
-from app.services.recovery_evidence_ledger import RecoveryEvidenceLedgerService
-from app.services.shadow_execution import ReadOnlyShadowRunner
-from app.services.schema_drift_guard import SchemaDriftGuard
-from app.services.solve_job_runtime import DurableSolveQueue, SolveJobWorker
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.solver.feasibility_restoration import FeasibilityRestorationEngine
+from app.services.validation.production_validation_harness import ProductionValidationHarness
+from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
+from app.services.validation.shadow_execution import ReadOnlyShadowRunner
+from app.services.data_gate.schema_drift_guard import SchemaDriftGuard
+from app.services.solver.solve_job_runtime import DurableSolveQueue, SolveJobWorker
 
 
 router = APIRouter(prefix="/api/v1/runtime", tags=["production-runtime"])

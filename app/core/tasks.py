@@ -32,7 +32,7 @@ async def confirmation_timeout_reminder(ctx: dict[str, Any], incident_id: str) -
     Stub — full implementation in task 9.1.
     """
     from app.models.enums import IncidentStatus
-    from app.services.persistence import (
+    from app.services.storage.persistence import (
         fetch_decision_record_by_incident,
         fetch_incident,
         persist_audit_log,
@@ -73,12 +73,12 @@ async def writeback_retry(
     Stub — full implementation in task 9.2.
     """
     from app.models.enums import WritebackStatus
-    from app.services.persistence import (
+    from app.services.storage.persistence import (
         fetch_decision_record_by_id,
         fetch_writeback_job_by_incident,
         persist_writeback_job,
     )
-    from app.services.writeback_module import MESAdapter, MESInstruction
+    from app.services.governance.writeback_module import MESAdapter, MESInstruction
 
     record = await fetch_decision_record_by_id(UUID(decision_record_id))
     if record is None:
@@ -162,7 +162,7 @@ async def execution_progress_poll(ctx: dict[str, Any]) -> None:
 
     Stub — full implementation in task 9.2.
     """
-    from app.services.persistence import list_retryable_writeback_jobs
+    from app.services.storage.persistence import list_retryable_writeback_jobs
 
     retryable = await list_retryable_writeback_jobs()
     for job in retryable:
@@ -190,7 +190,7 @@ async def dead_letter_compensation(
 
     Stub — full implementation in a later task.
     """
-    from app.services.persistence import record_entity_version
+    from app.services.storage.persistence import record_entity_version
 
     logger.info("dead_letter_compensation: recording message from topic=%s", topic)
     await record_entity_version(

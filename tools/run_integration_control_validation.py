@@ -7,10 +7,10 @@ import argparse
 import json
 from pathlib import Path
 
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.operational_store import RelationalOperationalStore
+from app.services.storage.operational_store import RelationalOperationalStore
 
 
 def main() -> int:

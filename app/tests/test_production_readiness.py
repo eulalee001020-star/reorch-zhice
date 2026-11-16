@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.production_readiness import ProductionReadinessEvidence
-from app.services.production_readiness import ProductionReadinessGate
+from app.services.validation.production_readiness import ProductionReadinessGate
 
 
 def test_public_large_fjsp_pack_is_replay_ready_not_production_ready() -> None:

@@ -28,7 +28,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.export_service import ExportService
+from app.services.governance.export_service import ExportService
 
 _NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
 _LATER = _NOW + timedelta(hours=2)

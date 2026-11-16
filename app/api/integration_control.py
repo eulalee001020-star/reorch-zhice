@@ -28,18 +28,18 @@ from app.models.integration_control import (
     VersionedAssetRecord,
     WritebackCertificationReport,
 )
-from app.services.decision_readiness import (
+from app.services.data_gate.decision_readiness import (
     DecisionReadinessError,
     DecisionReadinessService,
 )
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.integration_registry import (
+from app.services.data_gate.integration_registry import (
     IntegrationRegistryError,
     IntegrationRegistryService,
 )
-from app.services.schema_drift_guard import SchemaDriftError, SchemaDriftGuard
+from app.services.data_gate.schema_drift_guard import SchemaDriftError, SchemaDriftGuard
 
 
 router = APIRouter(prefix="/api/v1/integration-control", tags=["integration-control"])

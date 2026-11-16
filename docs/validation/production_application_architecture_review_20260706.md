@@ -101,7 +101,7 @@
 核心代码：
 
 - `app/models/production_readiness.py`
-- `app/services/production_readiness.py`
+- `app/services/validation/production_readiness.py`
 - `app/tests/test_production_readiness.py`
 
 ### 3.1 门控等级

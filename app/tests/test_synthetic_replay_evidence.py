@@ -1,7 +1,7 @@
 """Tests for synthetic replay evidence pack evaluator."""
 
 from app.models.synthetic_replay_evidence import SyntheticScenarioPack
-from app.services.synthetic_replay_evidence import SyntheticReplayEvidenceEvaluator
+from app.services.evidence.synthetic_replay_evidence import SyntheticReplayEvidenceEvaluator
 
 
 def test_synthetic_replay_evidence_scores_roi_proxy_but_blocks_solver_replay() -> None:

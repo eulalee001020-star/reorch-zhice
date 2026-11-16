@@ -1,7 +1,7 @@
 """Integrated production digital-twin validation tests."""
 
 from app.models.db.operational_runtime import OperationalBase
-from app.services.production_validation_harness import ProductionValidationHarness
+from app.services.validation.production_validation_harness import ProductionValidationHarness
 
 
 def test_operational_runtime_schema_contains_durable_state_tables() -> None:

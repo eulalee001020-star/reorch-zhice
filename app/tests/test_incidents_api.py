@@ -159,7 +159,7 @@ async def test_create_incident_uses_local_intake_in_development():
 @pytest.mark.asyncio
 async def test_create_incident_validation_error():
     """POST should return 422 when IntakeValidationError is raised."""
-    from app.services.anomaly_intake_center import IntakeValidationError
+    from app.services.intake.anomaly_intake_center import IntakeValidationError
 
     app = _make_app()
 
@@ -192,7 +192,7 @@ async def test_create_incident_validation_error():
 @pytest.mark.asyncio
 async def test_create_incident_source_not_allowed():
     """POST should return 403 when SourceNotAllowedError is raised."""
-    from app.services.anomaly_intake_center import SourceNotAllowedError
+    from app.services.intake.anomaly_intake_center import SourceNotAllowedError
 
     app = _make_app()
 

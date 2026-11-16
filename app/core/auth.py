@@ -19,7 +19,7 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.services.oidc_auth import (
+from app.services.governance.oidc_auth import (
     OIDCVerificationError,
     OIDCTokenVerifier,
     parse_role_mapping,

@@ -13,13 +13,13 @@ from app.models.planning import (
     ResourceCalendarWindowInput,
     ValueTrackingInput,
 )
-from app.services.digital_twin_runner import DigitalTwinRunner
-from app.services.enterprise_integration import EnterpriseIntegrationService
+from app.services.validation.digital_twin_runner import DigitalTwinRunner
+from app.services.data_gate.enterprise_integration import EnterpriseIntegrationService
 from app.models.solver import ConstraintViolation
-from app.services.data_readiness import DataReadinessService
-from app.services.initial_scheduler import InitialScheduler
-from app.services.plan_quality_gate import PlanQualityGate
-from app.services.value_tracking import ValueTrackingService
+from app.services.data_gate.data_readiness import DataReadinessService
+from app.services.solver.initial_scheduler import InitialScheduler
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
+from app.services.evidence.value_tracking import ValueTrackingService
 
 
 def _make_initial_request() -> InitialScheduleRequest:

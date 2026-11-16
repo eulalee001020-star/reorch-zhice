@@ -1,7 +1,7 @@
 """Executable decomposition and digital-twin scale tests."""
 
-from app.services.decomposition_executor import DecompositionExecutor
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.solver.decomposition_executor import DecompositionExecutor
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
 
 def test_joint_incidents_are_solved_together_and_independent_groups_run_parallel() -> None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.services.ngs_lab import NgsProtectedPortfolioService
+from app.services.ngs.ngs_lab import NgsProtectedPortfolioService
 
 
 def test_ngs_demo_generates_top_k_feasible_and_rejected_candidates():

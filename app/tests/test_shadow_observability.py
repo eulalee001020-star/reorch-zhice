@@ -19,8 +19,8 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.agent_observability import AgentObservabilityService
-from app.services.shadow_mode import ShadowModeService
+from app.services.agent.agent_observability import AgentObservabilityService
+from app.services.validation.shadow_mode import ShadowModeService
 
 
 def test_shadow_capture_is_advisory_only_and_blocks_writeback() -> None:

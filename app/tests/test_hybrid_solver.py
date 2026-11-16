@@ -38,8 +38,8 @@ from app.models.strategy import (
     SolverChainConfig,
     StrategyRecommendation,
 )
-from app.services.hybrid_solver import HybridSolver
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.solver.hybrid_solver import HybridSolver
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
 
 # ── Fixtures ────────────────────────────────────────────────────────

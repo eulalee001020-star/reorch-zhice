@@ -22,10 +22,10 @@ from app.models.reality_harness import (  # noqa: E402
     FieldMappingCompileRequest,
     P0RealityHarnessRequest,
 )
-from app.services.design_partner_preflight import (  # noqa: E402
+from app.services.data_gate.design_partner_preflight import (  # noqa: E402
     DesignPartnerPreflightService,
 )
-from app.services.field_mapping_compiler import FieldMappingCompiler  # noqa: E402
+from app.services.data_gate.field_mapping_compiler import FieldMappingCompiler  # noqa: E402
 
 _CSV_CANDIDATES = {
     "work_orders": ("work_orders.csv", "erp_work_orders.csv"),

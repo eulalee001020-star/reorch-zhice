@@ -8,12 +8,12 @@ from uuid import uuid4
 from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.anytime_hybrid_scheduler import AnytimeHybridScheduler
-from app.services.constraint_aware_ssgs import (
+from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
+from app.services.solver.constraint_aware_ssgs import (
     ConstraintAwareSsgsScheduler,
     HeuristicScheduleResult,
 )
-from app.services.cp_sat_scheduler import CpSatFjspScheduler, CpSatScheduleResult
+from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler, CpSatScheduleResult
 
 
 NOW = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)

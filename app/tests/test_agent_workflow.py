@@ -175,7 +175,7 @@ async def test_incident_agent_understands_machine_down_text():
 
 @pytest.mark.asyncio
 async def test_incident_agent_uses_configured_llm_when_available(monkeypatch):
-    from app.services.llm_agent_client import LLMJsonResult
+    from app.services.agent.llm_agent_client import LLMJsonResult
 
     class FakeLLMClient:
         async def complete_json(self, **kwargs):
@@ -197,7 +197,7 @@ async def test_incident_agent_uses_configured_llm_when_available(monkeypatch):
                 output_tokens=45,
             )
 
-    monkeypatch.setattr("app.services.agent_workflow.LLMAgentClient", FakeLLMClient)
+    monkeypatch.setattr("app.services.agent.agent_workflow.LLMAgentClient", FakeLLMClient)
 
     app = _make_app()
     async with AsyncClient(
@@ -292,7 +292,7 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
 
 @pytest.mark.asyncio
 async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeypatch):
-    from app.services.plan_quality_gate import PlanQualityGate
+    from app.services.recommendation.plan_quality_gate import PlanQualityGate
 
     incident = _seed_incident()
     _seed_snapshot()
@@ -337,7 +337,7 @@ async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeyp
 @pytest.mark.asyncio
 async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
     from app.core.config import settings
-    from app.services.agent_workflow import SolverAgent
+    from app.services.agent.agent_workflow import SolverAgent
 
     incident = _seed_incident()
     _seed_snapshot()
@@ -558,7 +558,7 @@ async def test_rule_candidate_reject_requires_reason():
 
 @pytest.mark.asyncio
 async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
-    from app.services.llm_agent_client import LLMJsonResult
+    from app.services.agent.llm_agent_client import LLMJsonResult
 
     class FakeLLMClient:
         async def complete_json(self, **kwargs):
@@ -575,7 +575,7 @@ async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
                 latency_ms=89.0,
             )
 
-    monkeypatch.setattr("app.services.agent_workflow.LLMAgentClient", FakeLLMClient)
+    monkeypatch.setattr("app.services.agent.agent_workflow.LLMAgentClient", FakeLLMClient)
 
     app = _make_app()
     async with AsyncClient(

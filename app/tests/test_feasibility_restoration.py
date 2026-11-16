@@ -18,14 +18,14 @@ from app.models.feasibility_restoration import (
 )
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.cp_sat_scheduler import CpSatScheduleResult
-from app.services.constraint_assumption_registry import ConstraintAssumptionRegistry
-from app.services.feasibility_restoration import (
+from app.services.solver.cp_sat_scheduler import CpSatScheduleResult
+from app.services.constraints.constraint_assumption_registry import ConstraintAssumptionRegistry
+from app.services.solver.feasibility_restoration import (
     FeasibilityRestorationEngine,
     conservative_default_recovery_policy,
 )
-from app.services.infeasibility_classifier import InfeasibilityClassifier
-from app.services.recovery_approval_policy import RecoveryApprovalPolicy
+from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
+from app.services.governance.recovery_approval_policy import RecoveryApprovalPolicy
 
 
 NOW = datetime(2026, 7, 13, 8, 0, tzinfo=timezone.utc)

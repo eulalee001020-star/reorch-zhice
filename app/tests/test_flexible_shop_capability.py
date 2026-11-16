@@ -48,7 +48,7 @@ from app.models.flexible_shop import (
     TransportConstraint,
     WipItem,
 )
-from app.services.flexible_shop_capability import (
+from app.services.solver.flexible_shop_capability import (
     CounterfactualReplayMatrixService,
     CounterfactualReplayRunner,
     DecompositionDynamicSolver,

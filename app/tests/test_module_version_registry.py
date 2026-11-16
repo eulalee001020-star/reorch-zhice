@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.services.module_version_registry import (
+from app.services.governance.module_version_registry import (
     ModuleInvocationRecord,
     ModuleVersionRegistry,
     ScenarioVersionConfig,

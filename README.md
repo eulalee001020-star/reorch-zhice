@@ -134,7 +134,7 @@ docker compose up --build
 ## 项目结构
 
 ```text
-app/              FastAPI API、领域模型、Agent、求解、质量门、运行时与治理
+app/              FastAPI API、领域模型与服务层（服务按闭环环节分包，见 app/services/README.md）
 frontend/         React + TypeScript 产品工作台
 portfolio_site/   可独立部署的互动作品集 Demo
 datasets/         公开来源与合成可靠性回放包，以及 NGS 排序学习训练集

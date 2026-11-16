@@ -404,7 +404,7 @@ async def test_sandbox_writeback_uses_second_approval_and_idempotency_key(
 
     from app.api.solver import _plan_index
     from app.core.config import settings
-    from app.services.writeback_module import WritebackModule
+    from app.services.governance.writeback_module import WritebackModule
 
     class CapturingAdapter:
         def __init__(self) -> None:
