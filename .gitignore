@@ -53,3 +53,6 @@ outputs/
 # IDE local state
 .idea/
 .vscode/
+
+# Built portfolio files are published as Release assets, not committed
+portfolio_artifacts/
