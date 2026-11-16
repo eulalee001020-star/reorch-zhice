@@ -4,6 +4,8 @@
 
 这一版的依据来自 `ngs_lrsp_manuscript_package_20260527.zip` 中的 NGS-LRSP 论文，以及本地 `ngs_grouped_l2r_experiment_package` 中的数字孪生和 neutral benchmark 证据。结论需要保持保守：这些数据是 synthetic / digital-twin-style benchmark，不是医院或商业 LIMS 的真实导出，也不是生产部署证明。
 
+排序学习步骤使用的训练集已随仓库提供，见 [`datasets/ngs_l2r_training`](../../datasets/ngs_l2r_training/README.md)：554 条调度决策点样本、28 个特征，标签为 CP-SAT 参考排程中的任务次序。该数据同样是仿真生成，仅限学术与教育用途。
+
 ## 1. 双层定位
 
 ReOrch 的通用层仍然成立：它是一个面向高约束流程的异常响应与决策编排系统。制造车间版本处理设备、工单、工序、资源、交期和回写；NGS 实验室版本处理样本、实体链、实验步骤、仪器、试剂、pool/run、QC、报告 TAT 和实验室审计。

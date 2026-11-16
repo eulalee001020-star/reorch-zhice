@@ -6,8 +6,8 @@
 
 [在线互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site) ·
 [正式 Release 下载](https://github.com/eulalee001020-star/reorch-zhice/releases/latest) ·
-[PDF 作品集](portfolio_artifacts/ReOrch_智策_AI产品作品集_20260727.pdf) ·
-[完整材料包](portfolio_artifacts/ReOrch_智策_AI作品集材料包_20260727.zip) ·
+[PDF 作品集](https://github.com/eulalee001020-star/reorch-zhice/releases/download/v0.2.1-portfolio/ReOrch_Zhice_AI_Product_Portfolio_20260727.pdf) ·
+[完整材料包](https://github.com/eulalee001020-star/reorch-zhice/releases/download/v0.2.1-portfolio/ReOrch_Zhice_AI_Portfolio_Package_20260727.zip) ·
 [PRD](docs/product/prd_decision_workbench.md) ·
 [验证证据](docs/validation/production_runtime_completion_report_20260712.md)
 
@@ -125,9 +125,9 @@ docker compose up --build
 
 | 材料 | 内容 |
 | --- | --- |
-| [PDF 作品集](portfolio_artifacts/ReOrch_智策_AI产品作品集_20260727.pdf) | 项目背景、用户问题、产品架构、AI 机制、PRD、流程、指标、评测、失败迭代、贡献与边界 |
-| [DOCX 作品集](portfolio_artifacts/ReOrch_智策_AI产品作品集_20260727.docx) | 与 PDF 同步的可编辑版本 |
-| [完整 ZIP 材料包](portfolio_artifacts/ReOrch_智策_AI作品集材料包_20260727.zip) | PDF、DOCX、README、关键文档、Demo 源码、核心代码、测试与公开验证证据 |
+| [PDF 作品集](https://github.com/eulalee001020-star/reorch-zhice/releases/download/v0.2.1-portfolio/ReOrch_Zhice_AI_Product_Portfolio_20260727.pdf) | 项目背景、用户问题、产品架构、AI 机制、PRD、流程、指标、评测、失败迭代、贡献与边界 |
+| [DOCX 作品集](https://github.com/eulalee001020-star/reorch-zhice/releases/download/v0.2.1-portfolio/ReOrch_Zhice_AI_Product_Portfolio_20260727.docx) | 与 PDF 同步的可编辑版本 |
+| [完整 ZIP 材料包](https://github.com/eulalee001020-star/reorch-zhice/releases/download/v0.2.1-portfolio/ReOrch_Zhice_AI_Portfolio_Package_20260727.zip) | PDF、DOCX、README、关键文档、Demo 源码、核心代码、测试与公开验证证据 |
 | [项目汇报材料](docs/portfolio/project_report_materials.md) | 10 页汇报结构、三分钟陈述与问答要点 |
 | [个人贡献](docs/portfolio/personal_contribution.md) | 问题定义、产品设计、Agent / Prompt、工程实现、验证与交付范围 |
 
@@ -137,7 +137,7 @@ docker compose up --build
 app/              FastAPI API、领域模型、Agent、求解、质量门、运行时与治理
 frontend/         React + TypeScript 产品工作台
 portfolio_site/   可独立部署的互动作品集 Demo
-datasets/         公开来源与合成可靠性回放包
+datasets/         公开来源与合成可靠性回放包，以及 NGS 排序学习训练集
 benchmark/        FJSP benchmark、回放与验证工具
 docs/             产品、架构、集成、项目、验证与作品集材料
 tools/            可靠性、连接器、运行时和证据验证脚本
