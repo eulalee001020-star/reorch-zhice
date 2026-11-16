@@ -223,16 +223,16 @@ async def edit_template(template_id: UUID, body: EditTemplateRequest) -> CaseTem
         )
         await persist_case_template(template)
         return template
-    except TemplateNotFoundError:
+    except TemplateNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Template {template_id} not found.",
-        )
-    except TemplateAlreadyPublishedError:
+        ) from exc
+    except TemplateAlreadyPublishedError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Template {template_id} is published. Cannot edit.",
-        )
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -260,11 +260,11 @@ async def publish_template(template_id: UUID) -> PublishResponse:
             status=template.status,
             message=f"Template '{template.template_name}' published successfully.",
         )
-    except TemplateNotFoundError:
+    except TemplateNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Template {template_id} not found.",
-        )
+        ) from exc
 
 
 # ---------------------------------------------------------------------------

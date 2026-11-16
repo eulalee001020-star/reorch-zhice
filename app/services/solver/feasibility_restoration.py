@@ -529,7 +529,7 @@ class FeasibilityRestorationEngine:
             affected_operation_ids=affected,
             delay_minutes=max(
                 [
-                    int(round(item.estimated_delay_minutes))
+                    round(item.estimated_delay_minutes)
                     for item in request.impact_report.affected_operations
                     if item.operation_id in set(affected)
                 ]

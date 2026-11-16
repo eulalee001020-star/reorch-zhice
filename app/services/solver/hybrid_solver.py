@@ -523,9 +523,7 @@ class HybridSolver:
             incident_id=str(impact_report.incident_id),
             incident_type="impact_report_recovery",
             affected_operation_ids=affected_op_ids,
-            delay_minutes=max(
-                [int(round(item.estimated_delay_minutes)) for item in affected] or [0]
-            ),
+            delay_minutes=max([round(item.estimated_delay_minutes) for item in affected] or [0]),
             resource_id=first.resource_id if first else None,
             work_order_id=first.work_order_id if first else None,
             severity="P2",

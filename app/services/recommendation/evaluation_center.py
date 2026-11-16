@@ -464,7 +464,7 @@ def _count_changeovers_from_work_orders(work_orders: list[WorkOrder]) -> int:
             resource_ops.setdefault(op.resource_id, []).append(op)
 
     changeovers = 0
-    for rid, ops in resource_ops.items():
+    for ops in resource_ops.values():
         sorted_ops = sorted(ops, key=lambda o: o.start_time)
         for i in range(1, len(sorted_ops)):
             if sorted_ops[i].work_order_id != sorted_ops[i - 1].work_order_id:

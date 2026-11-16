@@ -477,7 +477,9 @@ def _dominance_vector(
 
 
 def _dominates(left: tuple[float, ...], right: tuple[float, ...]) -> bool:
-    return all(a <= b for a, b in zip(left, right)) and any(a < b for a, b in zip(left, right))
+    return all(a <= b for a, b in zip(left, right, strict=True)) and any(
+        a < b for a, b in zip(left, right, strict=True)
+    )
 
 
 def _contains_schedule(

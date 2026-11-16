@@ -20,7 +20,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from app.models.base import ReOrchModel
 from app.models.case import CaseRecord, PreferenceProfile
@@ -101,7 +101,7 @@ class SolverPolicyBundle(ReOrchModel):
     to dynamically obtain neighborhood configurations.
     """
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     rules: list[RuleSelectionResult] = Field(default_factory=list)
     repair_config: RepairPolicyConfig

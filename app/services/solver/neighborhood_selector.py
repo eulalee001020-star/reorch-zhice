@@ -435,8 +435,6 @@ class NeighborhoodSelector:
             if entry.score <= 0:
                 continue
 
-            confidence = max(0.0, min(1.0, entry.score))
-
             reasoning = (
                 f"Neighborhood '{entry.neighborhood_type.value}' selected. "
                 f"Factors: {'; '.join(entry.factors) if entry.factors else 'default scoring'}. "

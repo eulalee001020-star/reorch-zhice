@@ -269,7 +269,7 @@ class TestLowConfidenceOutput:
     @pytest.mark.asyncio
     async def test_low_confidence_outputs_top_two(self):
         """Confidence < 0.5 → output top-2 rules (Req 23.6)."""
-        selector = RuleSelector()
+        RuleSelector()
         # Use wait strategy with breach to create mixed signals
         # but we need a scenario where no rule scores high
         # Create an impact report with no breach and few ops

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from collections import defaultdict
 from datetime import datetime
 from typing import Any
@@ -400,7 +401,7 @@ def _check_calendar_overlaps(
         by_resource[window.resource_id].append(window)
     for resource_id, resource_windows in by_resource.items():
         sorted_windows = sorted(resource_windows, key=lambda window: window.window_start)
-        for left, right in zip(sorted_windows, sorted_windows[1:]):
+        for left, right in itertools.pairwise(sorted_windows):
             if left.window_end > right.window_start:
                 conflicts.append(
                     _warning(

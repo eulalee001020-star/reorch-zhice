@@ -345,9 +345,9 @@ def _infer_objectives(strategy: str) -> list[str]:
     if strategy == "wait_and_repair":
         return ["最小化时间偏移", "保持原排程不变"]
     elif strategy == "local_repair":
-        return base + ["保护未受影响区域不变性"]
+        return [*base, "保护未受影响区域不变性"]
     elif strategy == "global_reschedule":
-        return base + ["最大化资源利用率", "最小化换型次数"]
+        return [*base, "最大化资源利用率", "最小化换型次数"]
     return base
 
 

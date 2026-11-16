@@ -1982,15 +1982,15 @@ def _extract_duration_minutes(text: str) -> int | None:
     for pattern, multiplier in patterns:
         match = pattern.search(text)
         if match:
-            return int(round(float(match.group(1)) * multiplier))
+            return round(float(match.group(1)) * multiplier)
 
     cn_hour = re.search(r"([一二两俩三四五六七八九十半]+)\s*(?:个)?\s*(小时|钟头)", text)
     if cn_hour:
-        return int(round(_parse_chinese_number(cn_hour.group(1)) * 60))
+        return round(_parse_chinese_number(cn_hour.group(1)) * 60)
 
     cn_minute = re.search(r"([一二两俩三四五六七八九十]+)\s*(?:分钟|分)", text)
     if cn_minute:
-        return int(round(_parse_chinese_number(cn_minute.group(1))))
+        return round(_parse_chinese_number(cn_minute.group(1)))
 
     return None
 

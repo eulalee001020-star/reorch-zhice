@@ -7,6 +7,7 @@ flow so ReOrch can support both baseline planning and exception recovery.
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
@@ -112,9 +113,7 @@ class InitialScheduler:
             return None
 
         resource_ids = [r.resource_id for r in request.resources]
-        resource_cost = {
-            r.resource_id: max(1, int(round(r.cost_per_minute))) for r in request.resources
-        }
+        resource_cost = {r.resource_id: max(1, round(r.cost_per_minute)) for r in request.resources}
         bottleneck_ids = {r.resource_id for r in request.resources if r.is_bottleneck}
         horizon = _horizon_minutes(request, op_runtimes)
 
@@ -600,7 +599,7 @@ def _compute_initial_kpis(
             by_resource.setdefault(op.resource_id, []).append(op)
     for ops in by_resource.values():
         ordered = sorted(ops, key=lambda op: op.start_time)
-        for left, right in zip(ordered, ordered[1:]):
+        for left, right in itertools.pairwise(ordered):
             if family_by_op.get(left.operation_id) != family_by_op.get(right.operation_id):
                 changeovers += 1
 

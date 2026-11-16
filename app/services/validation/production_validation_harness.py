@@ -562,7 +562,7 @@ class ProductionValidationHarness:
         same, duplicate_created = queue.submit(submit)
         completed = SolveJobWorker(queue, worker_id="worker-a").run_once().job
 
-        resume_job, _ = queue.submit(
+        _resume_job, _ = queue.submit(
             submit.model_copy(update={"idempotency_key": "validation-job-resume"})
         )
         lease = queue.claim("worker-crashed", lease_seconds=3)

@@ -46,7 +46,7 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     """Compute cosine similarity between two vectors."""
     if len(a) != len(b) or len(a) == 0:
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(x * x for x in b))
     if norm_a == 0.0 or norm_b == 0.0:
@@ -292,7 +292,7 @@ class CaseLibrary:
                 entry["repair_policies"][rp]["overrides"] += 1
 
         # Compute adoption rates
-        for key, entry in stats.items():
+        for entry in stats.values():
             total = entry["total"]
             entry["adoption_rate"] = (total - entry["overrides"]) / total if total > 0 else 0.0
 

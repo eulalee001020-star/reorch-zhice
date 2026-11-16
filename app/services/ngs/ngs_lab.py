@@ -520,7 +520,6 @@ def _hold_time_issues(
     operations: list[NgsOperation],
 ) -> list[NgsGateIssue]:
     issues: list[NgsGateIssue] = []
-    samples_by_id = {sample.sample_id: sample for sample in samples}
     by_sample_stage = {
         (operation.sample_id, operation.stage): operation for operation in operations
     }

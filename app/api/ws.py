@@ -152,9 +152,7 @@ class WebSocketManager:
         """Check if a client should receive this event based on role/workshop."""
         # All roles receive all event types for MVP
         # Workshop filtering: if client has workshop_ids set, only send matching events
-        if client.workshop_ids and workshop_id and workshop_id not in client.workshop_ids:
-            return False
-        return True
+        return not (client.workshop_ids and workshop_id and workshop_id not in client.workshop_ids)
 
 
 # Module-level singleton

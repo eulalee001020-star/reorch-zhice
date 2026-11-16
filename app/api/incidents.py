@@ -126,12 +126,12 @@ async def create_incident(
                 "message": exc.reason,
                 "missing_fields": exc.missing_fields,
             },
-        )
+        ) from exc
     except SourceNotAllowedError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": str(exc), "source": exc.source},
-        )
+        ) from exc
 
     # Persist in the in-memory store keyed by incident_id string
     key = str(incident.incident_id)

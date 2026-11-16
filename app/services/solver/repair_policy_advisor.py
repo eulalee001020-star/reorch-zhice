@@ -108,7 +108,6 @@ class RepairPolicyAdvisor:
 
         # Collect affected operation IDs from impact report
         affected_op_ids = [op.operation_id for op in impact_report.affected_operations]
-        affected_set = set(affected_op_ids)
 
         # Derive downstream (indirect) operation IDs
         downstream_op_ids = [

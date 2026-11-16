@@ -209,7 +209,7 @@ def _seed_full_context():
 @pytest.mark.asyncio
 async def test_solve_incident_success():
     """POST /solve should return candidate plans for a valid incident."""
-    incident, snapshot = _seed_full_context()
+    incident, _snapshot = _seed_full_context()
     app = _make_app()
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

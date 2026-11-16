@@ -692,7 +692,7 @@ class CpSatFjspScheduler:
         for affected in impact_report.affected_operations:
             delays[affected.operation_id] = max(
                 delays.get(affected.operation_id, 0),
-                int(round(affected.estimated_delay_minutes)),
+                round(affected.estimated_delay_minutes),
             )
         return delays
 

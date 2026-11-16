@@ -153,7 +153,7 @@ class TestEnsureTopics:
 class TestKafkaProducer:
     @patch("app.core.kafka_producer.Producer")
     def test_producer_init(self, mock_producer_cls: MagicMock) -> None:
-        producer = KafkaProducer()
+        KafkaProducer()
         mock_producer_cls.assert_called_once()
         config = mock_producer_cls.call_args[0][0]
         assert "bootstrap.servers" in config

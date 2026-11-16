@@ -712,7 +712,7 @@ class TestE2EConfirmWritebackCase:
             ConstraintViolationError,
         )
 
-        candidates, output, report, strategy = await self._produce_candidates(
+        candidates, output, _report, strategy = await self._produce_candidates(
             incident, snapshot, preference
         )
         recommended_plan_id = output.recommended_plan_id
@@ -758,7 +758,7 @@ class TestE2EConfirmWritebackCase:
         from app.services.governance.confirmation_module import ConfirmationModule
         from app.services.governance.writeback_module import WritebackModule
 
-        candidates, output, report, strategy = await self._produce_candidates(
+        candidates, output, _report, strategy = await self._produce_candidates(
             incident, snapshot, preference
         )
         recommended_plan_id = output.recommended_plan_id
@@ -944,7 +944,7 @@ class TestE2EAPIIntegration:
         assert resp.status_code == 200
         plans_data = resp.json()
         assert len(plans_data) >= 1
-        first_plan_id = plans_data[0]["plan_id"]
+        plans_data[0]["plan_id"]
 
         # 6. Trigger recommend (Req 12.11 — GoalMode)
         resp = await client.post(

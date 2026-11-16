@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from datetime import datetime
 from typing import Any
 
@@ -338,7 +339,7 @@ class OperationalConstraintValidator:
         violations: list[ConstraintViolation] = []
         for resource_id, operations in by_resource.items():
             ordered = sorted(operations, key=lambda item: item.start_time)
-            for previous, current in zip(ordered, ordered[1:]):
+            for previous, current in itertools.pairwise(ordered):
                 previous_family = family_by_operation.get(previous.operation_id, "unknown")
                 current_family = family_by_operation.get(current.operation_id, "unknown")
                 required = setup.get(

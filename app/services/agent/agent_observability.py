@@ -75,7 +75,7 @@ def _percentile(values: list[float], percentile: float) -> float:
     if not values:
         return 0.0
     ordered = sorted(values)
-    index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * percentile))))
+    index = min(len(ordered) - 1, max(0, round((len(ordered) - 1) * percentile)))
     return round(ordered[index], 4)
 
 

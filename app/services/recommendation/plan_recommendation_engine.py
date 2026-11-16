@@ -7,6 +7,7 @@ Validates: Requirements 29.1–29.12
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from datetime import datetime
 from uuid import UUID
@@ -550,10 +551,8 @@ def _extract_case_ids(case_matches: list[dict]) -> list[UUID]:
             if isinstance(cid, UUID):
                 ids.append(cid)
             else:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     ids.append(UUID(str(cid)))
-                except (ValueError, TypeError):
-                    pass
     return ids
 
 

@@ -128,7 +128,7 @@ class StrategySelector:
             vote_ratio = case_strategy_votes[most_voted] / len(relevant_cases)
             boost = vote_ratio * _CASE_BOOST_MAX
             scored = [
-                (st, score + boost, factors + [f"historical_case_boost (+{boost:.2f})"])
+                (st, score + boost, [*factors, f"historical_case_boost (+{boost:.2f})"])
                 if st == most_voted and score > 0
                 else (st, score, factors)
                 for st, score, factors in scored
@@ -191,7 +191,6 @@ class StrategySelector:
     @staticmethod
     def _has_breach_risk(report: ImpactReport) -> bool:
         """Check if any Breach-level delivery risk exists."""
-        breach_key = DeliveryRiskLevel.BREACH
         # With use_enum_values the key may be the string value
         for key, count in report.delivery_risk_distribution.items():
             key_val = key.value if hasattr(key, "value") else str(key)
@@ -244,7 +243,7 @@ class StrategySelector:
                     (
                         st,
                         score + boost,
-                        factors + [f"preference_boost (+{boost:.3f})"],
+                        [*factors, f"preference_boost (+{boost:.3f})"],
                     )
                 )
             else:

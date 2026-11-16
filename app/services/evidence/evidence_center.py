@@ -313,7 +313,7 @@ def _extract_first_table_after(markdown: str, heading: str) -> EvidenceTable | N
         cells = _split_table_row(line)
         if len(cells) != len(header):
             break
-        rows.append(dict(zip(header, cells)))
+        rows.append(dict(zip(header, cells, strict=True)))
     return EvidenceTable(columns=header, rows=rows)
 
 

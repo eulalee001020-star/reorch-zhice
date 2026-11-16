@@ -447,7 +447,7 @@ class TestDegradation:
             call_count += 1
             if solver_name == "cp_sat_lns":
                 raise RuntimeError("Primary solver crashed")
-            return await original_run(solver_name=solver_name, *args, **kwargs)
+            return await original_run(*args, solver_name=solver_name, **kwargs)
 
         solver._run_solver = _failing_run
 

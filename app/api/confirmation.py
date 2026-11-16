@@ -235,22 +235,22 @@ async def confirm_plan(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
-        )
+        ) from e
     except ConstraintViolationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Constraint violation: {e}",
-        )
+        ) from e
     except OverrideReasonRequiredError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     # 7. Build and store DecisionRecord
     # The ConfirmationModule already builds the record internally;
@@ -618,7 +618,7 @@ async def export_pdf(decision_record_id: UUID) -> ExportResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     return ExportResponse(
         filename=result.filename,
@@ -657,7 +657,7 @@ async def export_excel(decision_record_id: UUID) -> ExportResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     return ExportResponse(
         filename=result.filename,

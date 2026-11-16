@@ -432,7 +432,7 @@ class TestEquipmentCapabilityProperty:
     def test_no_violations_when_caps_subset(self, data):
         """For any schedule where required_capabilities ⊆ resource capabilities,
         the validator reports no equipment_capability violations."""
-        schedule, res_map = data
+        schedule, _res_map = data
         snapshot = _make_snapshot(schedule)
 
         report = validator.validate_constraints(
@@ -449,7 +449,7 @@ class TestEquipmentCapabilityProperty:
     def test_violations_when_cap_missing(self, data):
         """For any schedule where at least one op has a capability NOT in its resource,
         the validator reports at least one equipment_capability violation."""
-        schedule, res_map = data
+        schedule, _res_map = data
         snapshot = _make_snapshot(schedule)
 
         report = validator.validate_constraints(
