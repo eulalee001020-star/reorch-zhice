@@ -8,7 +8,6 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 
-
 EvidenceSource = Literal[
     "public_benchmark",
     "customer_desensitized",

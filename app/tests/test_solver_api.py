@@ -14,7 +14,7 @@ Tests:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -85,12 +85,12 @@ def _seed_incident(**overrides: Any) -> Incident:
     defaults: dict[str, Any] = {
         "incident_id": uuid4(),
         "incident_type": IncidentType.EQUIPMENT_FAILURE.value,
-        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
         "resource_id": "CNC-001",
         "report_source": ReportSource.MES.value,
         "severity": IncidentSeverity.P3_MEDIUM.value,
         "status": IncidentStatus.PENDING_ANALYSIS.value,
-        "created_at": datetime.now(tz=timezone.utc),
+        "created_at": datetime.now(tz=UTC),
     }
     defaults.update(overrides)
     incident = Incident(**defaults)
@@ -102,28 +102,28 @@ def _seed_snapshot(**overrides: Any) -> ScheduleSnapshot:
     """Create and store a ScheduleSnapshot."""
     defaults: dict[str, Any] = {
         "snapshot_id": uuid4(),
-        "captured_at": datetime(2024, 6, 15, 7, 55, 0, tzinfo=timezone.utc),
+        "captured_at": datetime(2024, 6, 15, 7, 55, 0, tzinfo=UTC),
         "workshop_id": "WS-01",
         "work_orders": [
             WorkOrder(
                 work_order_id="WO-001",
                 product_name="Product-A",
-                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=timezone.utc),
+                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=UTC),
                 operations=[
                     Operation(
                         operation_id="OP-001",
                         work_order_id="WO-001",
                         resource_id="CNC-001",
-                        start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
-                        end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
+                        start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
+                        end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
                         successor_ids=["OP-002"],
                     ),
                     Operation(
                         operation_id="OP-002",
                         work_order_id="WO-001",
                         resource_id="CNC-002",
-                        start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
-                        end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+                        start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
+                        end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
                         predecessor_ids=["OP-001"],
                     ),
                 ],
@@ -142,12 +142,12 @@ def _seed_impact_report(incident_id: str, snapshot_id: str) -> ImpactReport:
     report = ImpactReport(
         incident_id=incident_id,
         schedule_snapshot_id=snapshot_id,
-        analysis_reference_time=datetime(2024, 6, 15, 7, 55, 0, tzinfo=timezone.utc),
+        analysis_reference_time=datetime(2024, 6, 15, 7, 55, 0, tzinfo=UTC),
         affected_work_orders=[
             AffectedWorkOrder(
                 work_order_id="WO-001",
                 product_name="Product-A",
-                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=timezone.utc),
+                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=UTC),
                 delivery_risk_level="warning",
                 remaining_buffer_minutes=120.0,
                 affected_operations=[
@@ -209,12 +209,10 @@ def _seed_full_context():
 @pytest.mark.asyncio
 async def test_solve_incident_success():
     """POST /solve should return candidate plans for a valid incident."""
-    incident, snapshot = _seed_full_context()
+    incident, _snapshot = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -239,9 +237,7 @@ async def test_solve_incident_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{fake_id}/solve",
             json={},
@@ -258,9 +254,7 @@ async def test_solve_missing_impact_report():
     _seed_snapshot()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -278,9 +272,7 @@ async def test_solve_missing_strategy():
     _seed_impact_report(str(incident.incident_id), str(snapshot.snapshot_id))
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -301,18 +293,14 @@ async def test_list_candidate_plans_success():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # First solve
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
         )
         # Then list
-        resp = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/candidate-plans"
-        )
+        resp = await client.get(f"/api/v1/incidents/{incident.incident_id}/candidate-plans")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -326,12 +314,8 @@ async def test_list_candidate_plans_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{fake_id}/candidate-plans"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{fake_id}/candidate-plans")
 
     assert resp.status_code == 404
 
@@ -347,9 +331,7 @@ async def test_get_candidate_plan_detail():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         solve_resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -373,9 +355,7 @@ async def test_get_candidate_plan_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(f"/api/v1/candidate-plans/{fake_id}")
 
     assert resp.status_code == 404
@@ -392,9 +372,7 @@ async def test_get_candidate_plan_gantt():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         solve_resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -418,9 +396,7 @@ async def test_get_candidate_plan_gantt_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(f"/api/v1/candidate-plans/{fake_id}/gantt")
 
     assert resp.status_code == 404
@@ -437,9 +413,7 @@ async def test_recommend_plan_success():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # First solve
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
@@ -467,9 +441,7 @@ async def test_recommend_with_manual_weights():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -499,9 +471,7 @@ async def test_recommend_rejects_unknown_manual_weight_keys():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -522,9 +492,7 @@ async def test_recommend_blocks_reference_only_timeout_candidates():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -547,9 +515,7 @@ async def test_recommend_no_candidates():
     _seed_snapshot()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{incident.incident_id}/recommend",
             json={},
@@ -565,9 +531,7 @@ async def test_recommend_incident_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v1/incidents/{fake_id}/recommend",
             json={},
@@ -587,9 +551,7 @@ async def test_get_recommendation_success():
     incident, _ = _seed_full_context()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
             f"/api/v1/incidents/{incident.incident_id}/solve",
             json={},
@@ -598,9 +560,7 @@ async def test_get_recommendation_success():
             f"/api/v1/incidents/{incident.incident_id}/recommend",
             json={},
         )
-        resp = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/recommendation"
-        )
+        resp = await client.get(f"/api/v1/incidents/{incident.incident_id}/recommendation")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -614,11 +574,7 @@ async def test_get_recommendation_not_found():
     app = _make_app()
     fake_id = uuid4()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{fake_id}/recommendation"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{fake_id}/recommendation")
 
     assert resp.status_code == 404

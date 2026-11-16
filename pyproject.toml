@@ -40,3 +40,27 @@ dev = [
     "mypy>=1.13.0",
     "alembic>=1.13.0",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["alembic/versions", "datasets", "portfolio_site", "frontend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "SIM102",  # nested ifs here carry separate comments and read better split
+    "SIM116",
+    "UP042",   # StrEnum changes str() output of existing enums
+    "B008",    # FastAPI declares dependencies as call defaults
+    "E501",    # line length is handled by the formatter
+    "RUF001",  # Chinese punctuation in strings is intentional
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"app/tests/*" = ["B017", "SIM117"]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]

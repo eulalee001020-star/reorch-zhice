@@ -16,9 +16,7 @@ async def test_readyz_reports_database_and_redis(monkeypatch):
 
     monkeypatch.setattr("app.main.redis_client.ping", redis_ready)
     monkeypatch.setattr("app.main.engine", _HealthyEngine())
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/readyz")
 
     assert response.status_code == 200
@@ -35,9 +33,7 @@ async def test_readyz_returns_503_in_production_when_database_is_down(monkeypatc
     monkeypatch.setattr("app.main.redis_client.ping", redis_ready)
     monkeypatch.setattr("app.main.engine", _FailingEngine())
     monkeypatch.setattr(settings.app, "env", "production")
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/readyz")
 
     assert response.status_code == 503

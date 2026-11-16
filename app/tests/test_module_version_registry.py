@@ -8,16 +8,15 @@ Covers:
 - Version listing and history retrieval (Req 22.5)
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from app.services.module_version_registry import (
+from app.services.governance.module_version_registry import (
     ModuleInvocationRecord,
     ModuleVersionRegistry,
     ScenarioVersionConfig,
 )
-
 
 # ── Fixtures ────────────────────────────────────────────────────────
 
@@ -61,7 +60,7 @@ class TestVersionManagement:
         reg = _make_registry()
         reg.register_module("Rule_Selector", "1.0.0")
         reg.set_version("Rule_Selector", "1.1.0")
-    
+
         assert reg.get_version("Rule_Selector") == "1.1.0"
 
     def test_set_version_unregistered_raises(self):
@@ -114,7 +113,7 @@ class TestInvocationRecording:
 
     def test_record_with_custom_timestamp(self):
         reg = _populated_registry()
-        ts = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        ts = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         record = reg.record_invocation(
             module_name="Rule_Selector",
             version="1.0.0",
@@ -209,7 +208,8 @@ class TestScenarioVersionResolution:
         reg.add_scenario_config(cfg)
         # Different scenario key → falls back to current version
         resolved = reg.resolve_version(
-            "Rule_Selector", scenario_key="workshop=W1",
+            "Rule_Selector",
+            scenario_key="workshop=W1",
         )
         assert resolved == "1.0.0"
 
@@ -293,10 +293,12 @@ class TestFallbackDegradation:
         """Multiple failures should each be recorded."""
         reg = _populated_registry()
         reg.handle_module_failure(
-            "Rule_Selector", RuntimeError("err1"),
+            "Rule_Selector",
+            RuntimeError("err1"),
         )
         reg.handle_module_failure(
-            "Rule_Selector", RuntimeError("err2"),
+            "Rule_Selector",
+            RuntimeError("err2"),
         )
         history = reg.get_invocation_history("Rule_Selector")
         assert len(history) == 2

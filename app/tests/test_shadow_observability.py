@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -19,8 +19,8 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.agent_observability import AgentObservabilityService
-from app.services.shadow_mode import ShadowModeService
+from app.services.agent.agent_observability import AgentObservabilityService
+from app.services.validation.shadow_mode import ShadowModeService
 
 
 def test_shadow_capture_is_advisory_only_and_blocks_writeback() -> None:
@@ -151,7 +151,7 @@ async def test_shadow_and_observability_api() -> None:
 
 
 def _candidate_plan() -> CandidatePlan:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     schedule = ScheduleDetail(
         resources=[
             Resource(

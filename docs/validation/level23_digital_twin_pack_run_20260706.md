@@ -29,7 +29,7 @@ New implementation:
 | Artifact | Purpose |
 | --- | --- |
 | `app/models/level23_digital_twin.py` | Workbook-shaped request/response models |
-| `app/services/level23_digital_twin.py` | Table validation, linkage metrics, replay metrics, execution metrics, policy summaries, production readiness gate |
+| `app/services/validation/level23_digital_twin.py` | Table validation, linkage metrics, replay metrics, execution metrics, policy summaries, production readiness gate |
 | `tools/run_level23_digital_twin_pack.py` | Offline `.xlsx` loader that parses workbook sheets and calls the evaluator |
 | `app/tests/test_level23_digital_twin.py` | Unit and API coverage for Level 2/3 evaluator |
 

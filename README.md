@@ -17,7 +17,7 @@
 
 - **场景**：计划员在高噪声、高时效和多约束环境中处理生产异常，原流程依赖跨部门询问、人工试排与经验判断，数据可信度、执行边界和复盘证据容易断裂。
 - **动作**：完成 canonical model、Data Health Gate、影响子图、约束求解、多候选评价、Agent 解释、质量门、双重审批、审计台账与失败关闭机制；同时交付 PRD、原型、项目计划、指标、评测、失败样本和可互动产品。
-- **产出**：公开分支收录 872 项自动化测试、三行业合成回放包、10/10 生产运行时数字孪生门、8/8 集成控制面检查和 15/15 回写认证演练检查。以上均为工程与数字孪生证据，不替代客户生产验收。
+- **产出**：公开分支收录约 880 项自动化测试、三行业合成回放包、10/10 生产运行时数字孪生门、8/8 集成控制面检查和 15/15 回写认证演练检查。以上均为工程与数字孪生证据，不替代客户生产验收。
 
 ## 产品差异
 
@@ -68,7 +68,7 @@ flowchart LR
 
 | 证据层 | 当前公开结果 | 可证明 | 不能外推 |
 | --- | --- | --- | --- |
-| 自动化测试 | 872 项用例已收集，发布检查以 CI 结果为准 | 领域模型、API、求解、Agent、质量门、审批、回写策略与运行时行为 | 客户环境稳定性 |
+| 自动化测试 | 约 880 项用例，数量与结果以 CI 为准 | 领域模型、API、求解、Agent、质量门、审批、回写策略与运行时行为 | 客户环境稳定性 |
 | 生产运行时数字孪生 | 10 / 10 gates passed | shadow、schema drift、OIDC/RBAC、备份恢复、观测与证据发布逻辑可执行 | 客户 IdP、HA/DR 与现场运维验收 |
 | 集成控制面 | 8 / 8 checks passed | Connector 注册、版本、认证、隔离与失败关闭路径 | 客户 ERP/MES/QMS 字段已接通 |
 | 回写认证演练 | 15 / 15 checks passed；customer certification=false | 双审批、幂等、dry-run、回滚与审计协议可验证 | 已获客户生产写回权限 |
@@ -112,7 +112,18 @@ flowchart LR
 
 [打开在线互动 Demo](https://reorch-zhice-portfolio.eula-lee001020.chatgpt.site)
 
-本地完整栈包含 FastAPI、React、PostgreSQL/pgvector、Redis、Redpanda 和 mock ERP/MES/APS：
+本地有两种跑法。**轻量模式**不需要 Docker、数据库或消息队列，一条命令在进程内走完“异常 → 影响 → 候选 → 推荐 → 确认”，约 10 秒出结果：
+
+```bash
+uv sync --extra dev
+uv run python tools/run_local_demo.py            # 只打印闭环结果
+uv run python tools/run_local_demo.py --serve    # 结果保留在 :8000，供前端查看
+cd frontend && npm install && npm run dev        # 另开终端，打开 http://localhost:3000
+```
+
+轻量模式下工作状态只存在内存里，重启即清空，适合演示和开发。
+
+**完整栈**包含 FastAPI、React、PostgreSQL/pgvector、Redis、Redpanda 和 mock ERP/MES/APS：
 
 ```bash
 cp .env.example .env
@@ -134,14 +145,14 @@ docker compose up --build
 ## 项目结构
 
 ```text
-app/              FastAPI API、领域模型、Agent、求解、质量门、运行时与治理
+app/              FastAPI API、领域模型与服务层（服务按闭环环节分包，见 app/services/README.md）
 frontend/         React + TypeScript 产品工作台
 portfolio_site/   可独立部署的互动作品集 Demo
 datasets/         公开来源与合成可靠性回放包，以及 NGS 排序学习训练集
 benchmark/        FJSP benchmark、回放与验证工具
-docs/             产品、架构、集成、项目、验证与作品集材料
+docs/             产品、架构、验证、演示四类文档，索引见 docs/README.md
 tools/            可靠性、连接器、运行时和证据验证脚本
-.github/          后端测试、前端构建与 compose smoke CI
+.github/          后端 lint 与测试、前端构建、compose smoke CI
 ```
 
 ## 技术栈
@@ -157,6 +168,7 @@ tools/            可靠性、连接器、运行时和证据验证脚本
 
 ```bash
 uv sync --extra dev
+uv run ruff check . && uv run ruff format --check .
 uv run pytest -q
 cd frontend && npm ci && npm run build
 cd ../portfolio_site && npm ci && npm run lint && npm run build

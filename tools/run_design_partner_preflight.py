@@ -8,7 +8,7 @@ import csv
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,10 +22,10 @@ from app.models.reality_harness import (  # noqa: E402
     FieldMappingCompileRequest,
     P0RealityHarnessRequest,
 )
-from app.services.design_partner_preflight import (  # noqa: E402
+from app.services.data_gate.design_partner_preflight import (  # noqa: E402
     DesignPartnerPreflightService,
 )
-from app.services.field_mapping_compiler import FieldMappingCompiler  # noqa: E402
+from app.services.data_gate.field_mapping_compiler import FieldMappingCompiler  # noqa: E402
 
 _CSV_CANDIDATES = {
     "work_orders": ("work_orders.csv", "erp_work_orders.csv"),
@@ -87,8 +87,7 @@ def main() -> int:
         )
         if draft.unmapped_required_fields:
             print(
-                "Unmapped required fields: "
-                + ", ".join(draft.unmapped_required_fields),
+                "Unmapped required fields: " + ", ".join(draft.unmapped_required_fields),
                 file=sys.stderr,
             )
         return 2
@@ -172,9 +171,7 @@ def _build_request(
         source_system=str(metadata.get("source_system") or profile.source_system),
         workshop_id=str(metadata["site_id"]),
         planning_start=(
-            datetime.fromisoformat(planning_start)
-            if planning_start
-            else datetime.now(tz=timezone.utc)
+            datetime.fromisoformat(planning_start) if planning_start else datetime.now(tz=UTC)
         ),
         raw_work_orders=rows["work_orders"],
         raw_operations=rows["operations"],
@@ -234,8 +231,7 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "|---|---|---|",
     ]
     lines.extend(
-        f"| {item['check_id']} | {item['status']} | {_md(item['finding'])} |"
-        for item in checks
+        f"| {item['check_id']} | {item['status']} | {_md(item['finding'])} |" for item in checks
     )
     lines.extend(
         [
@@ -284,7 +280,7 @@ def _metadata_template() -> dict[str, Any]:
         "customer_ref": "PSEUDONYMOUS-CUSTOMER-ID",
         "site_id": "WORKSHOP-ID",
         "source_system": "customer_export",
-        "planning_start": datetime.now(tz=timezone.utc).isoformat(),
+        "planning_start": datetime.now(tz=UTC).isoformat(),
         "provenance": {
             "dataset_name": "",
             "source_systems": [],
@@ -338,7 +334,7 @@ def _write_json(path: Path, payload: Any) -> None:
 
 def _input_manifest(pack_dir: Path, files: list[Path]) -> dict[str, Any]:
     return {
-        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
+        "generated_at": datetime.now(tz=UTC).isoformat(),
         "pack_ref": pack_dir.name,
         "files": [
             {

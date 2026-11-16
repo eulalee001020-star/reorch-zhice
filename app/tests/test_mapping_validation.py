@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.adapters.mapping_schema import (
     CanonicalMachine,
@@ -61,7 +61,9 @@ def test_customer_payload_validation_accepts_clean_dataset() -> None:
     assert report.blocking_errors == 0
 
 
-def test_customer_payload_validation_accepts_pipe_delimited_alternatives_and_degraded_machine() -> None:
+def test_customer_payload_validation_accepts_pipe_delimited_alternatives_and_degraded_machine() -> (
+    None
+):
     report = validate_customer_payloads(
         raw_work_orders=[
             {
@@ -104,12 +106,12 @@ def test_customer_payload_validation_accepts_pipe_delimited_alternatives_and_deg
 def test_schedule_snapshot_preserves_eligible_resources_for_fjsp_solver() -> None:
     snapshot = build_schedule_snapshot(
         workshop_id="WS-FJSP",
-        captured_at=datetime(2026, 7, 5, 8, tzinfo=timezone.utc),
+        captured_at=datetime(2026, 7, 5, 8, tzinfo=UTC),
         work_orders=[
             CanonicalWorkOrder(
                 work_order_id="WO-FJSP",
                 product_name="Large FJSP job",
-                due_time=datetime(2026, 7, 5, 18, tzinfo=timezone.utc),
+                due_time=datetime(2026, 7, 5, 18, tzinfo=UTC),
             )
         ],
         operations=[

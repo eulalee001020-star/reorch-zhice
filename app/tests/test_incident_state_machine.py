@@ -6,11 +6,11 @@ Validates: Requirements 17.1
 import pytest
 
 from app.models.enums import IncidentStatus
-from app.services.incident_state_machine import (
-    IllegalStateTransitionError,
-    IncidentStateMachine,
+from app.services.intake.incident_state_machine import (
     LEGAL_TRANSITIONS,
     STATE_ORDER,
+    IllegalStateTransitionError,
+    IncidentStateMachine,
     validate_transition,
 )
 

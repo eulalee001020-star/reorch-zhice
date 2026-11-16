@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -18,11 +18,11 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.replay_validation import ReplayValidationService
+from app.services.validation.replay_validation import ReplayValidationService
 
 
 def test_replay_validation_hits_historical_acceptance_envelope() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     accepted = _schedule(start, resource_id="CNC-01")
     plan = _candidate_plan(_schedule(start + timedelta(minutes=5), resource_id="CNC-01"))
     request = ReplayValidationRequest(
@@ -45,7 +45,7 @@ def test_replay_validation_hits_historical_acceptance_envelope() -> None:
 
 
 def test_replay_validation_blocks_when_quality_gate_fails() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     accepted = _schedule(start, resource_id="CNC-01")
     plan = _candidate_plan(
         _schedule(start, resource_id="CNC-01"),
@@ -69,7 +69,7 @@ def test_replay_validation_blocks_when_quality_gate_fails() -> None:
 
 @pytest.mark.asyncio
 async def test_replay_validation_api() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     accepted = _schedule(start, resource_id="CNC-01")
     plan = _candidate_plan(_schedule(start + timedelta(minutes=5), resource_id="CNC-01"))
     test_app = FastAPI()
@@ -137,14 +137,18 @@ def _candidate_plan(
     *,
     feasible: bool = True,
 ) -> CandidatePlan:
-    violations = [] if feasible else [
-        ConstraintViolation(
-            constraint_type="resource_mutex",
-            operation_id="OP-10",
-            resource_id="CNC-01",
-            detail="Overlap detected.",
-        )
-    ]
+    violations = (
+        []
+        if feasible
+        else [
+            ConstraintViolation(
+                constraint_type="resource_mutex",
+                operation_id="OP-10",
+                resource_id="CNC-01",
+                detail="Overlap detected.",
+            )
+        ]
+    )
     return CandidatePlan(
         strategy_type="repair",
         schedule_detail=schedule,

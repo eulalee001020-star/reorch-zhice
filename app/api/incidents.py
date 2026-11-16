@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -21,11 +21,15 @@ from app.core.auth import CurrentUser, get_optional_current_user
 from app.core.config import settings
 from app.models.enums import IncidentSeverity, IncidentStatus, IncidentType
 from app.models.incident import Incident, IncidentCreateRequest
-from app.services.persistence import fetch_incident, list_incidents_from_db, persist_incident
-from app.services.anomaly_intake_center import (
+from app.services.intake.anomaly_intake_center import (
     AnomalyIntakeCenter,
     IntakeValidationError,
     SourceNotAllowedError,
+)
+from app.services.storage.persistence import (
+    fetch_incident,
+    list_incidents_from_db,
+    persist_incident,
 )
 
 logger = logging.getLogger(__name__)
@@ -122,12 +126,12 @@ async def create_incident(
                 "message": exc.reason,
                 "missing_fields": exc.missing_fields,
             },
-        )
+        ) from exc
     except SourceNotAllowedError as exc:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": str(exc), "source": exc.source},
-        )
+        ) from exc
 
     # Persist in the in-memory store keyed by incident_id string
     key = str(incident.incident_id)
@@ -146,26 +150,14 @@ async def create_incident(
     "",
     response_model=list[Incident],
     summary="查询异常列表",
-    description=(
-        "查询异常事件列表，支持按类型、严重等级、状态和时间范围筛选。"
-    ),
+    description=("查询异常事件列表，支持按类型、严重等级、状态和时间范围筛选。"),
 )
 async def list_incidents(
-    incident_type: Optional[IncidentType] = Query(
-        None, description="按异常类型筛选"
-    ),
-    severity: Optional[IncidentSeverity] = Query(
-        None, description="按严重等级筛选"
-    ),
-    status_filter: Optional[IncidentStatus] = Query(
-        None, alias="status", description="按状态筛选"
-    ),
-    start_time: Optional[datetime] = Query(
-        None, description="筛选发生时间 >= start_time"
-    ),
-    end_time: Optional[datetime] = Query(
-        None, description="筛选发生时间 <= end_time"
-    ),
+    incident_type: IncidentType | None = Query(None, description="按异常类型筛选"),
+    severity: IncidentSeverity | None = Query(None, description="按严重等级筛选"),
+    status_filter: IncidentStatus | None = Query(None, alias="status", description="按状态筛选"),
+    start_time: datetime | None = Query(None, description="筛选发生时间 >= start_time"),
+    end_time: datetime | None = Query(None, description="筛选发生时间 <= end_time"),
 ) -> list[Incident]:
     if not _incident_store:
         db_results = await list_incidents_from_db(

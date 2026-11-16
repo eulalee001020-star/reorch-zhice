@@ -11,7 +11,7 @@ Tests:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -66,12 +66,12 @@ def _seed_incident(**overrides: Any) -> Incident:
     defaults: dict[str, Any] = {
         "incident_id": uuid4(),
         "incident_type": IncidentType.EQUIPMENT_FAILURE.value,
-        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
         "resource_id": "CNC-001",
         "report_source": ReportSource.MES.value,
         "severity": IncidentSeverity.P3_MEDIUM.value,
         "status": IncidentStatus.PENDING_ANALYSIS.value,
-        "created_at": datetime.now(tz=timezone.utc),
+        "created_at": datetime.now(tz=UTC),
     }
     defaults.update(overrides)
     incident = Incident(**defaults)
@@ -83,28 +83,28 @@ def _seed_snapshot(**overrides: Any) -> ScheduleSnapshot:
     """Create and store a ScheduleSnapshot in the in-memory store."""
     defaults: dict[str, Any] = {
         "snapshot_id": uuid4(),
-        "captured_at": datetime(2024, 6, 15, 7, 55, 0, tzinfo=timezone.utc),
+        "captured_at": datetime(2024, 6, 15, 7, 55, 0, tzinfo=UTC),
         "workshop_id": "WS-01",
         "work_orders": [
             WorkOrder(
                 work_order_id="WO-001",
                 product_name="Product-A",
-                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=timezone.utc),
+                due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=UTC),
                 operations=[
                     Operation(
                         operation_id="OP-001",
                         work_order_id="WO-001",
                         resource_id="CNC-001",
-                        start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
-                        end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
+                        start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
+                        end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
                         successor_ids=["OP-002"],
                     ),
                     Operation(
                         operation_id="OP-002",
                         work_order_id="WO-001",
                         resource_id="CNC-002",
-                        start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
-                        end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+                        start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
+                        end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
                         predecessor_ids=["OP-001"],
                     ),
                 ],
@@ -129,9 +129,7 @@ async def test_create_schedule_snapshot():
     app = _make_app()
     snapshot_id = str(uuid4())
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/schedule-snapshots",
             json={
@@ -161,12 +159,8 @@ async def test_get_impact_report_success():
     _seed_snapshot()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/impact-report"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{incident.incident_id}/impact-report")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -182,15 +176,9 @@ async def test_get_impact_report_cached():
     _seed_snapshot()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp1 = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/impact-report"
-        )
-        resp2 = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/impact-report"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp1 = await client.get(f"/api/v1/incidents/{incident.incident_id}/impact-report")
+        resp2 = await client.get(f"/api/v1/incidents/{incident.incident_id}/impact-report")
 
     assert resp1.status_code == 200
     assert resp2.status_code == 200
@@ -202,12 +190,8 @@ async def test_get_impact_report_incident_not_found():
     """GET impact-report should return 404 for unknown incident."""
     app = _make_app()
     fake_id = uuid4()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{fake_id}/impact-report"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{fake_id}/impact-report")
 
     assert resp.status_code == 404
     assert "not found" in resp.json()["detail"].lower()
@@ -220,12 +204,8 @@ async def test_get_impact_report_degraded_mode():
     # No snapshot seeded
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/impact-report"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{incident.incident_id}/impact-report")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -244,12 +224,8 @@ async def test_get_strategy_success():
     _seed_snapshot()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/strategy"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{incident.incident_id}/strategy")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -270,9 +246,7 @@ async def test_get_strategy_with_custom_repair_time():
     _seed_snapshot()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(
             f"/api/v1/incidents/{incident.incident_id}/strategy",
             params={"estimated_repair_time_minutes": 5.0},
@@ -288,12 +262,8 @@ async def test_get_strategy_incident_not_found():
     """GET strategy should return 404 for unknown incident."""
     app = _make_app()
     fake_id = uuid4()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{fake_id}/strategy"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(f"/api/v1/incidents/{fake_id}/strategy")
 
     assert resp.status_code == 404
     assert "not found" in resp.json()["detail"].lower()
@@ -306,15 +276,9 @@ async def test_get_strategy_cached():
     _seed_snapshot()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp1 = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/strategy"
-        )
-        resp2 = await client.get(
-            f"/api/v1/incidents/{incident.incident_id}/strategy"
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp1 = await client.get(f"/api/v1/incidents/{incident.incident_id}/strategy")
+        resp2 = await client.get(f"/api/v1/incidents/{incident.incident_id}/strategy")
 
     assert resp1.status_code == 200
     assert resp2.status_code == 200

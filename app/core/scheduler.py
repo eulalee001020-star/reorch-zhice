@@ -9,10 +9,11 @@ async-native, and a natural fit for the FastAPI / asyncio runtime.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from arq import cron as arq_cron
 from arq.connections import ArqRedis, RedisSettings
@@ -48,7 +49,7 @@ class RetryConfig:
         if self.policy == RetryPolicy.LINEAR:
             return timedelta(seconds=self.base_delay_seconds)
         # EXPONENTIAL: 5s, 10s, 20s, …
-        return timedelta(seconds=self.base_delay_seconds * (2 ** attempt))
+        return timedelta(seconds=self.base_delay_seconds * (2**attempt))
 
 
 # ── Task registration ───────────────────────────────────────────────
@@ -161,7 +162,7 @@ def get_worker_settings() -> dict[str, Any]:
     Used by the worker entrypoint after resolving lazy task imports.
     """
     # Lazy import so tasks module can freely import from the rest of the app.
-    from app.core.tasks import (  # noqa: WPS433
+    from app.core.tasks import (
         confirmation_timeout_reminder,
         dead_letter_compensation,
         execution_progress_poll,

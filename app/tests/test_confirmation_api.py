@@ -14,7 +14,7 @@ Validates: Requirements 7.6, 8.3, 8.7, 27.7
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -22,41 +22,41 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 
-_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 _LATER = _NOW + timedelta(hours=2)
 
 
 def _seed_incident_and_plans():
     """Seed in-memory stores with an incident, snapshot, plans, and recommendation."""
+    from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
     from app.api.incidents import _incident_store
-    from app.api.analysis import _snapshot_store, _impact_report_cache, _strategy_cache
     from app.api.solver import _candidate_plans_store, _plan_index, _recommendation_store
-    from app.models.incident import Incident
     from app.models.enums import (
+        GoalMode,
         IncidentSeverity,
         IncidentStatus,
         IncidentType,
         ReportSource,
-        GoalMode,
     )
+    from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
+    from app.models.impact import AffectedWorkOrder, ImpactReport
+    from app.models.incident import Incident
+    from app.models.recommendation import PlanSelectionOutput
     from app.models.schedule import (
+        GanttDiffPayload,
         Operation,
         Resource,
         ScheduleDetail,
         ScheduleSnapshot,
         WorkOrder,
-        GanttDiffPayload,
     )
-    from app.models.impact import AffectedWorkOrder, ImpactReport
-    from app.models.strategy import StrategyRecommendation
     from app.models.solver import (
         CandidatePlan,
         ConstraintValidationReport,
         SolverChain,
         SolverMetadata,
     )
-    from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
-    from app.models.recommendation import PlanSelectionOutput
+    from app.models.strategy import StrategyRecommendation
 
     incident_id = uuid4()
     key = str(incident_id)
@@ -148,9 +148,7 @@ def _seed_incident_and_plans():
         gantt_version="1.0",
         solver_chain=solver_chain,
         feasibility_status="feasible",
-        solver_metadata=SolverMetadata(
-            solve_time_seconds=5.0, iteration_count=100
-        ),
+        solver_metadata=SolverMetadata(solve_time_seconds=5.0, iteration_count=100),
         constraint_report=ConstraintValidationReport(
             is_feasible=True, violations=[], checked_constraints=[]
         ),
@@ -279,9 +277,7 @@ async def test_get_decision_record():
         )
 
         # Then query
-        resp = await client.get(
-            f"/api/v1/incidents/{incident_id}/decision-record"
-        )
+        resp = await client.get(f"/api/v1/incidents/{incident_id}/decision-record")
 
     assert resp.status_code == 200
     data = resp.json()
@@ -297,9 +293,7 @@ async def test_get_decision_record_404():
     """GET /decision-record returns 404 for unknown incident."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{uuid4()}/decision-record"
-        )
+        resp = await client.get(f"/api/v1/incidents/{uuid4()}/decision-record")
 
     assert resp.status_code == 404
 
@@ -323,9 +317,7 @@ async def test_confirmation_does_not_trigger_writeback():
             },
         )
 
-        resp = await client.get(
-            f"/api/v1/incidents/{incident_id}/writeback-status"
-        )
+        resp = await client.get(f"/api/v1/incidents/{incident_id}/writeback-status")
 
     assert resp.status_code == 404
 
@@ -354,9 +346,7 @@ async def test_sandbox_writeback_dry_run_only_builds_instructions():
                 "dry_run": True,
             },
         )
-        status_response = await client.get(
-            f"/api/v1/incidents/{incident_id}/writeback-status"
-        )
+        status_response = await client.get(f"/api/v1/incidents/{incident_id}/writeback-status")
 
     assert preview.status_code == 200
     body = preview.json()
@@ -404,7 +394,7 @@ async def test_sandbox_writeback_uses_second_approval_and_idempotency_key(
 
     from app.api.solver import _plan_index
     from app.core.config import settings
-    from app.services.writeback_module import WritebackModule
+    from app.services.governance.writeback_module import WritebackModule
 
     class CapturingAdapter:
         def __init__(self) -> None:
@@ -471,9 +461,7 @@ async def test_get_writeback_status_404():
     """GET /writeback-status returns 404 for unknown incident."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{uuid4()}/writeback-status"
-        )
+        resp = await client.get(f"/api/v1/incidents/{uuid4()}/writeback-status")
 
     assert resp.status_code == 404
 
@@ -486,8 +474,6 @@ async def test_get_execution_result_404():
     """GET /execution-result returns 404 for unknown incident."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get(
-            f"/api/v1/incidents/{uuid4()}/execution-result"
-        )
+        resp = await client.get(f"/api/v1/incidents/{uuid4()}/execution-result")
 
     assert resp.status_code == 404

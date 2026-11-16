@@ -78,7 +78,9 @@ class CSVAdapter(BaseCustomerAdapter):
             name: (self._data_dir / name).exists()
             for name in ("work_orders.csv", "operations.csv", "machines.csv", "incidents.csv")
         }
-        required_ok = all(files[name] for name in ("work_orders.csv", "operations.csv", "machines.csv"))
+        required_ok = all(
+            files[name] for name in ("work_orders.csv", "operations.csv", "machines.csv")
+        )
         return {
             "system": self.source_system,
             "adapter": self.adapter_name,

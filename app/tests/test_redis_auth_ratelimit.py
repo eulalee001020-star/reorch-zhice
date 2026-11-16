@@ -5,22 +5,20 @@ Validates: Requirements 16.2, 16.5, 18.7
 
 from __future__ import annotations
 
-import asyncio
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import HTTPException
 
 from app.core.auth import (
+    _API_KEY_STORE,
     CurrentUser,
     Role,
-    _API_KEY_STORE,
     get_current_user,
     require_role,
 )
 from app.core.redis_client import RedisClient
-
 
 # ── RedisClient ─────────────────────────────────────────────────────
 

@@ -1,8 +1,6 @@
 """CandidatePlan ORM model — solver-generated schedule alternatives."""
 
 import uuid
-from datetime import datetime
-
 from decimal import Decimal
 
 from sqlalchemy import ForeignKey, Index, Numeric, String, text
@@ -40,9 +38,7 @@ class CandidatePlan(TimestampMixin, Base):
     strategy_type: Mapped[str] = mapped_column(String(64), nullable=False)
     schedule_detail: Mapped[dict] = mapped_column(JSONB, nullable=False)
     solver_chain: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    feasibility_status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="feasible"
-    )
+    feasibility_status: Mapped[str] = mapped_column(String(32), nullable=False, default="feasible")
     objective_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
     kpi_vector: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     solver_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

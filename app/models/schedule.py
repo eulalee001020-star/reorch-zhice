@@ -6,13 +6,11 @@ optimization and visualization layers.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
 
 from app.models.base import ReOrchModel
-
 
 # ---------------------------------------------------------------------------
 # Nested structures for ScheduleDetail
@@ -73,17 +71,17 @@ class ScheduleSnapshot(ReOrchModel):
     snapshot_id: UUID = Field(default_factory=uuid4)
     captured_at: datetime
     workshop_id: str
-    source_system: Optional[str] = None
+    source_system: str | None = None
     schema_version: str = "1.0"
     snapshot_version: int = 1
-    parent_snapshot_id: Optional[UUID] = None
-    baseline_snapshot_id: Optional[UUID] = None
-    import_batch_id: Optional[str] = None
-    snapshot_hash: Optional[str] = None
+    parent_snapshot_id: UUID | None = None
+    baseline_snapshot_id: UUID | None = None
+    import_batch_id: str | None = None
+    snapshot_hash: str | None = None
     is_active: bool = True
-    created_by: Optional[str] = None
+    created_by: str | None = None
     work_orders: list[WorkOrder] = Field(default_factory=list)
-    raw_data: Optional[dict] = None
+    raw_data: dict | None = None
 
 
 # ---------------------------------------------------------------------------

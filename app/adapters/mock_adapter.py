@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.adapters.base_adapter import (
@@ -107,7 +107,7 @@ def _default_work_orders() -> list[CanonicalWorkOrder]:
             product_name="PCR Kit A",
             quantity=100,
             priority=3,
-            due_time=datetime(2026, 5, 15, 18, 0, tzinfo=timezone.utc),
+            due_time=datetime(2026, 5, 15, 18, 0, tzinfo=UTC),
             status="released",
         ),
         CanonicalWorkOrder(
@@ -116,7 +116,7 @@ def _default_work_orders() -> list[CanonicalWorkOrder]:
             product_name="PCR Kit B",
             quantity=80,
             priority=1,
-            due_time=datetime(2026, 5, 16, 18, 0, tzinfo=timezone.utc),
+            due_time=datetime(2026, 5, 16, 18, 0, tzinfo=UTC),
             status="released",
         ),
     ]
@@ -132,8 +132,8 @@ def _default_operations() -> list[CanonicalOperation]:
             required_capabilities=["PCR"],
             processing_time_min=45,
             machine_id="M-PCR-01",
-            start_time=datetime(2026, 5, 14, 10, 0, tzinfo=timezone.utc),
-            end_time=datetime(2026, 5, 14, 10, 45, tzinfo=timezone.utc),
+            start_time=datetime(2026, 5, 14, 10, 0, tzinfo=UTC),
+            end_time=datetime(2026, 5, 14, 10, 45, tzinfo=UTC),
             successors=["OP-002"],
         ),
         CanonicalOperation(
@@ -144,8 +144,8 @@ def _default_operations() -> list[CanonicalOperation]:
             required_capabilities=["PACK"],
             processing_time_min=30,
             machine_id="M-PACK-01",
-            start_time=datetime(2026, 5, 14, 10, 50, tzinfo=timezone.utc),
-            end_time=datetime(2026, 5, 14, 11, 20, tzinfo=timezone.utc),
+            start_time=datetime(2026, 5, 14, 10, 50, tzinfo=UTC),
+            end_time=datetime(2026, 5, 14, 11, 20, tzinfo=UTC),
             predecessors=["OP-001"],
         ),
         CanonicalOperation(
@@ -156,8 +156,8 @@ def _default_operations() -> list[CanonicalOperation]:
             required_capabilities=["PCR"],
             processing_time_min=40,
             machine_id="M-PCR-02",
-            start_time=datetime(2026, 5, 14, 11, 0, tzinfo=timezone.utc),
-            end_time=datetime(2026, 5, 14, 11, 40, tzinfo=timezone.utc),
+            start_time=datetime(2026, 5, 14, 11, 0, tzinfo=UTC),
+            end_time=datetime(2026, 5, 14, 11, 40, tzinfo=UTC),
         ),
     ]
 
@@ -194,7 +194,7 @@ def _default_incidents() -> list[CanonicalIncident]:
             incident_id="INC-20260514-001",
             incident_type="machine_down",
             machine_id="M-PCR-01",
-            start_time=datetime(2026, 5, 14, 10, 30, tzinfo=timezone.utc),
+            start_time=datetime(2026, 5, 14, 10, 30, tzinfo=UTC),
             severity="P1-Critical",
             description="M-PCR-01 down for planned mock integration test",
         )

@@ -5,10 +5,8 @@ Validates: Requirements 30.1, 30.2, 30.3, 30.10
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
-
-import pytest
+from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.models.case import PreferenceProfile
 from app.models.enums import (
@@ -18,7 +16,6 @@ from app.models.enums import (
     IncidentType,
     ReportSource,
 )
-from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
 from app.models.incident import Incident
 from app.models.recommendation import PlanSelectionInput
 from app.models.schedule import ScheduleDetail
@@ -28,8 +25,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
-
+from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
 
 # ── Fixtures ────────────────────────────────────────────────────────
 
@@ -38,7 +34,7 @@ def _make_incident(**overrides) -> Incident:
     defaults = dict(
         incident_id=uuid4(),
         incident_type=IncidentType.EQUIPMENT_FAILURE,
-        occurred_at=datetime(2025, 1, 15, 8, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2025, 1, 15, 8, 0, tzinfo=UTC),
         resource_id="CNC-001",
         report_source=ReportSource.MES,
         severity=IncidentSeverity.P2_HIGH,
@@ -82,7 +78,7 @@ def _make_preference(**overrides) -> PreferenceProfile:
     defaults = dict(
         planner_id="planner-A",
         strategy_preferences={"local_repair": 0.8, "global_reschedule": 0.2},
-        updated_at=datetime(2025, 1, 10, tzinfo=timezone.utc),
+        updated_at=datetime(2025, 1, 10, tzinfo=UTC),
     )
     defaults.update(overrides)
     return PreferenceProfile(**defaults)

@@ -9,13 +9,11 @@ Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
-import pytest_asyncio
 
 from app.models.enums import (
     IncidentSeverity,
@@ -24,24 +22,23 @@ from app.models.enums import (
     ReportSource,
 )
 from app.models.incident import Incident, IncidentCreateRequest
-from app.services.anomaly_intake_center import (
+from app.services.intake.anomaly_intake_center import (
     ALLOWED_SOURCES,
     AnomalyIntakeCenter,
     IntakeSeverityClassifier,
-    IntakeValidationError,
     SourceNotAllowedError,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 def _make_request(**overrides: Any) -> IncidentCreateRequest:
     """Helper to build a valid IncidentCreateRequest with optional overrides."""
     defaults: dict[str, Any] = {
         "incident_type": IncidentType.EQUIPMENT_FAILURE,
-        "occurred_at": datetime(2024, 6, 15, 8, 30, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2024, 6, 15, 8, 30, 0, tzinfo=UTC),
         "resource_id": "CNC-001",
         "report_source": ReportSource.MES,
         "description": "Spindle overheat",
@@ -101,6 +98,7 @@ def kafka_producer() -> FakeKafkaProducer:
 @pytest.fixture
 def default_resource_provider():
     """Returns a resource info provider that yields 'general' defaults."""
+
     async def provider(resource_id: str) -> dict[str, Any]:
         return {
             "criticality": "general",
@@ -108,6 +106,7 @@ def default_resource_provider():
             "has_redundancy": False,
             "active_work_order_count": 0,
         }
+
     return provider
 
 
@@ -126,6 +125,7 @@ def _make_center(
 # ---------------------------------------------------------------------------
 # IntakeSeverityClassifier tests (Req 1.4)
 # ---------------------------------------------------------------------------
+
 
 class TestIntakeSeverityClassifier:
     """Test the four-level severity classification rules."""
@@ -230,9 +230,10 @@ class TestIntakeSeverityClassifier:
 # Source validation tests (Req 1.6)
 # ---------------------------------------------------------------------------
 
+
 class TestSourceValidation:
     def test_allowed_sources_match_enum(self):
-        assert ALLOWED_SOURCES == {"MES", "IoT", "manual"}
+        assert {"MES", "IoT", "manual"} == ALLOWED_SOURCES
 
     def test_valid_source_accepted(self):
         """No exception for valid sources."""
@@ -249,6 +250,7 @@ class TestSourceValidation:
 # ---------------------------------------------------------------------------
 # receive_event tests (Req 1.1, 1.2, 1.5, 1.7)
 # ---------------------------------------------------------------------------
+
 
 class TestReceiveEvent:
     @pytest.mark.asyncio
@@ -284,6 +286,7 @@ class TestReceiveEvent:
     @pytest.mark.asyncio
     async def test_severity_classification_via_provider(self, redis_client, kafka_producer):
         """Severity is classified using resource info (Req 1.4)."""
+
         async def bottleneck_provider(resource_id: str):
             return {
                 "criticality": "general",
@@ -355,6 +358,7 @@ class TestReceiveEvent:
 # Deduplication tests (Req 1.3)
 # ---------------------------------------------------------------------------
 
+
 class TestDeduplication:
     @pytest.mark.asyncio
     async def test_first_event_becomes_primary(self, redis_client, kafka_producer):
@@ -362,7 +366,7 @@ class TestDeduplication:
         incident = Incident(
             incident_id=uuid4(),
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-010",
             report_source=ReportSource.MES,
             severity=IncidentSeverity.P3_MEDIUM,
@@ -381,7 +385,7 @@ class TestDeduplication:
         primary = Incident(
             incident_id=primary_id,
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-010",
             report_source=ReportSource.MES,
             severity=IncidentSeverity.P3_MEDIUM,
@@ -389,7 +393,7 @@ class TestDeduplication:
         duplicate = Incident(
             incident_id=dup_id,
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-010",
             report_source=ReportSource.IOT,
             severity=IncidentSeverity.P3_MEDIUM,
@@ -410,7 +414,7 @@ class TestDeduplication:
         i1 = Incident(
             incident_id=uuid4(),
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-A",
             report_source=ReportSource.MES,
             severity=IncidentSeverity.P3_MEDIUM,
@@ -418,7 +422,7 @@ class TestDeduplication:
         i2 = Incident(
             incident_id=uuid4(),
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-B",
             report_source=ReportSource.MES,
             severity=IncidentSeverity.P3_MEDIUM,
@@ -435,6 +439,7 @@ class TestDeduplication:
 # Publish to stream tests (Req 1.8)
 # ---------------------------------------------------------------------------
 
+
 class TestPublishToStream:
     @pytest.mark.asyncio
     async def test_publish_sends_to_kafka(self, redis_client, kafka_producer):
@@ -442,7 +447,7 @@ class TestPublishToStream:
         incident = Incident(
             incident_id=uuid4(),
             incident_type=IncidentType.EQUIPMENT_FAILURE,
-            occurred_at=datetime.now(tz=timezone.utc),
+            occurred_at=datetime.now(tz=UTC),
             resource_id="CNC-020",
             report_source=ReportSource.MES,
             severity=IncidentSeverity.P2_HIGH,

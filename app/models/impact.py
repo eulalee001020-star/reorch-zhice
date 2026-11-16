@@ -63,9 +63,7 @@ class ImpactReport(ReOrchModel):
     affected_work_orders: list[AffectedWorkOrder] = Field(default_factory=list)
     affected_operations: list[AffectedOperation] = Field(default_factory=list)
     affected_resource_ids: list[str] = Field(default_factory=list)
-    delivery_risk_distribution: dict[DeliveryRiskLevel, int] = Field(
-        default_factory=dict
-    )
+    delivery_risk_distribution: dict[DeliveryRiskLevel, int] = Field(default_factory=dict)
     estimated_total_delay_minutes: float = 0.0
     is_degraded_mode: bool = False
     degraded_reason: str | None = None

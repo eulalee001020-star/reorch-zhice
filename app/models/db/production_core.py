@@ -12,7 +12,6 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
-    Text,
     UniqueConstraint,
     text,
 )
@@ -154,7 +153,9 @@ class Operation(TimestampMixin, Base):
         server_default=text("gen_random_uuid()"),
     )
     work_order_pk: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("work_orders.work_order_pk", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("work_orders.work_order_pk", ondelete="CASCADE"),
+        nullable=False,
     )
     operation_id: Mapped[str] = mapped_column(String(128), nullable=False)
     sequence_no: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -168,7 +169,9 @@ class Operation(TimestampMixin, Base):
             "standard_processing_minutes IS NULL OR standard_processing_minutes > 0",
             name="ck_operations_processing_positive",
         ),
-        UniqueConstraint("work_order_pk", "operation_id", name="uq_operations_work_order_operation_id"),
+        UniqueConstraint(
+            "work_order_pk", "operation_id", name="uq_operations_work_order_operation_id"
+        ),
         Index("ix_operations_work_order_sequence", "work_order_pk", "sequence_no"),
     )
 
@@ -185,7 +188,9 @@ class OperationAlternativeResource(Base):
         server_default=text("gen_random_uuid()"),
     )
     operation_pk: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="CASCADE"),
+        nullable=False,
     )
     resource_pk: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("resources.resource_pk", ondelete="CASCADE"), nullable=False
@@ -214,12 +219,18 @@ class OperationPrecedenceEdge(Base):
         server_default=text("gen_random_uuid()"),
     )
     predecessor_operation_pk: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="CASCADE"),
+        nullable=False,
     )
     successor_operation_pk: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="CASCADE"),
+        nullable=False,
     )
-    relation_type: Mapped[str] = mapped_column(String(32), nullable=False, default="finish_to_start")
+    relation_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="finish_to_start"
+    )
     min_lag_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (
@@ -248,7 +259,9 @@ class MaterialRequirement(Base):
         server_default=text("gen_random_uuid()"),
     )
     operation_pk: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="CASCADE"),
+        nullable=False,
     )
     material_id: Mapped[str] = mapped_column(String(128), nullable=False)
     required_quantity: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
@@ -260,4 +273,3 @@ class MaterialRequirement(Base):
         CheckConstraint("required_quantity > 0", name="ck_material_requirements_quantity_positive"),
         Index("ix_material_requirements_material_id", "material_id"),
     )
-

@@ -5,7 +5,7 @@ Validates: Requirements 29.1–29.12
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -18,11 +18,10 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.plan_recommendation_engine import (
+from app.services.recommendation.plan_recommendation_engine import (
     NoFeasiblePlanError,
     PlanRecommendationEngine,
 )
-
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
@@ -77,7 +76,7 @@ def _plan(
 
 
 def _tradeoff_plan(*, on_time: bool, adjusted: bool) -> CandidatePlan:
-    start = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
     due = start + timedelta(minutes=60)
     plan = _plan()
     plan.schedule_detail = ScheduleDetail(
@@ -280,9 +279,7 @@ class TestReasonCodes:
     @pytest.mark.asyncio
     async def test_reason_codes_include_strategy(self):
         engine = PlanRecommendationEngine()
-        result = await engine.recommend(
-            _input(candidates=[_plan(strategy="global_reschedule")])
-        )
+        result = await engine.recommend(_input(candidates=[_plan(strategy="global_reschedule")]))
         assert any("global_reschedule" in c for c in result.reason_codes)
 
 

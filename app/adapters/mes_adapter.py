@@ -15,14 +15,14 @@ import asyncio
 import logging
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
 import httpx
 
 from app.core.config import settings
-from app.services.writeback_policy import WritebackExecutionPermit, WritebackPolicy
+from app.services.governance.writeback_policy import WritebackExecutionPermit, WritebackPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ BASE_BACKOFF_SECONDS = 1.0  # exponential: 1s, 2s, 4s
 
 class MESFormat(str, Enum):
     """Supported MES data formats."""
+
     STANDARD = "standard"
     SIEMENS = "siemens"
     ROCKWELL = "rockwell"
@@ -42,6 +43,7 @@ class MESFormat(str, Enum):
 @dataclass
 class MESInstruction:
     """A single schedule change instruction for MES."""
+
     instruction_id: str
     work_order_id: str
     operation_id: str
@@ -54,6 +56,7 @@ class MESInstruction:
 @dataclass
 class MESWritebackResult:
     """Result of a single MES writeback attempt."""
+
     instruction_id: str
     success: bool
     error: str | None = None
@@ -62,7 +65,7 @@ class MESWritebackResult:
 
     def __post_init__(self) -> None:
         if not self.timestamp:
-            self.timestamp = datetime.now(tz=timezone.utc).isoformat()
+            self.timestamp = datetime.now(tz=UTC).isoformat()
 
 
 class MESAdapter:
@@ -213,7 +216,10 @@ class MESAdapter:
                 backoff = BASE_BACKOFF_SECONDS * (2 ** (attempt - 1))
                 logger.info(
                     "Retry %d/%d for instruction %s in %.1fs",
-                    attempt, MAX_RETRIES, instruction.instruction_id, backoff,
+                    attempt,
+                    MAX_RETRIES,
+                    instruction.instruction_id,
+                    backoff,
                 )
                 await asyncio.sleep(backoff)
 
@@ -227,7 +233,9 @@ class MESAdapter:
         self._results[instruction.instruction_id] = result
         logger.error(
             "All %d retries exhausted for instruction %s: %s",
-            MAX_RETRIES, instruction.instruction_id, last_error,
+            MAX_RETRIES,
+            instruction.instruction_id,
+            last_error,
         )
         return result
 
@@ -246,8 +254,7 @@ class MESAdapter:
             headers = {
                 "Content-Type": "application/json",
                 "Idempotency-Key": str(
-                    instruction.metadata.get("idempotency_key")
-                    or instruction.instruction_id
+                    instruction.metadata.get("idempotency_key") or instruction.instruction_id
                 ),
             }
             if self._api_key:
@@ -285,7 +292,8 @@ class MESAdapter:
 
         logger.info(
             "Queue retry complete: %d processed, %d re-queued",
-            len(results), len(self._local_queue),
+            len(results),
+            len(self._local_queue),
         )
         return results
 

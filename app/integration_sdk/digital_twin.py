@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.integration_sdk.base import (
@@ -23,7 +23,7 @@ from app.models.integration_control import (
     ConnectorFieldSchema,
     ConnectorManifest,
 )
-from app.services.integration_registry import fingerprint_payload
+from app.services.data_gate.integration_registry import fingerprint_payload
 
 
 class DigitalTwinEnterpriseConnector(EnterpriseConnector):
@@ -69,9 +69,7 @@ class DigitalTwinEnterpriseConnector(EnterpriseConnector):
             reconciliation=True,
             compensation=True,
         )
-        occurred_at = reference_time or datetime(
-            2026, 7, 12, 8, 0, tzinfo=timezone.utc
-        )
+        occurred_at = reference_time or datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
         self._records = [
             ConnectorRecord(
                 entity_type="operation",

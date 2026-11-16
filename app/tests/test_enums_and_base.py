@@ -2,8 +2,7 @@
 
 from uuid import UUID, uuid4
 
-import pytest
-
+from app.models.base import ReOrchModel
 from app.models.enums import (
     ConfirmAction,
     DeliveryRiskLevel,
@@ -19,12 +18,11 @@ from app.models.enums import (
     StrategyType,
     WritebackStatus,
 )
-from app.models.base import ReOrchModel
-
 
 # ---------------------------------------------------------------------------
 # Enum value tests
 # ---------------------------------------------------------------------------
+
 
 class TestIncidentSeverity:
     def test_values(self):
@@ -164,6 +162,7 @@ class TestReportSource:
 # ---------------------------------------------------------------------------
 # Base model tests
 # ---------------------------------------------------------------------------
+
 
 class TestReOrchModel:
     def test_from_attributes(self):

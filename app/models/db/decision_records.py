@@ -40,17 +40,11 @@ class DecisionRecord(TimestampMixin, Base):
         ForeignKey("candidate_plans.plan_id", ondelete="SET NULL"),
         nullable=True,
     )
-    is_manual_adjusted: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
-    is_override: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    is_manual_adjusted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_override: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     override_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     confirmed_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    confirmed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Structured input/output snapshots for audit
     plan_selection_input: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

@@ -1,29 +1,29 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.models.planning import (
     EnterpriseImportRequest,
     InitialScheduleRequest,
-    PlanningOperationInput,
     PlanningMaterialRequirementInput,
+    PlanningOperationInput,
     PlanningResourceInput,
     PlanningWorkOrderInput,
     ResourceCalendarWindowInput,
     ValueTrackingInput,
 )
-from app.services.digital_twin_runner import DigitalTwinRunner
-from app.services.enterprise_integration import EnterpriseIntegrationService
 from app.models.solver import ConstraintViolation
-from app.services.data_readiness import DataReadinessService
-from app.services.initial_scheduler import InitialScheduler
-from app.services.plan_quality_gate import PlanQualityGate
-from app.services.value_tracking import ValueTrackingService
+from app.services.data_gate.data_readiness import DataReadinessService
+from app.services.data_gate.enterprise_integration import EnterpriseIntegrationService
+from app.services.evidence.value_tracking import ValueTrackingService
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
+from app.services.solver.initial_scheduler import InitialScheduler
+from app.services.validation.digital_twin_runner import DigitalTwinRunner
 
 
 def _make_initial_request() -> InitialScheduleRequest:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     return InitialScheduleRequest(
         workshop_id="WS-01",
         planning_start=start,
@@ -205,7 +205,7 @@ def test_value_tracking_estimates_savings() -> None:
 
 
 def test_enterprise_import_normalizes_erp_aps_payload() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     payload = {
         "resources": [
             {"resource_id": "M1", "capabilities": ["milling"]},
@@ -254,4 +254,6 @@ def test_digital_twin_sample_runs_end_to_end() -> None:
     assert response.value_report is not None
     assert response.validation_evidence["model_cost_proxy"]["external_llm_calls"] == 0
     assert response.validation_evidence["source_refs"]["affected_operation_ids"]
-    assert response.validation_evidence["audit_package_proxy"]["planner_confirmation_required"] is True
+    assert (
+        response.validation_evidence["audit_package_proxy"]["planner_confirmation_required"] is True
+    )

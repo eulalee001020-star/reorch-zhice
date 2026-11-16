@@ -14,14 +14,13 @@ Validates: Requirements 9.3, 9.8, 14.1, 14.4
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
-
 
 # ── Helpers ────────────────────────────────────────────────────────
 
@@ -54,7 +53,7 @@ async def _seed_case():
         is_override=False,
         is_manual_adjusted=False,
         confirmed_by="planner-1",
-        confirmed_at=datetime.now(tz=timezone.utc),
+        confirmed_at=datetime.now(tz=UTC),
         plan_selection_input_version="1.0",
         plan_selection_output_version="1.0",
         solver_chain=SolverChain(

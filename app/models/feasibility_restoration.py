@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field, model_validator
@@ -11,7 +11,6 @@ from app.models.base import ReOrchModel
 from app.models.enums import GoalMode, StrategyType
 from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleDetail, ScheduleSnapshot
-
 
 FailureClass = Literal[
     "feasible",
@@ -46,7 +45,7 @@ class RecoveryActionRule(ReOrchModel):
     max_uses_per_pack: int = Field(default=1, ge=1, le=100)
 
     @model_validator(mode="after")
-    def validate_auto_execution_boundary(self) -> "RecoveryActionRule":
+    def validate_auto_execution_boundary(self) -> RecoveryActionRule:
         if any(not role for role in self.required_approval_roles):
             raise ValueError("approval_roles_must_be_non_empty")
         if len(self.required_approval_roles) != len(
@@ -54,9 +53,7 @@ class RecoveryActionRule(ReOrchModel):
         ):
             raise ValueError("approval_roles_must_be_unique")
         if self.auto_execute and (self.tier != 0 or self.required_approval_roles):
-            raise ValueError(
-                "auto_execute_is_only_allowed_for_tier_0_without_human_approvals"
-            )
+            raise ValueError("auto_execute_is_only_allowed_for_tier_0_without_human_approvals")
         if self.tier > 0 and not self.required_approval_roles:
             raise ValueError("tier_1_to_4_recovery_actions_require_approval_roles")
         if self.action_type == "safe_hold" and self.tier != 0:
@@ -76,7 +73,7 @@ class RecoveryPolicy(ReOrchModel):
     max_total_penalty_cost: float = Field(default=1_000_000.0, ge=0.0)
 
     @model_validator(mode="after")
-    def validate_unique_rules(self) -> "RecoveryPolicy":
+    def validate_unique_rules(self) -> RecoveryPolicy:
         action_types = [rule.action_type for rule in self.rules]
         if len(action_types) != len(set(action_types)):
             raise ValueError("recovery_policy_action_types_must_be_unique")
@@ -91,9 +88,7 @@ class RecoveryApprovalAttestation(ReOrchModel):
     policy_version: str = Field(min_length=1)
     approver_id: str = Field(min_length=1)
     approver_role: str = Field(min_length=1)
-    approved_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    approved_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     expires_at: datetime | None = None
     source_ref: str = Field(min_length=1)
     signature: str | None = None
@@ -114,7 +109,7 @@ class FeasibilityRestorationRequest(ReOrchModel):
     approvals: list[RecoveryApprovalAttestation] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_snapshot_binding(self) -> "FeasibilityRestorationRequest":
+    def validate_snapshot_binding(self) -> FeasibilityRestorationRequest:
         if self.impact_report.schedule_snapshot_id != self.snapshot.snapshot_id:
             raise ValueError("impact_report_snapshot_id_mismatch")
         if self.impact_report.analysis_reference_time != self.snapshot.captured_at:
@@ -126,9 +121,7 @@ class FeasibilityRestorationRequest(ReOrchModel):
         }
         unknown_frozen = sorted(set(self.frozen_operation_ids) - operation_ids)
         if unknown_frozen:
-            raise ValueError(
-                f"unknown_frozen_operation_ids:{','.join(unknown_frozen)}"
-            )
+            raise ValueError(f"unknown_frozen_operation_ids:{','.join(unknown_frozen)}")
         return self
 
 
@@ -201,9 +194,7 @@ class FeasibilityCertificate(ReOrchModel):
     schedule_fingerprint: str
     certificate_fingerprint: str
     writeback_authorized: Literal[False] = False
-    issued_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    issued_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class RecoveryPack(ReOrchModel):
@@ -222,14 +213,13 @@ class RecoveryPack(ReOrchModel):
     optimality_proven: bool = False
 
     @model_validator(mode="after")
-    def validate_execution_gate(self) -> "RecoveryPack":
+    def validate_execution_gate(self) -> RecoveryPack:
         if self.status == "validated_feasible" and (
             self.executable_schedule is None or self.feasibility_certificate is None
         ):
             raise ValueError("validated_feasible_pack_requires_schedule_and_certificate")
         if self.status == "pending_approval" and (
-            self.executable_schedule is not None
-            or self.feasibility_certificate is not None
+            self.executable_schedule is not None or self.feasibility_certificate is not None
         ):
             raise ValueError("pending_pack_cannot_expose_executable_schedule_or_certificate")
         return self

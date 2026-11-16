@@ -12,7 +12,7 @@ Provides:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -25,14 +25,17 @@ from app.models.agent import FeedbackStructuringRequest
 from app.models.decision import ConfirmRequest, ConfirmResponse, DecisionRecord
 from app.models.enums import ConfirmAction, WritebackStatus
 from app.models.execution import ExecutionResult
-from app.services.confirmation_module import (
+from app.services.agent.agent_workflow import FeedbackAgent
+from app.services.governance.confirmation_module import (
     ConfirmationModule,
     ConstraintViolationError,
     OverrideReasonRequiredError,
     PermissionDeniedError,
 )
-from app.services.export_service import ExportService
-from app.services.persistence import (
+from app.services.governance.export_service import ExportService
+from app.services.governance.writeback_module import WritebackModule
+from app.services.governance.writeback_policy import WritebackPolicy, WritebackPolicyError
+from app.services.storage.persistence import (
     fetch_any_snapshot,
     fetch_decision_record_by_id,
     fetch_decision_record_by_incident,
@@ -44,9 +47,6 @@ from app.services.persistence import (
     persist_decision_record,
     record_entity_version,
 )
-from app.services.agent_workflow import FeedbackAgent
-from app.services.writeback_module import WritebackModule
-from app.services.writeback_policy import WritebackPolicy, WritebackPolicyError
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +136,7 @@ class ErrorResponse(BaseModel):
     status_code=status.HTTP_200_OK,
     summary="确认/微调/否决方案",
     description=(
-        "对 incident 的候选方案执行确认操作。"
-        "支持三种操作：确认采纳、微调后采纳、否决并重选。"
+        "对 incident 的候选方案执行确认操作。支持三种操作：确认采纳、微调后采纳、否决并重选。"
     ),
     responses={
         400: {"description": "请求参数错误或约束违反"},
@@ -150,7 +149,7 @@ async def confirm_plan(
     body: ConfirmRequestBody,
     current_user: CurrentUser = Depends(get_optional_current_user),
 ) -> ConfirmResponse:
-    from app.api.analysis import _snapshot_store, _strategy_cache, _impact_report_cache
+    from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
     from app.api.solver import _candidate_plans_store, _recommendation_store
 
     key = str(incident_id)
@@ -191,9 +190,7 @@ async def confirm_plan(
         if recommendation is not None:
             _recommendation_store[key] = recommendation
     recommended_plan_id = (
-        recommendation.recommended_plan_id
-        if recommendation
-        else candidates[0].plan_id
+        recommendation.recommended_plan_id if recommendation else candidates[0].plan_id
     )
 
     # 4. Get strategy and impact summary
@@ -201,7 +198,11 @@ async def confirm_plan(
     impact_summary = "Impact analysis summary"
     strategy = _strategy_cache.get(key)
     if strategy:
-        strategy_type = strategy.strategy_type.value if hasattr(strategy.strategy_type, "value") else strategy.strategy_type
+        strategy_type = (
+            strategy.strategy_type.value
+            if hasattr(strategy.strategy_type, "value")
+            else strategy.strategy_type
+        )
     impact_report = _impact_report_cache.get(key)
     if impact_report:
         impact_summary = (
@@ -234,22 +235,22 @@ async def confirm_plan(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
-        )
+        ) from e
     except ConstraintViolationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Constraint violation: {e}",
-        )
+        ) from e
     except OverrideReasonRequiredError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     # 7. Build and store DecisionRecord
     # The ConfirmationModule already builds the record internally;
@@ -270,7 +271,7 @@ async def confirm_plan(
             is_manual_adjusted=response.is_manual_adjusted,
             override_reason=body.override_reason,
             confirmed_by=confirm_request.confirmed_by,
-            confirmed_at=datetime.now(tz=timezone.utc),
+            confirmed_at=datetime.now(tz=UTC),
             plan_selection_input_version="1.0",
             plan_selection_output_version="1.0",
             solver_chain=selected_plan.solver_chain,
@@ -401,7 +402,7 @@ async def sandbox_writeback(
     certification_id = body.certification_id or ""
     if settings.integration.require_certified_writeback_adapter or certification_id:
         from app.api.production_runtime import get_operational_store
-        from app.services.integration_registry import (
+        from app.services.data_gate.integration_registry import (
             IntegrationRegistryError,
             IntegrationRegistryService,
         )
@@ -578,7 +579,6 @@ async def get_execution_result(incident_id: UUID) -> ExecutionResult:
     return result
 
 
-
 # ---------------------------------------------------------------------------
 # GET /api/v1/decisions/{decision_record_id}/export/pdf
 # ---------------------------------------------------------------------------
@@ -618,7 +618,7 @@ async def export_pdf(decision_record_id: UUID) -> ExportResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     return ExportResponse(
         filename=result.filename,
@@ -657,7 +657,7 @@ async def export_excel(decision_record_id: UUID) -> ExportResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        ) from e
 
     return ExportResponse(
         filename=result.filename,

@@ -6,26 +6,25 @@ Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 28.1, 28.2, 28.3,
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 
 from app.models.case import CaseRecord
 from app.models.evaluation import ComparisonMatrix, ComparisonMatrixRow, KPIVector
-from app.models.explanation import RecommendationExplanation, SolverChainExplanation
 from app.models.execution import ExecutionResult
+from app.models.explanation import RecommendationExplanation, SolverChainExplanation
 from app.models.schedule import ScheduleDetail
 from app.models.solver import (
     CandidatePlan,
     ConstraintValidationReport,
-    ConstraintViolation,
     SolverChain,
     SolverMetadata,
 )
-from app.services.explainability_layer import ExplainabilityLayer
+from app.services.recommendation.explainability_layer import ExplainabilityLayer
 
-_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -109,7 +108,9 @@ def _matrix_row(plan_id: str, **kpi_kw) -> ComparisonMatrixRow:
     )
 
 
-def _matrix(plans: list[CandidatePlan], kpi_overrides: list[dict] | None = None) -> ComparisonMatrix:
+def _matrix(
+    plans: list[CandidatePlan], kpi_overrides: list[dict] | None = None
+) -> ComparisonMatrix:
     rows = []
     for i, p in enumerate(plans):
         kw = kpi_overrides[i] if kpi_overrides and i < len(kpi_overrides) else {}
@@ -137,7 +138,9 @@ def _case(case_id=None, with_result: bool = False) -> CaseRecord:
             actual_otd=0.95,
             actual_resource_utilization=0.8,
             deviation_percentage=5.0,
-        ) if with_result else None,
+        )
+        if with_result
+        else None,
         is_override=False,
         rule_selection="due_date_priority",
         neighborhood_selection="critical_path",
@@ -159,9 +162,7 @@ class TestExplainRecommendation:
         layer = ExplainabilityLayer()
         rec = _plan()
         alt = _plan()
-        result = await layer.explain_recommendation(
-            rec, [alt], _matrix([rec, alt]), []
-        )
+        result = await layer.explain_recommendation(rec, [alt], _matrix([rec, alt]), [])
         assert isinstance(result, RecommendationExplanation)
 
     @pytest.mark.asyncio
@@ -170,9 +171,7 @@ class TestExplainRecommendation:
         layer = ExplainabilityLayer()
         rec = _plan()
         cases = [_case(with_result=True)]
-        result = await layer.explain_recommendation(
-            rec, [_plan()], _matrix([rec, _plan()]), cases
-        )
+        result = await layer.explain_recommendation(rec, [_plan()], _matrix([rec, _plan()]), cases)
         assert len(result.core_reasons) <= 3
         assert len(result.core_reasons) >= 1
 
@@ -181,9 +180,7 @@ class TestExplainRecommendation:
         """Key advantages are generated (Req 6.2)."""
         layer = ExplainabilityLayer()
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert len(result.key_advantages) >= 1
 
     @pytest.mark.asyncio
@@ -191,9 +188,7 @@ class TestExplainRecommendation:
         """Main risks are generated (Req 6.2)."""
         layer = ExplainabilityLayer()
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert len(result.main_risks) >= 1
 
     @pytest.mark.asyncio
@@ -201,9 +196,7 @@ class TestExplainRecommendation:
         """Summary ≤ 200 characters (Req 6.5)."""
         layer = ExplainabilityLayer()
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert len(result.summary) <= 200
         assert len(result.summary) > 0
 
@@ -212,9 +205,7 @@ class TestExplainRecommendation:
         """Summary uses business terms not pure technical jargon (Req 6.3)."""
         layer = ExplainabilityLayer()
         rec = _plan(strategy="local_repair")
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         # Should contain Chinese business terms
         assert any(
             term in result.summary
@@ -227,9 +218,7 @@ class TestExplainRecommendation:
         layer = ExplainabilityLayer()
         case = _case(with_result=True)
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), [case]
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [case])
         assert str(case.case_id) in result.referenced_case_ids
 
     @pytest.mark.asyncio
@@ -237,9 +226,7 @@ class TestExplainRecommendation:
         """No case IDs when no historical cases used."""
         layer = ExplainabilityLayer()
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert result.referenced_case_ids == []
 
     @pytest.mark.asyncio
@@ -248,12 +235,8 @@ class TestExplainRecommendation:
         layer = ExplainabilityLayer()
         case = _case(with_result=True)
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), [case]
-        )
-        case_mentioned = any(
-            str(case.case_id) in reason for reason in result.core_reasons
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [case])
+        case_mentioned = any(str(case.case_id) in reason for reason in result.core_reasons)
         assert case_mentioned
 
     @pytest.mark.asyncio
@@ -299,9 +282,7 @@ class TestExplainRecommendation:
         """Output is structured and JSON-serializable (Req 6.6)."""
         layer = ExplainabilityLayer()
         rec = _plan()
-        result = await layer.explain_recommendation(
-            rec, [_plan()], _matrix([rec, _plan()]), []
-        )
+        result = await layer.explain_recommendation(rec, [_plan()], _matrix([rec, _plan()]), [])
         json_str = result.model_dump_json()
         restored = RecommendationExplanation.model_validate_json(json_str)
         assert restored.core_reasons == result.core_reasons
@@ -312,9 +293,7 @@ class TestExplainRecommendation:
         """Timeout partial plan generates appropriate risk (Req 6.2)."""
         layer = ExplainabilityLayer()
         rec = _plan(feasibility="timeout_partial")
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert any("超时" in r for r in result.main_risks)
 
     @pytest.mark.asyncio
@@ -322,9 +301,7 @@ class TestExplainRecommendation:
         """Degraded solver generates appropriate risk."""
         layer = ExplainabilityLayer()
         rec = _plan(degradation=True)
-        result = await layer.explain_recommendation(
-            rec, [], _matrix([rec]), []
-        )
+        result = await layer.explain_recommendation(rec, [], _matrix([rec]), [])
         assert any("降级" in r for r in result.main_risks)
 
 
@@ -445,6 +422,5 @@ class TestExplainSolverChain:
         assert "推荐" not in result.chain_reason
         # Should mention solver/generation concepts
         assert any(
-            term in result.chain_reason
-            for term in ["修复", "搜索", "优化", "策略", "扰动", "调整"]
+            term in result.chain_reason for term in ["修复", "搜索", "优化", "策略", "扰动", "调整"]
         )

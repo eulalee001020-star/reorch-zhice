@@ -35,4 +35,3 @@ class OutboxEvent(Base):
         Index("ix_outbox_pending", "status", "next_retry_at", "created_at"),
         Index("ix_outbox_aggregate", "aggregate_type", "aggregate_id"),
     )
-

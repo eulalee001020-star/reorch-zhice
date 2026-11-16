@@ -4,7 +4,7 @@ Covers JSON serialization/deserialization round-trip consistency,
 field defaults, validation errors, and nested structure integrity.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -32,8 +32,8 @@ from app.models.strategy import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
-_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
+_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=UTC)
 
 
 def _make_affected_op(**overrides) -> AffectedOperation:
@@ -186,7 +186,7 @@ class TestImpactReport:
 
     def test_analysis_reference_time_matches_snapshot(self):
         """analysis_reference_time should be set to snapshot.captured_at."""
-        ref_time = datetime(2025, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        ref_time = datetime(2025, 6, 1, 12, 0, 0, tzinfo=UTC)
         report = _make_impact_report(analysis_reference_time=ref_time)
         assert report.analysis_reference_time == ref_time
 

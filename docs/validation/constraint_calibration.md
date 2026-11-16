@@ -20,7 +20,7 @@ This module compiles only human-approved constraints into:
 | Item | Implementation |
 | --- | --- |
 | Calibration models | `app/models/constraint_calibration.py` |
-| Compile service | `app/services/constraint_calibration.py` |
+| Compile service | `app/services/constraints/constraint_calibration.py` |
 | API endpoint | `POST /api/v1/planning/constraint-calibration/compile` |
 | Frontend API/types | `frontend/src/api/planning.ts`, `frontend/src/types/models.ts` |
 | Tests | `app/tests/test_constraint_calibration.py` |
@@ -42,7 +42,7 @@ Run:
 
 ```bash
 pytest app/tests/test_constraint_calibration.py -q
-python -m ruff check app/models/constraint_calibration.py app/services/constraint_calibration.py app/api/planning.py app/tests/test_constraint_calibration.py
+python -m ruff check app/models/constraint_calibration.py app/services/constraints/constraint_calibration.py app/api/planning.py app/tests/test_constraint_calibration.py
 ```
 
 Expected outcome:

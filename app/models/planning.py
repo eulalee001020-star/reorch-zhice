@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import Field
@@ -92,9 +92,7 @@ class PlanningOperationInput(ReOrchModel):
     predecessor_ids: list[str] = Field(default_factory=list)
     release_time: datetime | None = None
     product_family: str | None = None
-    material_requirements: list[PlanningMaterialRequirementInput] = Field(
-        default_factory=list
-    )
+    material_requirements: list[PlanningMaterialRequirementInput] = Field(default_factory=list)
 
 
 class PlanningWorkOrderInput(ReOrchModel):
@@ -145,7 +143,7 @@ class InitialScheduleResponse(ReOrchModel):
     """Response for from-zero initial schedule generation."""
 
     workshop_id: str
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     readiness_report: DataReadinessReport
     options: list[InitialScheduleOption] = Field(default_factory=list)
 

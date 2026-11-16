@@ -8,7 +8,6 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 
-
 NonEquipmentIncidentType = Literal[
     "material_shortage",
     "urgent_order_insert",

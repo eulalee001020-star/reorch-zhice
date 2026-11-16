@@ -12,8 +12,8 @@ Records:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class AuditAction(str, Enum):
     """Types of auditable actions."""
+
     LOGIN = "login"
     PLAN_CONFIRM = "plan_confirm"
     PLAN_ADJUST = "plan_adjust"
@@ -39,6 +40,7 @@ class AuditAction(str, Enum):
 
 class AuditResult(str, Enum):
     """Outcome of an audited action."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     DENIED = "denied"
@@ -47,6 +49,7 @@ class AuditResult(str, Enum):
 @dataclass
 class AuditEntry:
     """A single audit log entry."""
+
     entry_id: str
     action: AuditAction
     operator: str
@@ -101,7 +104,7 @@ class AuditLogger:
             entry_id=self._next_id(),
             action=action,
             operator=operator,
-            timestamp=datetime.now(tz=timezone.utc),
+            timestamp=datetime.now(tz=UTC),
             content=content,
             result=result,
             resource_type=resource_type,
@@ -111,13 +114,19 @@ class AuditLogger:
         self._entries.append(entry)
         logger.info(
             "AUDIT: %s by %s on %s/%s → %s",
-            action.value, operator, resource_type, resource_id, result.value,
+            action.value,
+            operator,
+            resource_type,
+            resource_id,
+            result.value,
         )
         return entry
 
     # ── Convenience methods ────────────────────────────────────────
 
-    def log_plan_confirm(self, operator: str, incident_id: str, plan_id: str, action_type: str) -> AuditEntry:
+    def log_plan_confirm(
+        self, operator: str, incident_id: str, plan_id: str, action_type: str
+    ) -> AuditEntry:
         return self.log(
             action=AuditAction.PLAN_CONFIRM,
             operator=operator,
@@ -126,7 +135,14 @@ class AuditLogger:
             resource_id=incident_id,
         )
 
-    def log_override(self, operator: str, incident_id: str, original_plan_id: str, selected_plan_id: str, reason: str) -> AuditEntry:
+    def log_override(
+        self,
+        operator: str,
+        incident_id: str,
+        original_plan_id: str,
+        selected_plan_id: str,
+        reason: str,
+    ) -> AuditEntry:
         return self.log(
             action=AuditAction.PLAN_OVERRIDE,
             operator=operator,
@@ -149,16 +165,24 @@ class AuditLogger:
             resource_id=template_id,
         )
 
-    def log_module_version_change(self, operator: str, module_name: str, old_version: str, new_version: str) -> AuditEntry:
+    def log_module_version_change(
+        self, operator: str, module_name: str, old_version: str, new_version: str
+    ) -> AuditEntry:
         return self.log(
             action=AuditAction.MODULE_VERSION_CHANGE,
             operator=operator,
-            content={"module_name": module_name, "old_version": old_version, "new_version": new_version},
+            content={
+                "module_name": module_name,
+                "old_version": old_version,
+                "new_version": new_version,
+            },
             resource_type="strategy_module",
             resource_id=module_name,
         )
 
-    def log_solver_portfolio_change(self, operator: str, change_description: str, config: dict[str, Any]) -> AuditEntry:
+    def log_solver_portfolio_change(
+        self, operator: str, change_description: str, config: dict[str, Any]
+    ) -> AuditEntry:
         return self.log(
             action=AuditAction.SOLVER_PORTFOLIO_CHANGE,
             operator=operator,

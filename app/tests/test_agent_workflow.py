@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -66,12 +66,12 @@ def _seed_incident(**overrides: Any) -> Incident:
     defaults: dict[str, Any] = {
         "incident_id": uuid4(),
         "incident_type": IncidentType.EQUIPMENT_FAILURE.value,
-        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
         "resource_id": "CNC-001",
         "report_source": ReportSource.MES.value,
         "severity": IncidentSeverity.P3_MEDIUM.value,
         "status": IncidentStatus.PENDING_ANALYSIS.value,
-        "created_at": datetime.now(tz=timezone.utc),
+        "created_at": datetime.now(tz=UTC),
     }
     defaults.update(overrides)
     incident = Incident(**defaults)
@@ -80,27 +80,27 @@ def _seed_incident(**overrides: Any) -> Incident:
 
 
 def _seed_snapshot() -> ScheduleSnapshot:
-    base_time = datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc)
+    base_time = datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC)
     work_orders = [
         WorkOrder(
             work_order_id="WO-001",
             product_name="Product-A",
-            due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=timezone.utc),
+            due_date=datetime(2024, 6, 20, 18, 0, 0, tzinfo=UTC),
             operations=[
                 Operation(
                     operation_id="OP-001",
                     work_order_id="WO-001",
                     resource_id="CNC-001",
                     start_time=base_time,
-                    end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
+                    end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
                     successor_ids=["OP-002"],
                 ),
                 Operation(
                     operation_id="OP-002",
                     work_order_id="WO-001",
                     resource_id="CNC-002",
-                    start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
-                    end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+                    start_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
+                    end_time=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
                     predecessor_ids=["OP-001"],
                 ),
             ],
@@ -109,14 +109,14 @@ def _seed_snapshot() -> ScheduleSnapshot:
         WorkOrder(
             work_order_id="WO-002",
             product_name="Product-B",
-            due_date=datetime(2024, 6, 21, 18, 0, 0, tzinfo=timezone.utc),
+            due_date=datetime(2024, 6, 21, 18, 0, 0, tzinfo=UTC),
             operations=[
                 Operation(
                     operation_id="OP-003",
                     work_order_id="WO-002",
                     resource_id="CNC-003",
-                    start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
-                    end_time=datetime(2024, 6, 15, 9, 0, 0, tzinfo=timezone.utc),
+                    start_time=datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
+                    end_time=datetime(2024, 6, 15, 9, 0, 0, tzinfo=UTC),
                 ),
             ],
             priority=1,
@@ -124,14 +124,14 @@ def _seed_snapshot() -> ScheduleSnapshot:
         WorkOrder(
             work_order_id="WO-003",
             product_name="Product-C",
-            due_date=datetime(2024, 6, 22, 18, 0, 0, tzinfo=timezone.utc),
+            due_date=datetime(2024, 6, 22, 18, 0, 0, tzinfo=UTC),
             operations=[
                 Operation(
                     operation_id="OP-004",
                     work_order_id="WO-003",
                     resource_id="CNC-004",
-                    start_time=datetime(2024, 6, 15, 9, 0, 0, tzinfo=timezone.utc),
-                    end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
+                    start_time=datetime(2024, 6, 15, 9, 0, 0, tzinfo=UTC),
+                    end_time=datetime(2024, 6, 15, 10, 0, 0, tzinfo=UTC),
                 ),
             ],
             priority=0,
@@ -139,7 +139,7 @@ def _seed_snapshot() -> ScheduleSnapshot:
     ]
     snapshot = ScheduleSnapshot(
         snapshot_id=uuid4(),
-        captured_at=datetime(2024, 6, 15, 7, 55, 0, tzinfo=timezone.utc),
+        captured_at=datetime(2024, 6, 15, 7, 55, 0, tzinfo=UTC),
         workshop_id="WS-01",
         source_system="aps",
         work_orders=work_orders,
@@ -151,9 +151,7 @@ def _seed_snapshot() -> ScheduleSnapshot:
 @pytest.mark.asyncio
 async def test_incident_agent_understands_machine_down_text():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/incident/understand",
             json={
@@ -175,7 +173,7 @@ async def test_incident_agent_understands_machine_down_text():
 
 @pytest.mark.asyncio
 async def test_incident_agent_uses_configured_llm_when_available(monkeypatch):
-    from app.services.llm_agent_client import LLMJsonResult
+    from app.services.agent.llm_agent_client import LLMJsonResult
 
     class FakeLLMClient:
         async def complete_json(self, **kwargs):
@@ -197,12 +195,10 @@ async def test_incident_agent_uses_configured_llm_when_available(monkeypatch):
                 output_tokens=45,
             )
 
-    monkeypatch.setattr("app.services.agent_workflow.LLMAgentClient", FakeLLMClient)
+    monkeypatch.setattr("app.services.agent.agent_workflow.LLMAgentClient", FakeLLMClient)
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/incident/understand",
             json={
@@ -224,9 +220,7 @@ async def test_incident_agent_uses_configured_llm_when_available(monkeypatch):
 @pytest.mark.asyncio
 async def test_incident_agent_routes_unsupported_low_context_to_confirmation():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/incident/understand",
             json={"text": "物料还没到"},
@@ -246,9 +240,7 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
     _seed_snapshot()
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/decision-flow",
             json={
@@ -292,7 +284,7 @@ async def test_agent_decision_flow_runs_tools_without_auto_writeback():
 
 @pytest.mark.asyncio
 async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeypatch):
-    from app.services.plan_quality_gate import PlanQualityGate
+    from app.services.recommendation.plan_quality_gate import PlanQualityGate
 
     incident = _seed_incident()
     _seed_snapshot()
@@ -318,9 +310,7 @@ async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeyp
 
     monkeypatch.setattr(PlanQualityGate, "evaluate", block_first)
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/decision-flow",
             json={"incident_id": str(incident.incident_id)},
@@ -337,7 +327,7 @@ async def test_agent_decision_flow_never_recommends_quality_blocked_plan(monkeyp
 @pytest.mark.asyncio
 async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
     from app.core.config import settings
-    from app.services.agent_workflow import SolverAgent
+    from app.services.agent.agent_workflow import SolverAgent
 
     incident = _seed_incident()
     _seed_snapshot()
@@ -349,9 +339,7 @@ async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
     monkeypatch.setattr(SolverAgent, "run", slow_solver)
     monkeypatch.setattr(settings.agent, "solver_timeout_seconds", 0.01)
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/decision-flow",
             json={"incident_id": str(incident.incident_id)},
@@ -363,9 +351,7 @@ async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
     assert data["candidate_plans"] == []
     assert data["recommendation"] is None
     solver_trace = next(
-        item
-        for item in data["trace"]
-        if item["agent_name"] == "Solver Tool / Solver Agent"
+        item for item in data["trace"] if item["agent_name"] == "Solver Tool / Solver Agent"
     )
     assert solver_trace["stage_status"] == "timed_out"
     assert solver_trace["fallback_reason"].startswith("timeout_after_")
@@ -374,9 +360,7 @@ async def test_agent_decision_flow_solver_timeout_fails_closed(monkeypatch):
 @pytest.mark.asyncio
 async def test_feedback_agent_structures_operator_override():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/feedback/structure",
             json={"override_text": "M4 operator unavailable after 16:00"},
@@ -395,9 +379,7 @@ async def test_feedback_agent_structures_operator_override():
 @pytest.mark.asyncio
 async def test_rule_candidate_agent_compiles_pending_constraint():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/rules/compile",
             json={
@@ -419,9 +401,7 @@ async def test_rule_candidate_agent_compiles_pending_constraint():
 @pytest.mark.asyncio
 async def test_rule_candidate_review_replay_publish_lifecycle():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         compile_resp = await client.post(
             "/api/v1/agents/rules/compile",
             json={
@@ -496,9 +476,7 @@ async def test_rule_candidate_review_replay_publish_lifecycle():
 @pytest.mark.asyncio
 async def test_rule_candidate_replay_ignores_unverified_scenario_count():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         compile_resp = await client.post(
             "/api/v1/agents/rules/compile",
             json={
@@ -526,9 +504,7 @@ async def test_rule_candidate_replay_ignores_unverified_scenario_count():
 @pytest.mark.asyncio
 async def test_rule_candidate_reject_requires_reason():
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         compile_resp = await client.post(
             "/api/v1/agents/rules/compile",
             json={"rule_text": "现场说这个约束还不清楚", "source": "planner_feedback"},
@@ -550,15 +526,12 @@ async def test_rule_candidate_reject_requires_reason():
     assert reject_resp.status_code == 422
     assert reject_with_reason_resp.status_code == 200
     assert reject_with_reason_resp.json()["status"] == "rejected"
-    assert (
-        reject_with_reason_resp.json()["reject_reason"]
-        == "缺少资源、时间窗口和适用工序。"
-    )
+    assert reject_with_reason_resp.json()["reject_reason"] == "缺少资源、时间窗口和适用工序。"
 
 
 @pytest.mark.asyncio
 async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
-    from app.services.llm_agent_client import LLMJsonResult
+    from app.services.agent.llm_agent_client import LLMJsonResult
 
     class FakeLLMClient:
         async def complete_json(self, **kwargs):
@@ -575,12 +548,10 @@ async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
                 latency_ms=89.0,
             )
 
-    monkeypatch.setattr("app.services.agent_workflow.LLMAgentClient", FakeLLMClient)
+    monkeypatch.setattr("app.services.agent.agent_workflow.LLMAgentClient", FakeLLMClient)
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/rules/compile",
             json={
@@ -593,9 +564,7 @@ async def test_rule_candidate_agent_accepts_llm_candidate(monkeypatch):
     data = resp.json()
     candidate = data["candidates"][0]
     assert candidate["constraint_type"] == "quality"
-    assert (
-        candidate["compiled_rule"] == "require QA hold release before OP-7 can be moved"
-    )
+    assert candidate["compiled_rule"] == "require QA hold release before OP-7 can be moved"
     assert data["trace"][0]["llm_used"] is True
     assert data["trace"][0]["llm_provider"] == "fake_llm"
 
@@ -606,9 +575,7 @@ async def test_case_memory_and_preference_learning_agents_archive_assets():
     execution_result = _make_execution_result(decision_record)
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         archive_resp = await client.post(
             "/api/v1/agents/case-memory/archive",
             json={
@@ -641,9 +608,7 @@ async def test_post_decision_learning_runs_rule_case_preference_chain():
     execution_result = _make_execution_result(decision_record)
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/agents/post-decision-learning",
             json={
@@ -655,16 +620,10 @@ async def test_post_decision_learning_runs_rule_case_preference_chain():
 
     assert resp.status_code == 200
     data = resp.json()
-    assert (
-        data["rule_candidate_output"]["candidates"][0]["status"]
-        == "pending_human_review"
-    )
+    assert data["rule_candidate_output"]["candidates"][0]["status"] == "pending_human_review"
     assert data["case_memory_output"]["status"] == "execution_feedback_captured"
     assert data["preference_learning_output"]["sample_count"] == 1
-    assert (
-        data["preference_learning_output"]["recommended_use"]
-        == "ranking_tiebreaker_only"
-    )
+    assert data["preference_learning_output"]["recommended_use"] == "ranking_tiebreaker_only"
     assert [step["agent_name"] for step in data["trace"]] == [
         "Rule Candidate Agent",
         "Case Memory Agent",
@@ -690,7 +649,7 @@ def _make_decision_record():
         is_manual_adjusted=False,
         override_reason="M4 operator unavailable after 16:00",
         confirmed_by="planner-1",
-        confirmed_at=datetime.now(tz=timezone.utc),
+        confirmed_at=datetime.now(tz=UTC),
         plan_selection_input_version="1.0",
         plan_selection_output_version="1.0",
         solver_chain=SolverChain(

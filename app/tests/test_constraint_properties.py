@@ -11,7 +11,7 @@ Validates:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import hypothesis.strategies as st
@@ -25,11 +25,11 @@ from app.models.schedule import (
     ScheduleSnapshot,
     WorkOrder,
 )
-from app.services.constraint_validator import ConstraintValidator
+from app.services.constraints.constraint_validator import ConstraintValidator
 
 # ── Constants ───────────────────────────────────────────────────────
 
-BASE_TIME = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
+BASE_TIME = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
 CAPABILITIES_POOL = ["cutting", "welding", "painting", "drilling", "milling"]
 RESOURCE_IDS = ["machine-A", "machine-B", "machine-C"]
 
@@ -42,9 +42,7 @@ validator = ConstraintValidator()
 @st.composite
 def capability_subset_strategy(draw):
     """Draw a non-empty subset of capabilities from the pool."""
-    return draw(
-        st.lists(st.sampled_from(CAPABILITIES_POOL), min_size=1, max_size=3, unique=True)
-    )
+    return draw(st.lists(st.sampled_from(CAPABILITIES_POOL), min_size=1, max_size=3, unique=True))
 
 
 @st.composite
@@ -129,9 +127,15 @@ def invalid_capability_schedule(draw):
             extra_cap = draw(st.sampled_from(missing_caps))
             req_caps = [extra_cap]
         else:
-            req_caps = draw(
-                st.lists(st.sampled_from(res_caps), min_size=0, max_size=len(res_caps), unique=True)
-            ) if res_caps else []
+            req_caps = (
+                draw(
+                    st.lists(
+                        st.sampled_from(res_caps), min_size=0, max_size=len(res_caps), unique=True
+                    )
+                )
+                if res_caps
+                else []
+            )
 
         start_h = draw(st.floats(min_value=0, max_value=20, allow_nan=False, allow_infinity=False))
         dur_h = draw(st.floats(min_value=0.5, max_value=4, allow_nan=False, allow_infinity=False))
@@ -178,8 +182,8 @@ def valid_process_order_schedule(draw):
         start_h = current_time + gap
         end_h = start_h + dur_h
 
-        preds = [f"op-{i-1}"] if i > 0 else []
-        succs = [f"op-{i+1}"] if i < n_ops - 1 else []
+        preds = [f"op-{i - 1}"] if i > 0 else []
+        succs = [f"op-{i + 1}"] if i < n_ops - 1 else []
 
         ops.append(
             Operation(
@@ -222,15 +226,17 @@ def invalid_process_order_schedule(draw):
 
         if i == violating_transition + 1:
             # Force overlap: start before predecessor ends
-            overlap = draw(st.floats(min_value=0.1, max_value=1.0, allow_nan=False, allow_infinity=False))
+            overlap = draw(
+                st.floats(min_value=0.1, max_value=1.0, allow_nan=False, allow_infinity=False)
+            )
             start_h = current_time - overlap
         else:
             gap = draw(st.floats(min_value=0, max_value=1, allow_nan=False, allow_infinity=False))
             start_h = current_time + gap
 
         end_h = start_h + dur_h
-        preds = [f"op-{i-1}"] if i > 0 else []
-        succs = [f"op-{i+1}"] if i < n_ops - 1 else []
+        preds = [f"op-{i - 1}"] if i > 0 else []
+        succs = [f"op-{i + 1}"] if i < n_ops - 1 else []
 
         ops.append(
             Operation(
@@ -308,7 +314,9 @@ def overlapping_resource_schedule(draw):
     end1 = start1 + dur1
 
     # Second op overlaps: starts before first ends
-    overlap = draw(st.floats(min_value=0.1, max_value=dur1 - 0.01, allow_nan=False, allow_infinity=False))
+    overlap = draw(
+        st.floats(min_value=0.1, max_value=dur1 - 0.01, allow_nan=False, allow_infinity=False)
+    )
     start2 = end1 - overlap
     dur2 = draw(st.floats(min_value=0.5, max_value=2, allow_nan=False, allow_infinity=False))
     end2 = start2 + dur2
@@ -424,14 +432,16 @@ class TestEquipmentCapabilityProperty:
     def test_no_violations_when_caps_subset(self, data):
         """For any schedule where required_capabilities ⊆ resource capabilities,
         the validator reports no equipment_capability violations."""
-        schedule, res_map = data
+        schedule, _res_map = data
         snapshot = _make_snapshot(schedule)
 
         report = validator.validate_constraints(
             schedule, snapshot, StrategyType.GLOBAL_RESCHEDULE, []
         )
 
-        cap_violations = [v for v in report.violations if v.constraint_type == "equipment_capability"]
+        cap_violations = [
+            v for v in report.violations if v.constraint_type == "equipment_capability"
+        ]
         assert len(cap_violations) == 0, f"Unexpected violations: {cap_violations}"
 
     @given(data=invalid_capability_schedule())
@@ -439,14 +449,16 @@ class TestEquipmentCapabilityProperty:
     def test_violations_when_cap_missing(self, data):
         """For any schedule where at least one op has a capability NOT in its resource,
         the validator reports at least one equipment_capability violation."""
-        schedule, res_map = data
+        schedule, _res_map = data
         snapshot = _make_snapshot(schedule)
 
         report = validator.validate_constraints(
             schedule, snapshot, StrategyType.GLOBAL_RESCHEDULE, []
         )
 
-        cap_violations = [v for v in report.violations if v.constraint_type == "equipment_capability"]
+        cap_violations = [
+            v for v in report.violations if v.constraint_type == "equipment_capability"
+        ]
         assert len(cap_violations) >= 1, "Expected at least one equipment_capability violation"
 
 
@@ -499,7 +511,9 @@ class TestResourceMutualExclusionProperty:
             schedule, snapshot, StrategyType.GLOBAL_RESCHEDULE, []
         )
 
-        excl_violations = [v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"]
+        excl_violations = [
+            v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"
+        ]
         assert len(excl_violations) == 0, f"Unexpected violations: {excl_violations}"
 
     @given(data=overlapping_resource_schedule())
@@ -514,8 +528,12 @@ class TestResourceMutualExclusionProperty:
             schedule, snapshot, StrategyType.GLOBAL_RESCHEDULE, []
         )
 
-        excl_violations = [v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"]
-        assert len(excl_violations) >= 1, "Expected at least one resource_mutual_exclusion violation"
+        excl_violations = [
+            v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"
+        ]
+        assert len(excl_violations) >= 1, (
+            "Expected at least one resource_mutual_exclusion violation"
+        )
 
 
 class TestLocalRepairInvarianceProperty:
@@ -532,5 +550,7 @@ class TestLocalRepairInvarianceProperty:
             schedule, snapshot, StrategyType.LOCAL_REPAIR, affected_ids
         )
 
-        inv_violations = [v for v in report.violations if v.constraint_type == "local_repair_invariance"]
+        inv_violations = [
+            v for v in report.violations if v.constraint_type == "local_repair_invariance"
+        ]
         assert len(inv_violations) == 0, f"Unexpected violations: {inv_violations}"

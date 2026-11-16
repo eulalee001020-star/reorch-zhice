@@ -10,7 +10,7 @@ Key capabilities:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -71,7 +71,7 @@ class ERPAdapter:
         work_orders = self._parse_work_orders(source_payload.get("work_orders", []))
         snapshot = ScheduleSnapshot(
             snapshot_id=uuid4(),
-            captured_at=datetime.now(tz=timezone.utc),
+            captured_at=datetime.now(tz=UTC),
             workshop_id=workshop_id,
             work_orders=work_orders,
             source_system="ERP_APS",
@@ -80,7 +80,9 @@ class ERPAdapter:
         self._snapshots[str(snapshot.snapshot_id)] = snapshot
         logger.info(
             "Imported schedule snapshot %s for workshop %s with %d work orders",
-            snapshot.snapshot_id, workshop_id, len(work_orders),
+            snapshot.snapshot_id,
+            workshop_id,
+            len(work_orders),
         )
         return snapshot
 
@@ -119,7 +121,7 @@ class ERPAdapter:
             wo = WorkOrder(
                 work_order_id=raw.get("work_order_id", ""),
                 product_name=raw.get("product_name", ""),
-                due_date=raw.get("due_date", datetime.now(tz=timezone.utc)),
+                due_date=raw.get("due_date", datetime.now(tz=UTC)),
                 operations=self._parse_operations(raw.get("operations", [])),
                 priority=raw.get("priority", 0),
             )
@@ -164,7 +166,7 @@ class ERPAdapter:
             wo = WorkOrder(
                 work_order_id=raw.get("work_order_id", ""),
                 product_name=raw.get("product_name", ""),
-                due_date=raw.get("due_date", datetime.now(tz=timezone.utc)),
+                due_date=raw.get("due_date", datetime.now(tz=UTC)),
                 operations=ops,
                 priority=raw.get("priority", 0),
             )
@@ -180,8 +182,8 @@ class ERPAdapter:
                 work_order_id=raw.get("work_order_id", ""),
                 resource_id=raw.get("resource_id", ""),
                 required_capabilities=raw.get("required_capabilities", []),
-                start_time=raw.get("start_time", datetime.now(tz=timezone.utc)),
-                end_time=raw.get("end_time", datetime.now(tz=timezone.utc)),
+                start_time=raw.get("start_time", datetime.now(tz=UTC)),
+                end_time=raw.get("end_time", datetime.now(tz=UTC)),
                 predecessor_ids=raw.get("predecessor_ids", []),
                 successor_ids=raw.get("successor_ids", []),
             )

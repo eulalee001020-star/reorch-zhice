@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.cp_sat_scheduler import CpSatFjspScheduler
+from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
 
-
-NOW = datetime(2026, 5, 7, 8, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 5, 7, 8, 0, 0, tzinfo=UTC)
 
 
 def _snapshot_with_alternative_machine() -> ScheduleSnapshot:
@@ -181,7 +180,7 @@ def test_cp_sat_rejects_when_process_capacity_is_exhausted(monkeypatch):
             raise AssertionError("release must not run when acquire failed")
 
     monkeypatch.setattr(
-        "app.services.cp_sat_scheduler._SOLVER_CAPACITY",
+        "app.services.solver.cp_sat_scheduler._SOLVER_CAPACITY",
         ExhaustedCapacity(),
     )
 
@@ -215,6 +214,4 @@ def test_cp_sat_routes_oversized_instance_to_decomposition(monkeypatch):
     assert result.is_feasible is False
     assert result.status_name == "INSTANCE_REQUIRES_DECOMPOSITION"
     assert result.solver_log["operation_count"] == 2
-    assert result.solver_log["required_action"] == (
-        "run_bounded_subgraph_or_decomposition_solver"
-    )
+    assert result.solver_log["required_action"] == ("run_bounded_subgraph_or_decomposition_solver")

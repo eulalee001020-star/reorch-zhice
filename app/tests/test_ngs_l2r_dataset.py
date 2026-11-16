@@ -6,10 +6,7 @@ import csv
 from pathlib import Path
 
 DATASET = (
-    Path(__file__).resolve().parents[2]
-    / "datasets"
-    / "ngs_l2r_training"
-    / "ngs_training_data.csv"
+    Path(__file__).resolve().parents[2] / "datasets" / "ngs_l2r_training" / "ngs_training_data.csv"
 )
 LABEL = "optimal_rank"
 CONSTANT_COLUMNS = {"m_versatility_score", "reagent_stock", "m_reliability_factor"}
@@ -44,7 +41,5 @@ def test_label_range_and_no_duplicates() -> None:
 
 def test_constant_columns_are_the_documented_ones() -> None:
     rows = _rows()
-    constant = {
-        name for name in rows[0] if len({row[name] for row in rows}) == 1
-    }
+    constant = {name for name in rows[0] if len({row[name] for row in rows}) == 1}
     assert constant == CONSTANT_COLUMNS

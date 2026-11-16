@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -47,7 +46,12 @@ def test_public_reliability_packs_pass_when_blocked_source_is_explicit(tmp_path:
 def test_strict_public_reliability_gate_fails_on_missing_official_source(tmp_path: Path) -> None:
     output = tmp_path / "strict-report.json"
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "run_public_reliability_packs.py"), "--output", str(output)],
+        [
+            sys.executable,
+            str(ROOT / "tools" / "run_public_reliability_packs.py"),
+            "--output",
+            str(output),
+        ],
         cwd=ROOT,
         capture_output=True,
         text=True,

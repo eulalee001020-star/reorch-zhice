@@ -12,10 +12,8 @@ Covers:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
-
-import pytest
 
 from app.models.enums import StrategyType
 from app.models.schedule import (
@@ -31,9 +29,9 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.constraint_validator import ConstraintValidator
+from app.services.constraints.constraint_validator import ConstraintValidator
 
-NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -138,7 +136,9 @@ class TestEquipmentCapability:
         ops = [
             _op("op-1", required_caps=["cutting"]),
         ]
-        resources = [Resource(resource_id="machine-A", name="A", capabilities=["cutting", "welding"])]
+        resources = [
+            Resource(resource_id="machine-A", name="A", capabilities=["cutting", "welding"])
+        ]
         sched = _schedule(ops, resources)
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
@@ -161,7 +161,9 @@ class TestEquipmentCapability:
 
         assert not report.is_feasible
         assert any(v.constraint_type == "equipment_capability" for v in report.violations)
-        violation = next(v for v in report.violations if v.constraint_type == "equipment_capability")
+        violation = next(
+            v for v in report.violations if v.constraint_type == "equipment_capability"
+        )
         assert "painting" in violation.detail
 
     def test_passes_when_no_required_capabilities(self):
@@ -187,10 +189,15 @@ class TestEquipmentCapability:
 
         # With override providing the capability → passes
         report_pass = validator.validate_constraints(
-            sched, snap, StrategyType.LOCAL_REPAIR, [],
+            sched,
+            snap,
+            StrategyType.LOCAL_REPAIR,
+            [],
             resource_capabilities={"machine-A": ["cutting"]},
         )
-        cap_violations = [v for v in report_pass.violations if v.constraint_type == "equipment_capability"]
+        cap_violations = [
+            v for v in report_pass.violations if v.constraint_type == "equipment_capability"
+        ]
         assert len(cap_violations) == 0
 
 
@@ -200,7 +207,13 @@ class TestProcessOrder:
     def test_passes_valid_order(self):
         ops = [
             _op("op-1", start_offset_h=0, duration_h=1, successors=["op-2"]),
-            _op("op-2", start_offset_h=1, duration_h=1, predecessors=["op-1"], resource_id="machine-B"),
+            _op(
+                "op-2",
+                start_offset_h=1,
+                duration_h=1,
+                predecessors=["op-1"],
+                resource_id="machine-B",
+            ),
         ]
         sched = _schedule(ops)
         snap = _snapshot_from_schedule(sched)
@@ -214,7 +227,13 @@ class TestProcessOrder:
     def test_fails_when_predecessor_overlaps_successor(self):
         ops = [
             _op("op-1", start_offset_h=0, duration_h=2, successors=["op-2"]),
-            _op("op-2", start_offset_h=1, duration_h=1, predecessors=["op-1"], resource_id="machine-B"),
+            _op(
+                "op-2",
+                start_offset_h=1,
+                duration_h=1,
+                predecessors=["op-1"],
+                resource_id="machine-B",
+            ),
         ]
         sched = _schedule(ops)
         snap = _snapshot_from_schedule(sched)
@@ -241,7 +260,9 @@ class TestResourceMutualExclusion:
 
         report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
-        excl_violations = [v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"]
+        excl_violations = [
+            v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"
+        ]
         assert len(excl_violations) == 0
 
     def test_fails_when_ops_overlap_on_same_resource(self):
@@ -255,7 +276,9 @@ class TestResourceMutualExclusion:
 
         report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
-        excl_violations = [v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"]
+        excl_violations = [
+            v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"
+        ]
         assert len(excl_violations) == 1
 
     def test_different_resources_no_conflict(self):
@@ -269,7 +292,9 @@ class TestResourceMutualExclusion:
 
         report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
-        excl_violations = [v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"]
+        excl_violations = [
+            v for v in report.violations if v.constraint_type == "resource_mutual_exclusion"
+        ]
         assert len(excl_violations) == 0
 
 
@@ -284,7 +309,9 @@ class TestMaterialAvailability:
 
         report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
-        mat_violations = [v for v in report.violations if v.constraint_type == "material_availability"]
+        mat_violations = [
+            v for v in report.violations if v.constraint_type == "material_availability"
+        ]
         assert len(mat_violations) == 0
 
     def test_fails_epoch_zero_start_time(self):
@@ -292,8 +319,8 @@ class TestMaterialAvailability:
             operation_id="op-bad",
             work_order_id="wo-1",
             resource_id="machine-A",
-            start_time=datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-            end_time=datetime(1970, 1, 1, 1, 0, 0, tzinfo=timezone.utc),
+            start_time=datetime(1970, 1, 1, 0, 0, 0, tzinfo=UTC),
+            end_time=datetime(1970, 1, 1, 1, 0, 0, tzinfo=UTC),
         )
         sched = _schedule([op])
         snap = _snapshot_from_schedule(sched)
@@ -301,7 +328,9 @@ class TestMaterialAvailability:
 
         report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
-        mat_violations = [v for v in report.violations if v.constraint_type == "material_availability"]
+        mat_violations = [
+            v for v in report.violations if v.constraint_type == "material_availability"
+        ]
         assert len(mat_violations) == 1
 
 
@@ -317,11 +346,11 @@ class TestLocalRepairInvariance:
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"]
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"])
 
-        inv_violations = [v for v in report.violations if v.constraint_type == "local_repair_invariance"]
+        inv_violations = [
+            v for v in report.violations if v.constraint_type == "local_repair_invariance"
+        ]
         assert len(inv_violations) == 0
 
     def test_fails_when_unaffected_op_modified(self):
@@ -339,11 +368,11 @@ class TestLocalRepairInvariance:
         sched = _schedule(ops_modified)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"]
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"])
 
-        inv_violations = [v for v in report.violations if v.constraint_type == "local_repair_invariance"]
+        inv_violations = [
+            v for v in report.violations if v.constraint_type == "local_repair_invariance"
+        ]
         assert len(inv_violations) == 1
         assert "op-2" in inv_violations[0].detail
 
@@ -381,11 +410,11 @@ class TestLocalRepairInvariance:
         sched = _schedule(ops_modified)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"]
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.LOCAL_REPAIR, ["op-1"])
 
-        inv_violations = [v for v in report.violations if v.constraint_type == "local_repair_invariance"]
+        inv_violations = [
+            v for v in report.violations if v.constraint_type == "local_repair_invariance"
+        ]
         assert len(inv_violations) == 1
 
 
@@ -416,10 +445,21 @@ class TestValidateMicroadjustment:
 
     def test_fails_microadjustment_with_violation(self):
         ops = [
-            _op("op-1", start_offset_h=0, duration_h=1, successors=["op-2"],
-                 is_affected=True, is_adjusted=True),
-            _op("op-2", start_offset_h=1, duration_h=1, predecessors=["op-1"],
-                 resource_id="machine-B"),
+            _op(
+                "op-1",
+                start_offset_h=0,
+                duration_h=1,
+                successors=["op-2"],
+                is_affected=True,
+                is_adjusted=True,
+            ),
+            _op(
+                "op-2",
+                start_offset_h=1,
+                duration_h=1,
+                predecessors=["op-1"],
+                resource_id="machine-B",
+            ),
         ]
         sched = _schedule(ops)
         snap = _snapshot_from_schedule(sched)
@@ -427,10 +467,21 @@ class TestValidateMicroadjustment:
 
         # Create adjusted schedule with process order violation
         adjusted_ops = [
-            _op("op-1", start_offset_h=0, duration_h=3, successors=["op-2"],
-                 is_affected=True, is_adjusted=True),
-            _op("op-2", start_offset_h=1, duration_h=1, predecessors=["op-1"],
-                 resource_id="machine-B"),
+            _op(
+                "op-1",
+                start_offset_h=0,
+                duration_h=3,
+                successors=["op-2"],
+                is_affected=True,
+                is_adjusted=True,
+            ),
+            _op(
+                "op-2",
+                start_offset_h=1,
+                duration_h=1,
+                predecessors=["op-1"],
+                resource_id="machine-B",
+            ),
         ]
         adjusted = _schedule(adjusted_ops)
         validator = ConstraintValidator()
@@ -450,9 +501,7 @@ class TestReportStructure:
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.GLOBAL_RESCHEDULE, []
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
         assert isinstance(report, ConstraintValidationReport)
         assert isinstance(report.is_feasible, bool)
@@ -465,9 +514,7 @@ class TestReportStructure:
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.LOCAL_REPAIR, []
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.LOCAL_REPAIR, [])
 
         expected = {
             "equipment_capability",
@@ -484,9 +531,7 @@ class TestReportStructure:
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.GLOBAL_RESCHEDULE, []
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
         expected = {
             "equipment_capability",
@@ -502,27 +547,30 @@ class TestReportStructure:
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, "local_repair", []
-        )
+        report = validator.validate_constraints(sched, snap, "local_repair", [])
 
         assert "local_repair_invariance" in report.checked_constraints
 
     def test_multiple_violations_reported(self):
         # Two ops on same resource overlapping + process order violation
         ops = [
-            _op("op-1", resource_id="machine-A", start_offset_h=0, duration_h=3,
-                 successors=["op-2"]),
-            _op("op-2", resource_id="machine-A", start_offset_h=1, duration_h=1,
-                 predecessors=["op-1"], wo_id="wo-2"),
+            _op(
+                "op-1", resource_id="machine-A", start_offset_h=0, duration_h=3, successors=["op-2"]
+            ),
+            _op(
+                "op-2",
+                resource_id="machine-A",
+                start_offset_h=1,
+                duration_h=1,
+                predecessors=["op-1"],
+                wo_id="wo-2",
+            ),
         ]
         sched = _schedule(ops)
         snap = _snapshot_from_schedule(sched)
         validator = ConstraintValidator()
 
-        report = validator.validate_constraints(
-            sched, snap, StrategyType.GLOBAL_RESCHEDULE, []
-        )
+        report = validator.validate_constraints(sched, snap, StrategyType.GLOBAL_RESCHEDULE, [])
 
         assert not report.is_feasible
         types = {v.constraint_type for v in report.violations}

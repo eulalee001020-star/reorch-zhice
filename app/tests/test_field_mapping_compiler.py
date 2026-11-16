@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.models.reality_harness import FieldMappingCompileRequest
-from app.services.field_mapping_compiler import FieldMappingCompiler
+from app.services.data_gate.field_mapping_compiler import FieldMappingCompiler
 
 
 def test_field_mapping_compiler_suggests_known_aliases() -> None:

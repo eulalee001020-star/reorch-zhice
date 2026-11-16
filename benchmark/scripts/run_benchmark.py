@@ -8,6 +8,7 @@ before the full backend stack is available.
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 from datetime import datetime
 from pathlib import Path
@@ -63,7 +64,7 @@ def validate_resource_capacity(dataset: dict[str, Any]) -> list[str]:
         by_resource.setdefault(op["resource_id"], []).append(op)
     for resource_id, ops in by_resource.items():
         ordered = sorted(ops, key=lambda op: parse_dt(op["start_time"]))
-        for left, right in zip(ordered, ordered[1:]):
+        for left, right in itertools.pairwise(ordered):
             if parse_dt(left["end_time"]) > parse_dt(right["start_time"]):
                 errors.append(
                     f"{resource_id}: {left['operation_id']} overlaps {right['operation_id']}"
@@ -123,4 +124,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

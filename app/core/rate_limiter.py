@@ -6,11 +6,9 @@ Validates: Requirements 18.7
 from __future__ import annotations
 
 import time
-from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 
-from app.core.auth import CurrentUser, get_current_user
 from app.core.redis_client import redis_client
 
 

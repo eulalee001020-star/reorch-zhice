@@ -10,12 +10,10 @@ import pytest
 from app.core.scheduler import (
     RetryConfig,
     RetryPolicy,
-    TaskDefinition,
     TaskRegistry,
     get_redis_settings,
     get_worker_settings,
 )
-
 
 # ── RetryConfig ─────────────────────────────────────────────────────
 

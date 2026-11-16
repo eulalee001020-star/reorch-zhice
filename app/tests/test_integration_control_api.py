@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.models.production_runtime import SolveJobSubmitRequest
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.operational_store import RelationalOperationalStore
-from app.services.production_digital_twin import ProductionDigitalTwinFactory
-
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
 ADMIN_HEADERS = {"X-API-Key": "admin-key-001"}
 PLANNER_HEADERS = {"X-API-Key": "planner-key-001"}
@@ -61,10 +60,8 @@ async def test_cdc_schema_drift_blocks_event_before_checkpoint(
     store = RelationalOperationalStore()
     monkeypatch.setattr(runtime_api, "_store", store)
     monkeypatch.setattr(runtime_api, "_queue", None)
-    IntegrationControlValidationHarness(store).run(
-        tenant_id="default", actor_id="admin-test"
-    )
-    occurred_at = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc).isoformat()
+    IntegrationControlValidationHarness(store).run(tenant_id="default", actor_id="admin-test")
+    occurred_at = datetime(2026, 7, 12, 8, 0, tzinfo=UTC).isoformat()
     valid_schema = {
         "operation_id": "string",
         "work_order_id": "string",

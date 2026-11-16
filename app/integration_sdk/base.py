@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -14,7 +14,7 @@ from app.models.integration_control import ConnectorManifest
 
 class ConnectorHealth(ReOrchModel):
     healthy: bool
-    checked_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    checked_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     latency_ms: float = Field(ge=0.0)
     details: dict[str, Any] = Field(default_factory=dict)
 
@@ -68,7 +68,7 @@ class WritebackReceipt(ReOrchModel):
     before_hash: str
     after_hash: str
     reason: str | None = None
-    observed_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    observed_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class ReconciliationResult(ReOrchModel):

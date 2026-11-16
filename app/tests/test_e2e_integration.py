@@ -14,7 +14,7 @@ Validates: Requirements 1.1, 1.8, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1,
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -41,19 +41,17 @@ from app.models.incident import Incident, IncidentCreateRequest
 from app.models.recommendation import PlanSelectionInput, PlanSelectionOutput
 from app.models.schedule import (
     Operation,
-    ScheduleDetail,
     ScheduleSnapshot,
     WorkOrder,
 )
 from app.models.solver import CandidatePlan
 from app.models.strategy import StrategyRecommendation
 
-
 # ---------------------------------------------------------------------------
 # Shared test data builders
 # ---------------------------------------------------------------------------
 
-_NOW = datetime(2024, 7, 1, 8, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2024, 7, 1, 8, 0, 0, tzinfo=UTC)
 _SNAPSHOT_ID = uuid4()
 _WORKSHOP_ID = "workshop-A"
 
@@ -68,9 +66,9 @@ def _make_operations(
     ops: list[Operation] = []
     t = base_time
     for i in range(count):
-        op_id = f"{wo_id}-OP-{i+1:03d}"
+        op_id = f"{wo_id}-OP-{i + 1:03d}"
         pred = [ops[-1].operation_id] if ops else []
-        succ_id = f"{wo_id}-OP-{i+2:03d}" if i < count - 1 else None
+        succ_id = f"{wo_id}-OP-{i + 2:03d}" if i < count - 1 else None
         duration = timedelta(minutes=30)
         op = Operation(
             operation_id=op_id,
@@ -105,7 +103,7 @@ def _make_work_order(
 
 def _make_snapshot(work_order_count: int = 5) -> ScheduleSnapshot:
     wos = [
-        _make_work_order(f"WO-{i+1:03d}", due_offset_hours=4 + i, priority=i % 2)
+        _make_work_order(f"WO-{i + 1:03d}", due_offset_hours=4 + i, priority=i % 2)
         for i in range(work_order_count)
     ]
     return ScheduleSnapshot(
@@ -163,6 +161,7 @@ class FakeKafkaProducer:
 # Bottleneck resource provider (triggers P1 severity)
 # ---------------------------------------------------------------------------
 
+
 async def _bottleneck_resource_provider(resource_id: str) -> dict[str, Any]:
     return {
         "criticality": "general",
@@ -170,7 +169,6 @@ async def _bottleneck_resource_provider(resource_id: str) -> dict[str, Any]:
         "has_redundancy": False,
         "active_work_order_count": 5,
     }
-
 
 
 # ===========================================================================
@@ -199,9 +197,9 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_full_intake_to_strategy_chain(self, redis, kafka, snapshot):
         """Simulate MES reporting equipment failure → full chain to strategy."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.strategy_selector import StrategySelector
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.solver.strategy_selector import StrategySelector
 
         # Step 1: Receive event via AnomalyIntakeCenter (Req 1.1)
         center = AnomalyIntakeCenter(
@@ -276,8 +274,8 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_severity_upgrade_on_breach(self, redis, kafka):
         """Impact analysis upgrades severity when Breach risk is found."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
 
         # Create incident with P3 severity (general resource)
         async def general_provider(rid: str):
@@ -320,7 +318,7 @@ class TestE2EIntakeAnalysisStrategy:
     @pytest.mark.asyncio
     async def test_dedup_and_kafka_publish(self, redis, kafka):
         """Deduplication merges events; Kafka receives the primary."""
-        from app.services.anomaly_intake_center import AnomalyIntakeCenter
+        from app.services.intake.anomaly_intake_center import AnomalyIntakeCenter
 
         center = AnomalyIntakeCenter(
             redis_client=redis,
@@ -341,7 +339,6 @@ class TestE2EIntakeAnalysisStrategy:
 
         # Both events published to Kafka
         assert len(kafka.messages) == 2
-
 
 
 # ===========================================================================
@@ -380,8 +377,8 @@ class TestE2ESolveEvaluateRecommendExplain:
 
     async def _run_intake_and_analysis(self, incident, snapshot, preference):
         """Helper: run impact analysis + strategy selection, return (report, strategy)."""
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.strategy_selector import StrategySelector
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.solver.strategy_selector import StrategySelector
 
         engine = ImpactAnalysisEngine()
         report = await engine.analyze(incident, snapshot)
@@ -399,16 +396,16 @@ class TestE2ESolveEvaluateRecommendExplain:
     @pytest.mark.asyncio
     async def test_full_solve_to_explain_chain(self, snapshot, incident, preference):
         """Full chain: SolverPolicy → Solve → Evaluate → Recommend → Explain."""
-        from app.services.evaluation_center import EvaluationCenter
-        from app.services.explainability_layer import ExplainabilityLayer
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.plan_recommendation_engine import PlanRecommendationEngine
-        from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
-
-        report, strategy = await self._run_intake_and_analysis(
-            incident, snapshot, preference
+        from app.services.recommendation.evaluation_center import EvaluationCenter
+        from app.services.recommendation.explainability_layer import ExplainabilityLayer
+        from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
+        from app.services.recommendation.plan_selection_input_builder import (
+            PlanSelectionInputBuilder,
         )
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
+
+        report, strategy = await self._run_intake_and_analysis(incident, snapshot, preference)
 
         # Step 1: Build SolverPolicyBundle (Req 4.1 — Solver_Policy_Layer)
         orchestrator = SolverPolicyOrchestrator()
@@ -482,12 +479,8 @@ class TestE2ESolveEvaluateRecommendExplain:
 
         # Step 5: Explainability (Req 6.1)
         explainer = ExplainabilityLayer()
-        recommended_plan = next(
-            p for p in candidates if p.plan_id == output.recommended_plan_id
-        )
-        alternatives = [
-            p for p in candidates if p.plan_id != output.recommended_plan_id
-        ]
+        recommended_plan = next(p for p in candidates if p.plan_id == output.recommended_plan_id)
+        alternatives = [p for p in candidates if p.plan_id != output.recommended_plan_id]
 
         rec_explanation = await explainer.explain_recommendation(
             recommended_plan=recommended_plan,
@@ -509,12 +502,10 @@ class TestE2ESolveEvaluateRecommendExplain:
     @pytest.mark.asyncio
     async def test_solver_records_metadata(self, snapshot, incident, preference):
         """Verify SolverChain and SolverMetadata are recorded on each plan."""
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
 
-        report, strategy = await self._run_intake_and_analysis(
-            incident, snapshot, preference
-        )
+        report, strategy = await self._run_intake_and_analysis(incident, snapshot, preference)
 
         orchestrator = SolverPolicyOrchestrator()
         bundle = await orchestrator.build_solver_policy(
@@ -538,7 +529,6 @@ class TestE2ESolveEvaluateRecommendExplain:
             meta = plan.solver_metadata
             assert meta.iteration_count >= 0
             assert isinstance(meta.objective_trajectory, list)
-
 
 
 # ===========================================================================
@@ -569,7 +559,11 @@ class TestE2EConfirmWritebackCase:
     def preference(self) -> PreferenceProfile:
         return PreferenceProfile(
             planner_id="planner-1",
-            strategy_preferences={"local_repair": 0.5, "global_reschedule": 0.3, "wait_and_repair": 0.2},
+            strategy_preferences={
+                "local_repair": 0.5,
+                "global_reschedule": 0.3,
+                "wait_and_repair": 0.2,
+            },
             adjustment_patterns=[],
             override_history=[],
             updated_at=_NOW,
@@ -577,12 +571,14 @@ class TestE2EConfirmWritebackCase:
 
     async def _produce_candidates(self, incident, snapshot, preference):
         """Helper: run full chain up to candidate generation."""
-        from app.services.hybrid_solver import HybridSolver
-        from app.services.impact_analysis_engine import ImpactAnalysisEngine
-        from app.services.plan_recommendation_engine import PlanRecommendationEngine
-        from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
-        from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
-        from app.services.strategy_selector import StrategySelector
+        from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+        from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
+        from app.services.recommendation.plan_selection_input_builder import (
+            PlanSelectionInputBuilder,
+        )
+        from app.services.solver.hybrid_solver import HybridSolver
+        from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
+        from app.services.solver.strategy_selector import StrategySelector
 
         engine = ImpactAnalysisEngine()
         report = await engine.analyze(incident, snapshot)
@@ -623,9 +619,9 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_accept_confirm_writeback_case(self, snapshot, incident, preference):
         """Accept plan → writeback → track execution → create case → update preference."""
-        from app.services.case_library import CaseLibrary
-        from app.services.confirmation_module import ConfirmationModule
-        from app.services.writeback_module import WritebackModule
+        from app.services.evidence.case_library import CaseLibrary
+        from app.services.governance.confirmation_module import ConfirmationModule
+        from app.services.governance.writeback_module import WritebackModule
 
         candidates, output, report, strategy = await self._produce_candidates(
             incident, snapshot, preference
@@ -661,7 +657,11 @@ class TestE2EConfirmWritebackCase:
         writeback = WritebackModule()
 
         # Build DecisionRecord for writeback
-        st_val = strategy.strategy_type.value if hasattr(strategy.strategy_type, "value") else strategy.strategy_type
+        st_val = (
+            strategy.strategy_type.value
+            if hasattr(strategy.strategy_type, "value")
+            else strategy.strategy_type
+        )
         decision_record = DecisionRecord(
             decision_record_id=response.decision_record_id,
             incident_id=incident.incident_id,
@@ -674,7 +674,7 @@ class TestE2EConfirmWritebackCase:
             is_override=False,
             is_manual_adjusted=False,
             confirmed_by="planner-1",
-            confirmed_at=datetime.now(tz=timezone.utc),
+            confirmed_at=datetime.now(tz=UTC),
             plan_selection_input_version="1.0",
             plan_selection_output_version="1.0",
             solver_chain=selected_plan.solver_chain,
@@ -707,9 +707,12 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_micro_adjustment_confirm(self, snapshot, incident, preference):
         """Accept-with-adjustment creates a derived plan version or raises constraint error."""
-        from app.services.confirmation_module import ConfirmationModule, ConstraintViolationError
+        from app.services.governance.confirmation_module import (
+            ConfirmationModule,
+            ConstraintViolationError,
+        )
 
-        candidates, output, report, strategy = await self._produce_candidates(
+        candidates, output, _report, strategy = await self._produce_candidates(
             incident, snapshot, preference
         )
         recommended_plan_id = output.recommended_plan_id
@@ -751,11 +754,11 @@ class TestE2EConfirmWritebackCase:
     @pytest.mark.asyncio
     async def test_override_confirm_updates_preference(self, snapshot, incident, preference):
         """Override (reject_and_reselect) records reason and updates preference."""
-        from app.services.case_library import CaseLibrary
-        from app.services.confirmation_module import ConfirmationModule
-        from app.services.writeback_module import WritebackModule
+        from app.services.evidence.case_library import CaseLibrary
+        from app.services.governance.confirmation_module import ConfirmationModule
+        from app.services.governance.writeback_module import WritebackModule
 
-        candidates, output, report, strategy = await self._produce_candidates(
+        candidates, output, _report, strategy = await self._produce_candidates(
             incident, snapshot, preference
         )
         recommended_plan_id = output.recommended_plan_id
@@ -787,7 +790,11 @@ class TestE2EConfirmWritebackCase:
 
         # Build DecisionRecord with is_override=True
         selected_plan = next(p for p in candidates if p.plan_id == override_plan_id)
-        st_val = strategy.strategy_type.value if hasattr(strategy.strategy_type, "value") else strategy.strategy_type
+        st_val = (
+            strategy.strategy_type.value
+            if hasattr(strategy.strategy_type, "value")
+            else strategy.strategy_type
+        )
         decision_record = DecisionRecord(
             decision_record_id=response.decision_record_id,
             incident_id=incident.incident_id,
@@ -801,7 +808,7 @@ class TestE2EConfirmWritebackCase:
             is_manual_adjusted=False,
             override_reason="Prefer less disruption to line B",
             confirmed_by="planner-1",
-            confirmed_at=datetime.now(tz=timezone.utc),
+            confirmed_at=datetime.now(tz=UTC),
             plan_selection_input_version="1.0",
             plan_selection_output_version="1.0",
             solver_chain=selected_plan.solver_chain,
@@ -826,7 +833,6 @@ class TestE2EConfirmWritebackCase:
         assert len(updated_pref.override_history) >= 1
 
 
-
 # ===========================================================================
 # 21.4 — Frontend-Backend API Integration
 # Validates: Requirements 31.3, 31.4, 31.11, 10.7, 12.11
@@ -845,13 +851,13 @@ class TestE2EAPIIntegration:
         """
         from httpx import ASGITransport, AsyncClient
 
-        from app.main import app
+        from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
+        from app.api.confirmation import _decision_record_store
 
         # Clear in-memory stores between tests
         from app.api.incidents import _incident_store
-        from app.api.analysis import _snapshot_store, _impact_report_cache, _strategy_cache
         from app.api.solver import _candidate_plans_store, _plan_index, _recommendation_store
-        from app.api.confirmation import _decision_record_store
+        from app.main import app
 
         _incident_store.clear()
         _snapshot_store.clear()
@@ -864,6 +870,7 @@ class TestE2EAPIIntegration:
 
         # Patch the global redis_client singleton with a FakeRedisClient
         import app.core.redis_client as rc_mod
+
         fake_redis = FakeRedisClient()
         monkeypatch.setattr(rc_mod, "redis_client", fake_redis)
 
@@ -873,6 +880,7 @@ class TestE2EAPIIntegration:
 
         class _FakeKafkaProducerClass:
             """Drop-in replacement that returns our fake producer."""
+
             def __init__(self, *a, **kw):
                 self.messages = fake_kafka.messages
 
@@ -936,7 +944,7 @@ class TestE2EAPIIntegration:
         assert resp.status_code == 200
         plans_data = resp.json()
         assert len(plans_data) >= 1
-        first_plan_id = plans_data[0]["plan_id"]
+        plans_data[0]["plan_id"]
 
         # 6. Trigger recommend (Req 12.11 — GoalMode)
         resp = await client.post(
@@ -970,7 +978,9 @@ class TestE2EAPIIntegration:
         assert dr_data["confirmed_by"] == "planner-1"
 
     @pytest.mark.asyncio
-    async def test_goal_mode_switch_refreshes_output(self, client, snapshot_payload, incident_payload):
+    async def test_goal_mode_switch_refreshes_output(
+        self, client, snapshot_payload, incident_payload
+    ):
         """GoalMode switch produces different PlanSelectionOutput (Req 12.11, 31.11)."""
 
         # Setup: snapshot + incident + solve
@@ -1005,7 +1015,9 @@ class TestE2EAPIIntegration:
         assert output2["recommended_plan_id"] is not None
 
     @pytest.mark.asyncio
-    async def test_incident_list_and_view_switching(self, client, snapshot_payload, incident_payload):
+    async def test_incident_list_and_view_switching(
+        self, client, snapshot_payload, incident_payload
+    ):
         """Verify incident list and selection → analysis view (Req 31.3, 31.4)."""
 
         await client.post("/api/v1/schedule-snapshots", json=snapshot_payload)
@@ -1101,11 +1113,15 @@ class TestE2EAPIIntegration:
 
         # Client subscribed to workshop-A only
         ws_a = MockWebSocket()
-        cid_a = await manager.connect(ws_a, user_id="u1", role="Planner", workshop_ids=["workshop-A"])
+        cid_a = await manager.connect(
+            ws_a, user_id="u1", role="Planner", workshop_ids=["workshop-A"]
+        )
 
         # Client subscribed to workshop-B only
         ws_b = MockWebSocket()
-        cid_b = await manager.connect(ws_b, user_id="u2", role="Planner", workshop_ids=["workshop-B"])
+        cid_b = await manager.connect(
+            ws_b, user_id="u2", role="Planner", workshop_ids=["workshop-B"]
+        )
 
         # Broadcast to workshop-A
         await manager.broadcast("incident_created", {"id": "1"}, workshop_id="workshop-A")

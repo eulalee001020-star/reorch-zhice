@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import Field
@@ -217,7 +217,7 @@ class DesignPartnerPreflightResponse(ReOrchModel):
     """Deterministic onboarding result and the highest safe trial stage."""
 
     preflight_id: str
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     evidence_scope: EvidenceScope
     customer_ref: str
     site_id: str

@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Generator
+from datetime import UTC, datetime
+from typing import Any
 
 from app.core.config import settings
 
@@ -24,9 +25,11 @@ logger = logging.getLogger(__name__)
 
 # ── Span representation (in-memory for MVP) ────────────────────────
 
+
 @dataclass
 class Span:
     """In-memory span for tracing."""
+
     trace_id: str
     span_id: str
     name: str
@@ -46,9 +49,11 @@ class Span:
 
 # ── Metrics store (in-memory for MVP) ──────────────────────────────
 
+
 @dataclass
 class MetricPoint:
     """A single metric data point."""
+
     name: str
     value: float
     labels: dict[str, str] = field(default_factory=dict)
@@ -56,7 +61,7 @@ class MetricPoint:
 
     def __post_init__(self) -> None:
         if not self.timestamp:
-            self.timestamp = datetime.now(tz=timezone.utc).isoformat()
+            self.timestamp = datetime.now(tz=UTC).isoformat()
 
 
 class TelemetryManager:
@@ -133,13 +138,17 @@ class TelemetryManager:
 
     # ── Metrics ────────────────────────────────────────────────────
 
-    def increment_counter(self, name: str, value: float = 1.0, labels: dict[str, str] | None = None) -> None:
+    def increment_counter(
+        self, name: str, value: float = 1.0, labels: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric."""
         key = f"{name}:{labels}" if labels else name
         self._counters[key] = self._counters.get(key, 0.0) + value
         self._metrics.append(MetricPoint(name=name, value=self._counters[key], labels=labels or {}))
 
-    def record_histogram(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
+    def record_histogram(
+        self, name: str, value: float, labels: dict[str, str] | None = None
+    ) -> None:
         """Record a histogram observation."""
         key = f"{name}:{labels}" if labels else name
         self._histograms.setdefault(key, []).append(value)

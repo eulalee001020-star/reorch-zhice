@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -22,11 +22,11 @@ from app.models.planning import (
     PlanningResourceInput,
     PlanningWorkOrderInput,
 )
-from app.services.constraint_calibration import ConstraintCalibrationService
+from app.services.constraints.constraint_calibration import ConstraintCalibrationService
 
 
 def test_approved_constraints_compile_into_initial_request() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     pack = ConstraintCalibrationPack(
         workshop_id="WS-01",
         base_request=_base_request(start),
@@ -106,13 +106,11 @@ def test_unpublished_ai_candidate_is_not_active_constraint() -> None:
     assert compiled.blocked is False
     assert compiled.omitted_candidate_count == 1
     assert compiled.changeover_rules == []
-    assert {conflict.code for conflict in compiled.conflicts} == {
-        "rule_candidate_not_active"
-    }
+    assert {conflict.code for conflict in compiled.conflicts} == {"rule_candidate_not_active"}
 
 
 def test_invalid_or_unknown_constraints_block_scheduler_patch() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     pack = ConstraintCalibrationPack(
         workshop_id="WS-01",
         base_request=_base_request(start),
@@ -161,7 +159,7 @@ def test_invalid_or_unknown_constraints_block_scheduler_patch() -> None:
 
 @pytest.mark.asyncio
 async def test_constraint_calibration_compile_api() -> None:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     test_app = FastAPI()
     test_app.include_router(planning_router)
     transport = ASGITransport(app=test_app)

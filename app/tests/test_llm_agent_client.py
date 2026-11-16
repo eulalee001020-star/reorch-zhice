@@ -6,10 +6,10 @@ import httpx
 import pytest
 
 from app.core.config import settings
-from app.services.llm_agent_client import (
+from app.services.agent.llm_agent_client import (
+    _CIRCUITS,
     LLMAgentClient,
     LLMProviderUnavailable,
-    _CIRCUITS,
 )
 
 
@@ -44,7 +44,7 @@ async def test_llm_client_retries_transient_network_failure(monkeypatch):
                 )
             return _SuccessfulResponse()
 
-    monkeypatch.setattr("app.services.llm_agent_client.httpx.AsyncClient", FakeClient)
+    monkeypatch.setattr("app.services.agent.llm_agent_client.httpx.AsyncClient", FakeClient)
     monkeypatch.setattr(settings.llm, "enabled", True)
     monkeypatch.setattr(settings.llm, "api_key", "test-key")
     monkeypatch.setattr(settings.llm, "max_attempts", 2)
@@ -84,9 +84,7 @@ async def test_llm_client_opens_circuit_after_repeated_failure(monkeypatch):
                 request=httpx.Request("POST", url),
             )
 
-    monkeypatch.setattr(
-        "app.services.llm_agent_client.httpx.AsyncClient", FailingClient
-    )
+    monkeypatch.setattr("app.services.agent.llm_agent_client.httpx.AsyncClient", FailingClient)
     monkeypatch.setattr(settings.llm, "enabled", True)
     monkeypatch.setattr(settings.llm, "api_key", "test-key")
     monkeypatch.setattr(settings.llm, "max_attempts", 1)

@@ -104,9 +104,7 @@ class KafkaConsumer:
                 key = msg.key().decode("utf-8") if msg.key() else None
                 value = _deserialize_value(msg.value())
                 headers = (
-                    {k: v.decode("utf-8") for k, v in msg.headers()}
-                    if msg.headers()
-                    else None
+                    {k: v.decode("utf-8") for k, v in msg.headers()} if msg.headers() else None
                 )
 
                 try:

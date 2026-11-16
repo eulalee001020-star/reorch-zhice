@@ -17,7 +17,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-
 JSON_DOCUMENT = JSON().with_variant(JSONB, "postgresql")
 
 
@@ -85,9 +84,7 @@ class CdcCheckpointRecord(OperationalBase):
 class SolveJobRecordORM(OperationalBase):
     __tablename__ = "runtime_solve_jobs"
     __table_args__ = (
-        UniqueConstraint(
-            "tenant_id", "idempotency_key", name="uq_runtime_solve_idempotency"
-        ),
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_runtime_solve_idempotency"),
         Index("ix_runtime_solve_claim", "status", "priority", "created_at"),
         Index("ix_runtime_solve_lease", "status", "lease_expires_at"),
     )
@@ -111,9 +108,7 @@ class SolveJobRecordORM(OperationalBase):
 
 class ShadowCaseRecordORM(OperationalBase):
     __tablename__ = "runtime_shadow_cases"
-    __table_args__ = (
-        Index("ix_runtime_shadow_tenant_status", "tenant_id", "status"),
-    )
+    __table_args__ = (Index("ix_runtime_shadow_tenant_status", "tenant_id", "status"),)
 
     shadow_case_id: Mapped[str] = mapped_column(String(96), primary_key=True)
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -128,9 +123,7 @@ class ShadowCaseRecordORM(OperationalBase):
 class ExecutionReceiptRecordORM(OperationalBase):
     __tablename__ = "runtime_execution_receipts"
     __table_args__ = (
-        UniqueConstraint(
-            "tenant_id", "source_event_id", name="uq_runtime_execution_source_event"
-        ),
+        UniqueConstraint("tenant_id", "source_event_id", name="uq_runtime_execution_source_event"),
         Index("ix_runtime_receipt_shadow_operation", "shadow_case_id", "operation_id"),
     )
 
@@ -146,9 +139,7 @@ class ExecutionReceiptRecordORM(OperationalBase):
 
 class RuntimeEvidenceRecordORM(OperationalBase):
     __tablename__ = "runtime_evidence_records"
-    __table_args__ = (
-        Index("ix_runtime_evidence_type", "tenant_id", "evidence_type"),
-    )
+    __table_args__ = (Index("ix_runtime_evidence_type", "tenant_id", "evidence_type"),)
 
     evidence_id: Mapped[str] = mapped_column(String(128), primary_key=True)
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -235,9 +226,7 @@ class IntegrationAuditRecordORM(OperationalBase):
     """Append-only audit trail for integration control-plane mutations."""
 
     __tablename__ = "integration_audit_events"
-    __table_args__ = (
-        Index("ix_integration_audit_tenant_time", "tenant_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_integration_audit_tenant_time", "tenant_id", "created_at"),)
 
     event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)

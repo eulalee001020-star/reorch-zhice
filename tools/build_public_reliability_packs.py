@@ -7,19 +7,19 @@ import argparse
 import csv
 import hashlib
 import json
-import shutil
 import re
+import shutil
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from collections.abc import Iterable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import openpyxl
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PACK_ROOT = ROOT / "datasets" / "public_reliability_packs"
-UTC = timezone.utc
+UTC = UTC
 
 
 SOURCES: dict[str, dict[str, Any]] = {
@@ -110,7 +110,11 @@ def read_sheet(path: Path, sheet_name: str, header_row: int = 1) -> list[dict[st
     headers = [str(value).strip() if value is not None else "" for value in next(rows)]
     result = []
     for row in rows:
-        record = {headers[index]: value for index, value in enumerate(row) if index < len(headers) and headers[index]}
+        record = {
+            headers[index]: value
+            for index, value in enumerate(row)
+            if index < len(headers) and headers[index]
+        }
         if any(value is not None for value in record.values()):
             result.append(record)
     workbook.close()
@@ -135,7 +139,9 @@ def process_map(machine_name: str) -> str:
 def build_textile(pack: Path) -> dict[str, Any]:
     raw = pack / "raw"
     source = json.loads((raw / "Input_JSON_Schedule_Optimization.json").read_text(encoding="utf-8"))
-    output = json.loads((raw / "Output_JSON_Schedule_Optimization.json").read_text(encoding="utf-8"))
+    output = json.loads(
+        (raw / "Output_JSON_Schedule_Optimization.json").read_text(encoding="utf-8")
+    )
     canonical = pack / "canonical"
     scenario_dir = pack / "scenarios"
     epoch = datetime(2026, 1, 5, 7, tzinfo=UTC)
@@ -153,15 +159,17 @@ def build_textile(pack: Path) -> dict[str, Any]:
     for request_index, request in enumerate(source["product_requests"], 1):
         work_order_id = f"TEXTILE-WO-{request_index:04d}"
         due_slot = int(request.get("deadline", source["configuration"]["time_window"]))
-        work_orders.append({
-            "work_order_id": work_order_id,
-            "product_id": request["product"],
-            "product_name": request["product"],
-            "quantity": request["amount"],
-            "priority": 100 if "deadline" in request else 0,
-            "due_time": iso(epoch + timedelta(minutes=due_slot * 5)),
-            "status": "planned",
-        })
+        work_orders.append(
+            {
+                "work_order_id": work_order_id,
+                "product_id": request["product"],
+                "product_name": request["product"],
+                "quantity": request["amount"],
+                "priority": 100 if "deadline" in request else 0,
+                "due_time": iso(epoch + timedelta(minutes=due_slot * 5)),
+                "status": "planned",
+            }
+        )
         sequence = 0
         previous = ""
         for task_spec in product_defs[request["product"]]["tasks"]:
@@ -169,26 +177,35 @@ def build_textile(pack: Path) -> dict[str, Any]:
                 sequence += 1
                 operation_id = f"{work_order_id}-OP-{sequence:03d}"
                 modes = task_to_modes[task_spec["task"]]
-                machines = sorted({machine for mode in modes for machine in mode_to_machines.get(mode, [])})
+                machines = sorted(
+                    {machine for mode in modes for machine in mode_to_machines.get(mode, [])}
+                )
                 duration = min((task_modes.get(mode, 1) for mode in modes), default=1) * 5
-                operations.append({
-                    "operation_id": operation_id,
-                    "work_order_id": work_order_id,
-                    "sequence": sequence,
-                    "required_capability": task_spec["task"],
-                    "processing_time_min": duration,
-                    "eligible_machine_ids": "|".join(machines),
-                    "predecessors": previous,
-                    "source_run": run,
-                })
+                operations.append(
+                    {
+                        "operation_id": operation_id,
+                        "work_order_id": work_order_id,
+                        "sequence": sequence,
+                        "required_capability": task_spec["task"],
+                        "processing_time_min": duration,
+                        "eligible_machine_ids": "|".join(machines),
+                        "predecessors": previous,
+                        "source_run": run,
+                    }
+                )
                 previous = operation_id
 
-    resources = [{
-        "machine_id": machine["id"],
-        "name": machine["id"],
-        "capabilities": "|".join(sorted({mode.split(" TM", 1)[0] for mode in machine["task_modes"]})),
-        "status": "available",
-    } for machine in source["machines"]]
+    resources = [
+        {
+            "machine_id": machine["id"],
+            "name": machine["id"],
+            "capabilities": "|".join(
+                sorted({mode.split(" TM", 1)[0] for mode in machine["task_modes"]})
+            ),
+            "status": "available",
+        }
+        for machine in source["machines"]
+    ]
 
     schedule = []
     assignment_index = 0
@@ -197,15 +214,22 @@ def build_textile(pack: Path) -> dict[str, Any]:
             for assignment in machine["assignments"]:
                 assignment_index += 1
                 duration_slots = task_modes.get(assignment["task_mode"], 1)
-                schedule.append({
-                    "schedule_operation_id": f"TEXTILE-SCHEDULE-{assignment_index:04d}",
-                    "machine_id": machine["machine"],
-                    "task": assignment["task"],
-                    "task_mode": assignment["task_mode"],
-                    "planned_start": iso(epoch + timedelta(minutes=int(assignment["start"]) * 5)),
-                    "planned_end": iso(epoch + timedelta(minutes=(int(assignment["start"]) + duration_slots) * 5)),
-                    "product_finished": assignment.get("product_finished", ""),
-                })
+                schedule.append(
+                    {
+                        "schedule_operation_id": f"TEXTILE-SCHEDULE-{assignment_index:04d}",
+                        "machine_id": machine["machine"],
+                        "task": assignment["task"],
+                        "task_mode": assignment["task_mode"],
+                        "planned_start": iso(
+                            epoch + timedelta(minutes=int(assignment["start"]) * 5)
+                        ),
+                        "planned_end": iso(
+                            epoch
+                            + timedelta(minutes=(int(assignment["start"]) + duration_slots) * 5)
+                        ),
+                        "product_finished": assignment.get("product_finished", ""),
+                    }
+                )
 
     counts = {
         "work_orders": write_csv(canonical / "work_orders.csv", list(work_orders[0]), work_orders),
@@ -215,12 +239,41 @@ def build_textile(pack: Path) -> dict[str, Any]:
     }
     incident_time = epoch + timedelta(minutes=300 * 5)
     scenarios = [
-        {"scenario_id": "textile_machine_down", "incident_type": "machine_down", "machine_id": "MAQ118", "occurred_at": iso(incident_time), "duration_min": 180, "provenance": "synthetic_incident_on_real_schedule"},
-        {"scenario_id": "textile_capacity_degradation", "incident_type": "capacity_degradation", "machine_id": "MAQ120", "occurred_at": iso(incident_time + timedelta(hours=3)), "capacity_ratio": 0.5, "duration_min": 240, "provenance": "synthetic_incident_on_real_schedule"},
-        {"scenario_id": "textile_urgent_order", "incident_type": "urgent_order_insert", "occurred_at": iso(incident_time + timedelta(hours=6)), "product_id": source["product_requests"][0]["product"], "quantity": 2, "due_in_min": 360, "provenance": "synthetic_incident_on_real_schedule"},
+        {
+            "scenario_id": "textile_machine_down",
+            "incident_type": "machine_down",
+            "machine_id": "MAQ118",
+            "occurred_at": iso(incident_time),
+            "duration_min": 180,
+            "provenance": "synthetic_incident_on_real_schedule",
+        },
+        {
+            "scenario_id": "textile_capacity_degradation",
+            "incident_type": "capacity_degradation",
+            "machine_id": "MAQ120",
+            "occurred_at": iso(incident_time + timedelta(hours=3)),
+            "capacity_ratio": 0.5,
+            "duration_min": 240,
+            "provenance": "synthetic_incident_on_real_schedule",
+        },
+        {
+            "scenario_id": "textile_urgent_order",
+            "incident_type": "urgent_order_insert",
+            "occurred_at": iso(incident_time + timedelta(hours=6)),
+            "product_id": source["product_requests"][0]["product"],
+            "quantity": 2,
+            "due_in_min": 360,
+            "provenance": "synthetic_incident_on_real_schedule",
+        },
     ]
     write_json(scenario_dir / "incidents.json", scenarios)
-    return {"counts": counts, "scenario_count": len(scenarios), "limitations": ["Published schedule assignments cannot be deterministically joined to source work-order instances."]}
+    return {
+        "counts": counts,
+        "scenario_count": len(scenarios),
+        "limitations": [
+            "Published schedule assignments cannot be deterministically joined to source work-order instances."
+        ],
+    }
 
 
 def build_flexible_packaging(pack: Path) -> dict[str, Any]:
@@ -231,15 +284,18 @@ def build_flexible_packaging(pack: Path) -> dict[str, Any]:
     orders = read_sheet(base / "6-Data Order.xlsx", "6-Data Order", header_row=2)
     route_map = {int(row["No"]): str(row["Routing"]).split("-") for row in routes}
     product_map = {int(row["No"]): row for row in products}
-    resource_rows = [{
-        "machine_id": row["Code"],
-        "name": row["Machine Name"],
-        "capabilities": process_map(str(row["Machine Name"])),
-        "status": "available",
-        "minimum_speed": row.get("MinSpeed", ""),
-        "speed_ratio": row.get("Ratio Speed", ""),
-        "setup_time_min": row.get("SetupTime", ""),
-    } for row in machines]
+    resource_rows = [
+        {
+            "machine_id": row["Code"],
+            "name": row["Machine Name"],
+            "capabilities": process_map(str(row["Machine Name"])),
+            "status": "available",
+            "minimum_speed": row.get("MinSpeed", ""),
+            "speed_ratio": row.get("Ratio Speed", ""),
+            "setup_time_min": row.get("SetupTime", ""),
+        }
+        for row in machines
+    ]
     process_resources: dict[str, list[str]] = defaultdict(list)
     for row in resource_rows:
         process_resources[row["capabilities"]].append(str(row["machine_id"]))
@@ -251,15 +307,17 @@ def build_flexible_packaging(pack: Path) -> dict[str, Any]:
         wo_id = f"FLEX-WO-{order_no:04d}"
         product_id = int(order["Tipe Produk"])
         due = order["Deadline"]
-        work_orders.append({
-            "work_order_id": wo_id,
-            "product_id": f"FLEX-PRODUCT-{product_id:03d}",
-            "product_name": f"Flexible packaging type {product_id}",
-            "quantity": order["Running Meter"],
-            "priority": int(order["Prioritas"]),
-            "due_time": iso(due),
-            "status": "planned",
-        })
+        work_orders.append(
+            {
+                "work_order_id": wo_id,
+                "product_id": f"FLEX-PRODUCT-{product_id:03d}",
+                "product_name": f"Flexible packaging type {product_id}",
+                "quantity": order["Running Meter"],
+                "priority": int(order["Prioritas"]),
+                "due_time": iso(due),
+                "status": "planned",
+            }
+        )
         product = product_map[product_id]
         route = route_map[int(product["Routing"])]
         previous = ""
@@ -267,16 +325,18 @@ def build_flexible_packaging(pack: Path) -> dict[str, Any]:
             op_id = f"{wo_id}-OP-{sequence:02d}"
             lookup_process = "P2" if process == "P2b" else process
             eligible = process_resources.get(lookup_process, [])
-            operations.append({
-                "operation_id": op_id,
-                "work_order_id": wo_id,
-                "sequence": sequence,
-                "required_capability": process,
-                "processing_time_min": max(1, int(float(order["Running Meter"]) / 200)),
-                "eligible_machine_ids": "|".join(eligible),
-                "predecessors": previous,
-                "mapping_status": "mapped" if eligible else "unmapped",
-            })
+            operations.append(
+                {
+                    "operation_id": op_id,
+                    "work_order_id": wo_id,
+                    "sequence": sequence,
+                    "required_capability": process,
+                    "processing_time_min": max(1, int(float(order["Running Meter"]) / 200)),
+                    "eligible_machine_ids": "|".join(eligible),
+                    "predecessors": previous,
+                    "mapping_status": "mapped" if eligible else "unmapped",
+                }
+            )
             previous = op_id
 
     canonical = pack / "canonical"
@@ -286,13 +346,43 @@ def build_flexible_packaging(pack: Path) -> dict[str, Any]:
         "resources": write_csv(canonical / "resources.csv", list(resource_rows[0]), resource_rows),
     }
     incidents = [
-        {"scenario_id": "flex_printing_down", "incident_type": "machine_down", "machine_id": resource_rows[0]["machine_id"], "occurred_at": "2022-10-03T08:00:00+00:00", "duration_min": 240, "provenance": "synthetic_incident_on_public_research_data"},
-        {"scenario_id": "flex_urgent_order", "incident_type": "urgent_order_insert", "occurred_at": "2022-10-05T08:00:00+00:00", "source_work_order_id": work_orders[0]["work_order_id"], "priority": 100, "due_in_min": 720, "provenance": "synthetic_incident_on_public_research_data"},
-        {"scenario_id": "flex_material_delay", "incident_type": "material_shortage", "occurred_at": "2022-10-07T08:00:00+00:00", "affected_capability": "P2", "available_in_min": 480, "provenance": "synthetic_incident_on_public_research_data"},
+        {
+            "scenario_id": "flex_printing_down",
+            "incident_type": "machine_down",
+            "machine_id": resource_rows[0]["machine_id"],
+            "occurred_at": "2022-10-03T08:00:00+00:00",
+            "duration_min": 240,
+            "provenance": "synthetic_incident_on_public_research_data",
+        },
+        {
+            "scenario_id": "flex_urgent_order",
+            "incident_type": "urgent_order_insert",
+            "occurred_at": "2022-10-05T08:00:00+00:00",
+            "source_work_order_id": work_orders[0]["work_order_id"],
+            "priority": 100,
+            "due_in_min": 720,
+            "provenance": "synthetic_incident_on_public_research_data",
+        },
+        {
+            "scenario_id": "flex_material_delay",
+            "incident_type": "material_shortage",
+            "occurred_at": "2022-10-07T08:00:00+00:00",
+            "affected_capability": "P2",
+            "available_in_min": 480,
+            "provenance": "synthetic_incident_on_public_research_data",
+        },
     ]
     write_json(pack / "scenarios" / "incidents.json", incidents)
     unmapped = sum(row["mapping_status"] == "unmapped" for row in operations)
-    return {"counts": counts, "scenario_count": len(incidents), "unmapped_operations": unmapped, "limitations": ["Factory origin is not established by the repository page.", "Process-to-machine mapping is inferred from published machine names and is retained as an explicit assumption."]}
+    return {
+        "counts": counts,
+        "scenario_count": len(incidents),
+        "unmapped_operations": unmapped,
+        "limitations": [
+            "Factory origin is not established by the repository page.",
+            "Process-to-machine mapping is inferred from published machine names and is retained as an explicit assumption.",
+        ],
+    }
 
 
 def read_semicolon_csv(path: Path) -> list[dict[str, str]]:
@@ -303,10 +393,20 @@ def read_semicolon_csv(path: Path) -> list[dict[str, str]]:
 def build_aerospace(pack: Path) -> dict[str, Any]:
     base = next((pack / "raw" / "extracted").rglob("MaxFixturesPerTank.csv")).parent
     raw_material = {row["Item_ID"]: row for row in read_semicolon_csv(base / "RawMaterial.csv")}
-    max_fixture = {row["Item_ID"]: row for row in read_semicolon_csv(base / "MaxFixturesPerTank.csv")}
+    max_fixture = {
+        row["Item_ID"]: row for row in read_semicolon_csv(base / "MaxFixturesPerTank.csv")
+    }
     per_fixture = {row["Item_ID"]: row for row in read_semicolon_csv(base / "MaxPerFixture.csv")}
     tanks = ["B1", "B2", "B6", "LTS30"]
-    resources = [{"machine_id": f"TANK-{tank}", "name": tank, "capabilities": "surface_treatment_batch", "status": "available"} for tank in tanks]
+    resources = [
+        {
+            "machine_id": f"TANK-{tank}",
+            "name": tank,
+            "capabilities": "surface_treatment_batch",
+            "status": "available",
+        }
+        for tank in tanks
+    ]
     work_orders = []
     operations = []
     real_case_rows = []
@@ -318,12 +418,50 @@ def build_aerospace(pack: Path) -> dict[str, Any]:
                 continue
             item = row["Item_ID"]
             wo_id = f"AERO-{case_id}-{safe_id(item)}"
-            eligible = [f"TANK-{tank}" for tank in tanks if int(raw_material[item].get(tank, 0)) == 1]
-            fixture_capacity = max((int(max_fixture.get(item, {}).get(f"tank_{tank}", 0) or 0) for tank in ["B1", "B2"]), default=0)
+            eligible = [
+                f"TANK-{tank}" for tank in tanks if int(raw_material[item].get(tank, 0)) == 1
+            ]
+            fixture_capacity = max(
+                (
+                    int(max_fixture.get(item, {}).get(f"tank_{tank}", 0) or 0)
+                    for tank in ["B1", "B2"]
+                ),
+                default=0,
+            )
             units_per_fixture = int(per_fixture.get(item, {}).get("quantity", 1) or 1)
-            work_orders.append({"work_order_id": wo_id, "product_id": item, "product_name": item, "quantity": quantity, "priority": 0, "due_time": "", "status": "planned", "source_case": case_id})
-            operations.append({"operation_id": f"{wo_id}-OP-01", "work_order_id": wo_id, "sequence": 1, "required_capability": "surface_treatment_batch", "processing_time_min": 60, "eligible_machine_ids": "|".join(eligible), "fixture_capacity": fixture_capacity, "units_per_fixture": units_per_fixture})
-            real_case_rows.append({"case_id": case_id, "work_order_id": wo_id, "item_id": item, "quantity": quantity, "source_type": "real_demand"})
+            work_orders.append(
+                {
+                    "work_order_id": wo_id,
+                    "product_id": item,
+                    "product_name": item,
+                    "quantity": quantity,
+                    "priority": 0,
+                    "due_time": "",
+                    "status": "planned",
+                    "source_case": case_id,
+                }
+            )
+            operations.append(
+                {
+                    "operation_id": f"{wo_id}-OP-01",
+                    "work_order_id": wo_id,
+                    "sequence": 1,
+                    "required_capability": "surface_treatment_batch",
+                    "processing_time_min": 60,
+                    "eligible_machine_ids": "|".join(eligible),
+                    "fixture_capacity": fixture_capacity,
+                    "units_per_fixture": units_per_fixture,
+                }
+            )
+            real_case_rows.append(
+                {
+                    "case_id": case_id,
+                    "work_order_id": wo_id,
+                    "item_id": item,
+                    "quantity": quantity,
+                    "source_type": "real_demand",
+                }
+            )
 
     stress_rows = []
     for demand_file in sorted((base / "Simulated_Demand").glob("*.csv")):
@@ -331,23 +469,61 @@ def build_aerospace(pack: Path) -> dict[str, Any]:
         for row in read_semicolon_csv(demand_file):
             quantity = int(row["Quantity"])
             if quantity > 0:
-                stress_rows.append({"case_id": case_id, "item_id": row["Item_ID"], "quantity": quantity, "source_type": "simulated_stress"})
+                stress_rows.append(
+                    {
+                        "case_id": case_id,
+                        "item_id": row["Item_ID"],
+                        "quantity": quantity,
+                        "source_type": "simulated_stress",
+                    }
+                )
 
     canonical = pack / "canonical"
     counts = {
         "work_orders": write_csv(canonical / "work_orders.csv", list(work_orders[0]), work_orders),
         "operations": write_csv(canonical / "operations.csv", list(operations[0]), operations),
         "resources": write_csv(canonical / "resources.csv", list(resources[0]), resources),
-        "real_demand_rows": write_csv(canonical / "real_demand_cases.csv", list(real_case_rows[0]), real_case_rows),
-        "stress_rows": write_csv(canonical / "simulated_stress_cases.csv", list(stress_rows[0]), stress_rows),
+        "real_demand_rows": write_csv(
+            canonical / "real_demand_cases.csv", list(real_case_rows[0]), real_case_rows
+        ),
+        "stress_rows": write_csv(
+            canonical / "simulated_stress_cases.csv", list(stress_rows[0]), stress_rows
+        ),
     }
     incidents = [
-        {"scenario_id": "aero_tank_down", "incident_type": "machine_down", "machine_id": "TANK-B2", "occurred_at": "2026-06-11T08:00:00+00:00", "duration_min": 480, "provenance": "synthetic_incident_on_real_demand"},
-        {"scenario_id": "aero_fixture_shortage", "incident_type": "capacity_degradation", "machine_id": "TANK-B1", "occurred_at": "2026-06-11T09:00:00+00:00", "capacity_ratio": 0.5, "duration_min": 360, "provenance": "synthetic_incident_on_real_demand"},
-        {"scenario_id": "aero_double_demand", "incident_type": "urgent_order_insert", "occurred_at": "2026-06-11T10:00:00+00:00", "stress_source": "canonical/simulated_stress_cases.csv", "provenance": "publisher_simulated_stress"},
+        {
+            "scenario_id": "aero_tank_down",
+            "incident_type": "machine_down",
+            "machine_id": "TANK-B2",
+            "occurred_at": "2026-06-11T08:00:00+00:00",
+            "duration_min": 480,
+            "provenance": "synthetic_incident_on_real_demand",
+        },
+        {
+            "scenario_id": "aero_fixture_shortage",
+            "incident_type": "capacity_degradation",
+            "machine_id": "TANK-B1",
+            "occurred_at": "2026-06-11T09:00:00+00:00",
+            "capacity_ratio": 0.5,
+            "duration_min": 360,
+            "provenance": "synthetic_incident_on_real_demand",
+        },
+        {
+            "scenario_id": "aero_double_demand",
+            "incident_type": "urgent_order_insert",
+            "occurred_at": "2026-06-11T10:00:00+00:00",
+            "stress_source": "canonical/simulated_stress_cases.csv",
+            "provenance": "publisher_simulated_stress",
+        },
     ]
     write_json(pack / "scenarios" / "incidents.json", incidents)
-    return {"counts": counts, "scenario_count": len(incidents), "limitations": ["Dataset contains demand and capacity constraints, not an MES execution timeline or planner decision history."]}
+    return {
+        "counts": counts,
+        "scenario_count": len(incidents),
+        "limitations": [
+            "Dataset contains demand and capacity constraints, not an MES execution timeline or planner decision history."
+        ],
+    }
 
 
 def build_tablets(pack: Path) -> dict[str, Any]:
@@ -362,41 +538,56 @@ def build_tablets(pack: Path) -> dict[str, Any]:
     for row in bom_items:
         inputs_by_header[str(row["bomheaderid"])].append(str(row["materialid"]))
 
-    resources = [{
-        "machine_id": row["machineid"],
-        "name": row["machinename"],
-        "capabilities": row["probleminstanceid"],
-        "status": "available",
-        "capacity": row["capacity"],
-        "valid_from": iso(row["validitydatefrom"]),
-        "valid_to": iso(row["validitydateto"]),
-    } for row in capacities]
+    resources = [
+        {
+            "machine_id": row["machineid"],
+            "name": row["machinename"],
+            "capabilities": row["probleminstanceid"],
+            "status": "available",
+            "capacity": row["capacity"],
+            "valid_from": iso(row["validitydatefrom"]),
+            "valid_to": iso(row["validitydateto"]),
+        }
+        for row in capacities
+    ]
     work_orders = []
     operations = []
     for index, demand in enumerate(demands, 1):
         wo_id = f"TABLET-WO-{index:05d}"
         key = (demand["probleminstanceid"], demand["materialid"])
         header = header_by_key.get(key)
-        work_orders.append({
-            "work_order_id": wo_id,
-            "product_id": demand["materialid"],
-            "product_name": demand["materialid"],
-            "quantity": demand["quantity"],
-            "priority": 0,
-            "due_time": iso(demand["deliverydate"]),
-            "status": "planned",
-            "problem_instance": demand["probleminstanceid"],
-        })
-        operations.append({
-            "operation_id": f"{wo_id}-OP-01",
-            "work_order_id": wo_id,
-            "sequence": 1,
-            "required_capability": demand["probleminstanceid"],
-            "processing_time_min": max(1, round(float(header.get("productiontime", 1)) * float(demand["quantity"]))) if header else 1,
-            "eligible_machine_ids": header["machineid"] if header else "",
-            "material_inputs": "|".join(inputs_by_header.get(str(header.get("bomheaderid", "")), [])) if header else "",
-            "mapping_status": "mapped" if header else "missing_bom_header",
-        })
+        work_orders.append(
+            {
+                "work_order_id": wo_id,
+                "product_id": demand["materialid"],
+                "product_name": demand["materialid"],
+                "quantity": demand["quantity"],
+                "priority": 0,
+                "due_time": iso(demand["deliverydate"]),
+                "status": "planned",
+                "problem_instance": demand["probleminstanceid"],
+            }
+        )
+        operations.append(
+            {
+                "operation_id": f"{wo_id}-OP-01",
+                "work_order_id": wo_id,
+                "sequence": 1,
+                "required_capability": demand["probleminstanceid"],
+                "processing_time_min": max(
+                    1, round(float(header.get("productiontime", 1)) * float(demand["quantity"]))
+                )
+                if header
+                else 1,
+                "eligible_machine_ids": header["machineid"] if header else "",
+                "material_inputs": "|".join(
+                    inputs_by_header.get(str(header.get("bomheaderid", "")), [])
+                )
+                if header
+                else "",
+                "mapping_status": "mapped" if header else "missing_bom_header",
+            }
+        )
 
     setup_rows = [{key: value for key, value in row.items()} for row in setups]
     canonical = pack / "canonical"
@@ -407,13 +598,41 @@ def build_tablets(pack: Path) -> dict[str, Any]:
         "setup_matrix": write_csv(canonical / "setup_matrix.csv", list(setup_rows[0]), setup_rows),
     }
     incidents = [
-        {"scenario_id": "tablets_packaging_robot_down", "incident_type": "machine_down", "machine_id": resources[0]["machine_id"], "occurred_at": "2018-06-01T08:00:00+00:00", "duration_min": 1440, "provenance": "synthetic_incident_on_real_anonymized_planning_data"},
-        {"scenario_id": "tablets_material_hold", "incident_type": "quality_hold", "affected_material_id": work_orders[0]["product_id"], "occurred_at": "2018-07-01T08:00:00+00:00", "release_in_min": 720, "provenance": "synthetic_incident_on_real_anonymized_planning_data"},
-        {"scenario_id": "tablets_demand_surge", "incident_type": "urgent_order_insert", "source_work_order_id": work_orders[0]["work_order_id"], "quantity_multiplier": 2, "occurred_at": "2018-08-01T08:00:00+00:00", "provenance": "synthetic_incident_on_real_anonymized_planning_data"},
+        {
+            "scenario_id": "tablets_packaging_robot_down",
+            "incident_type": "machine_down",
+            "machine_id": resources[0]["machine_id"],
+            "occurred_at": "2018-06-01T08:00:00+00:00",
+            "duration_min": 1440,
+            "provenance": "synthetic_incident_on_real_anonymized_planning_data",
+        },
+        {
+            "scenario_id": "tablets_material_hold",
+            "incident_type": "quality_hold",
+            "affected_material_id": work_orders[0]["product_id"],
+            "occurred_at": "2018-07-01T08:00:00+00:00",
+            "release_in_min": 720,
+            "provenance": "synthetic_incident_on_real_anonymized_planning_data",
+        },
+        {
+            "scenario_id": "tablets_demand_surge",
+            "incident_type": "urgent_order_insert",
+            "source_work_order_id": work_orders[0]["work_order_id"],
+            "quantity_multiplier": 2,
+            "occurred_at": "2018-08-01T08:00:00+00:00",
+            "provenance": "synthetic_incident_on_real_anonymized_planning_data",
+        },
     ]
     write_json(pack / "scenarios" / "incidents.json", incidents)
     missing = sum(row["mapping_status"] != "mapped" for row in operations)
-    return {"counts": counts, "scenario_count": len(incidents), "missing_bom_headers": missing, "limitations": ["Lot-sizing data does not contain timestamped equipment incidents, planner actions, or execution outcomes."]}
+    return {
+        "counts": counts,
+        "scenario_count": len(incidents),
+        "missing_bom_headers": missing,
+        "limitations": [
+            "Lot-sizing data does not contain timestamped equipment incidents, planner actions, or execution outcomes."
+        ],
+    }
 
 
 def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
@@ -434,28 +653,32 @@ def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
         seed_incidents = list(csv.DictReader(handle))
 
     extension_operation = dict(seed_operations[-1])
-    extension_operation.update({
-        "operation_id": "OP-P0-SYNTHETIC-EXT-01",
-        "work_order_id": seed_orders[-1]["work_order_id"],
-        "sequence": "99",
-        "start_time": "2026-05-14T16:00:00+08:00",
-        "end_time": "2026-05-14T16:45:00+08:00",
-        "predecessors": seed_operations[-1]["operation_id"],
-        "successors": "",
-        "provenance": "synthetic_extension_to_required_shape",
-    })
+    extension_operation.update(
+        {
+            "operation_id": "OP-P0-SYNTHETIC-EXT-01",
+            "work_order_id": seed_orders[-1]["work_order_id"],
+            "sequence": "99",
+            "start_time": "2026-05-14T16:00:00+08:00",
+            "end_time": "2026-05-14T16:45:00+08:00",
+            "predecessors": seed_operations[-1]["operation_id"],
+            "successors": "",
+            "provenance": "synthetic_extension_to_required_shape",
+        }
+    )
     for row in seed_operations:
         row["provenance"] = "existing_local_surrogate_sample"
     seed_operations.append(extension_operation)
     extension_incident = dict(seed_incidents[-1])
-    extension_incident.update({
-        "incident_id": "INC-P0-SYNTHETIC-EXT-02",
-        "machine_id": seed_resources[-1]["machine_id"],
-        "start_time": "2026-05-14T15:20:00+08:00",
-        "severity": "P2-High",
-        "description": "Synthetic capacity degradation added to meet the 2-event surrogate test shape.",
-        "provenance": "synthetic_extension_to_required_shape",
-    })
+    extension_incident.update(
+        {
+            "incident_id": "INC-P0-SYNTHETIC-EXT-02",
+            "machine_id": seed_resources[-1]["machine_id"],
+            "start_time": "2026-05-14T15:20:00+08:00",
+            "severity": "P2-High",
+            "description": "Synthetic capacity degradation added to meet the 2-event surrogate test shape.",
+            "provenance": "synthetic_extension_to_required_shape",
+        }
+    )
     for row in seed_incidents:
         row["provenance"] = "existing_local_surrogate_sample"
     seed_incidents.append(extension_incident)
@@ -477,48 +700,68 @@ def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
             seed_order = seed_orders[index % len(seed_orders)]
             wo_id = f"DT-WO-{index + 1:05d}"
             due_time = epoch + timedelta(hours=24 + index % 168)
-            twin_orders.append({
-                "work_order_id": wo_id,
-                "product_id": seed_order.get("product_id", seed_order.get("product_code", "DT-PRODUCT")),
-                "quantity": seed_order.get("quantity", 1),
-                "priority": seed_order.get("priority", 0),
-                "due_time": iso(due_time),
-                "status": "planned",
-                "provenance": "synthetic_digital_twin_from_p0_sample",
-                "seed_work_order_id": seed_order.get("work_order_id", ""),
-                "generation_seed": 20260713,
-            })
+            twin_orders.append(
+                {
+                    "work_order_id": wo_id,
+                    "product_id": seed_order.get(
+                        "product_id", seed_order.get("product_code", "DT-PRODUCT")
+                    ),
+                    "quantity": seed_order.get("quantity", 1),
+                    "priority": seed_order.get("priority", 0),
+                    "due_time": iso(due_time),
+                    "status": "planned",
+                    "provenance": "synthetic_digital_twin_from_p0_sample",
+                    "seed_work_order_id": seed_order.get("work_order_id", ""),
+                    "generation_seed": 20260713,
+                }
+            )
             for local_index, seed_operation in enumerate(seed_operations):
                 if len(twin_operations) >= target_operations:
                     break
                 op_id = f"{wo_id}-OP-{local_index + 1:03d}"
-                machine_id = seed_operation.get("machine_id") or seed_operation.get("assigned_machine_id") or seed_resources[local_index % len(seed_resources)].get("machine_id", "DT-MACHINE")
+                machine_id = (
+                    seed_operation.get("machine_id")
+                    or seed_operation.get("assigned_machine_id")
+                    or seed_resources[local_index % len(seed_resources)].get(
+                        "machine_id", "DT-MACHINE"
+                    )
+                )
                 start = epoch + timedelta(minutes=len(twin_operations) * 3)
-                duration = int(float(seed_operation.get("processing_time_min") or seed_operation.get("standard_duration_min") or 30))
-                twin_operations.append({
-                    "operation_id": op_id,
-                    "work_order_id": wo_id,
-                    "sequence": local_index + 1,
-                    "machine_id": machine_id,
-                    "processing_time_min": duration,
-                    "planned_start": iso(start),
-                    "planned_end": iso(start + timedelta(minutes=duration)),
-                    "provenance": "synthetic_digital_twin_from_p0_sample",
-                    "seed_operation_id": seed_operation.get("operation_id", ""),
-                    "generation_seed": 20260713,
-                })
+                duration = int(
+                    float(
+                        seed_operation.get("processing_time_min")
+                        or seed_operation.get("standard_duration_min")
+                        or 30
+                    )
+                )
+                twin_operations.append(
+                    {
+                        "operation_id": op_id,
+                        "work_order_id": wo_id,
+                        "sequence": local_index + 1,
+                        "machine_id": machine_id,
+                        "processing_time_min": duration,
+                        "planned_start": iso(start),
+                        "planned_end": iso(start + timedelta(minutes=duration)),
+                        "provenance": "synthetic_digital_twin_from_p0_sample",
+                        "seed_operation_id": seed_operation.get("operation_id", ""),
+                        "generation_seed": 20260713,
+                    }
+                )
                 receipt_status = "completed" if len(twin_operations) % 23 else "failed"
-                receipts.append({
-                    "receipt_id": f"DT-MES-RECEIPT-{len(twin_operations):05d}",
-                    "operation_id": op_id,
-                    "work_order_id": wo_id,
-                    "machine_id": machine_id,
-                    "status": receipt_status,
-                    "occurred_at": iso(start + timedelta(minutes=duration)),
-                    "idempotency_key": f"dt-mes:{op_id}:v1",
-                    "terminal": True,
-                    "provenance": "synthetic_digital_twin_mes_receipt",
-                })
+                receipts.append(
+                    {
+                        "receipt_id": f"DT-MES-RECEIPT-{len(twin_operations):05d}",
+                        "operation_id": op_id,
+                        "work_order_id": wo_id,
+                        "machine_id": machine_id,
+                        "status": receipt_status,
+                        "occurred_at": iso(start + timedelta(minutes=duration)),
+                        "idempotency_key": f"dt-mes:{op_id}:v1",
+                        "terminal": True,
+                        "provenance": "synthetic_digital_twin_mes_receipt",
+                    }
+                )
                 sequence += 1
                 event = {
                     "event_id": f"DT-CDC-{sequence:05d}",
@@ -536,18 +779,22 @@ def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
     twin_incidents = []
     for index in range(300):
         seed_incident = seed_incidents[index % len(seed_incidents)]
-        machine = seed_incident.get("machine_id") or seed_resources[index % len(seed_resources)].get("machine_id", "DT-MACHINE")
-        twin_incidents.append({
-            "incident_id": f"DT-INCIDENT-{index + 1:04d}",
-            "incident_type": seed_incident.get("incident_type", "machine_down"),
-            "machine_id": machine,
-            "start_time": iso(epoch + timedelta(minutes=index * 37)),
-            "duration_min": 30 + (index % 12) * 15,
-            "severity": f"P{1 + index % 4}",
-            "provenance": "synthetic_digital_twin_from_p0_sample",
-            "seed_incident_id": seed_incident.get("incident_id", ""),
-            "generation_seed": 20260713,
-        })
+        machine = seed_incident.get("machine_id") or seed_resources[
+            index % len(seed_resources)
+        ].get("machine_id", "DT-MACHINE")
+        twin_incidents.append(
+            {
+                "incident_id": f"DT-INCIDENT-{index + 1:04d}",
+                "incident_type": seed_incident.get("incident_type", "machine_down"),
+                "machine_id": machine,
+                "start_time": iso(epoch + timedelta(minutes=index * 37)),
+                "duration_min": 30 + (index % 12) * 15,
+                "severity": f"P{1 + index % 4}",
+                "provenance": "synthetic_digital_twin_from_p0_sample",
+                "seed_incident_id": seed_incident.get("incident_id", ""),
+                "generation_seed": 20260713,
+            }
+        )
 
     order_fields = list(twin_orders[0])
     operation_fields = list(twin_operations[0])
@@ -558,31 +805,118 @@ def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
         "surrogate_operations": len(seed_operations),
         "surrogate_resources": len(seed_resources),
         "surrogate_downtime_events": len(seed_incidents),
-        "digital_twin_work_orders": write_csv(twin / "work_orders_10k.csv", order_fields, twin_orders),
-        "digital_twin_operations": write_csv(twin / "operations_10k.csv", operation_fields, twin_operations),
-        "digital_twin_incidents": write_csv(twin / "incidents_300.csv", incident_fields, twin_incidents),
-        "digital_twin_mes_receipts": write_csv(twin / "mes_terminal_receipts_10k.csv", receipt_fields, receipts),
+        "digital_twin_work_orders": write_csv(
+            twin / "work_orders_10k.csv", order_fields, twin_orders
+        ),
+        "digital_twin_operations": write_csv(
+            twin / "operations_10k.csv", operation_fields, twin_operations
+        ),
+        "digital_twin_incidents": write_csv(
+            twin / "incidents_300.csv", incident_fields, twin_incidents
+        ),
+        "digital_twin_mes_receipts": write_csv(
+            twin / "mes_terminal_receipts_10k.csv", receipt_fields, receipts
+        ),
         "digital_twin_cdc_events": sequence,
     }
-    write_json(twin / "generation_contract.json", {
-        "generation_seed": 20260713,
-        "parent_dataset": "datasets/p0_reality_pack",
-        "parent_shape": {"operations": len(seed_operations), "downtime_events": len(seed_incidents)},
-        "profiles": {"operations": 10_000, "incidents": 300, "mes_terminal_receipts": 10_000, "cdc_events": 10_000},
-        "provenance": "synthetic_digital_twin",
-        "allowed_claims": ["engineering_stability", "throughput", "idempotency", "cdc_sequence", "receipt_state_machine"],
-        "forbidden_claims": ["real_mes_validation", "real_shadow", "real_roi", "customer_production_reliability", "production_writeback_authorization"],
-    })
+    write_json(
+        twin / "generation_contract.json",
+        {
+            "generation_seed": 20260713,
+            "parent_dataset": "datasets/p0_reality_pack",
+            "parent_shape": {
+                "operations": len(seed_operations),
+                "downtime_events": len(seed_incidents),
+            },
+            "profiles": {
+                "operations": 10_000,
+                "incidents": 300,
+                "mes_terminal_receipts": 10_000,
+                "cdc_events": 10_000,
+            },
+            "provenance": "synthetic_digital_twin",
+            "allowed_claims": [
+                "engineering_stability",
+                "throughput",
+                "idempotency",
+                "cdc_sequence",
+                "receipt_state_machine",
+            ],
+            "forbidden_claims": [
+                "real_mes_validation",
+                "real_shadow",
+                "real_roi",
+                "customer_production_reliability",
+                "production_writeback_authorization",
+            ],
+        },
+    )
 
     rehearsal = pack / "customer_admission_rehearsal"
     dictionary_rows = [
-        {"source_object": "ERP_WORK_ORDER", "source_field": "work_order_id", "canonical_object": "WorkOrder", "canonical_field": "work_order_id", "type": "string", "required": True, "authority": "order_authority"},
-        {"source_object": "ERP_WORK_ORDER", "source_field": "due_time", "canonical_object": "WorkOrder", "canonical_field": "due_time", "type": "datetime-tz", "required": True, "authority": "order_authority"},
-        {"source_object": "MES_OPERATION", "source_field": "operation_id", "canonical_object": "Operation", "canonical_field": "operation_id", "type": "string", "required": True, "authority": "execution_authority"},
-        {"source_object": "MES_OPERATION", "source_field": "machine_id", "canonical_object": "Operation", "canonical_field": "machine_id", "type": "string", "required": True, "authority": "execution_authority"},
-        {"source_object": "MES_INCIDENT", "source_field": "start_time", "canonical_object": "Incident", "canonical_field": "start_time", "type": "datetime-tz", "required": True, "authority": "execution_authority"},
-        {"source_object": "MES_RECEIPT", "source_field": "status", "canonical_object": "ExecutionFeedback", "canonical_field": "status", "type": "enum", "required": True, "authority": "execution_authority"},
-        {"source_object": "PLANNER_DECISION", "source_field": "disposition", "canonical_object": "DecisionRecord", "canonical_field": "planner_disposition", "type": "enum", "required": True, "authority": "schedule_authority"},
+        {
+            "source_object": "ERP_WORK_ORDER",
+            "source_field": "work_order_id",
+            "canonical_object": "WorkOrder",
+            "canonical_field": "work_order_id",
+            "type": "string",
+            "required": True,
+            "authority": "order_authority",
+        },
+        {
+            "source_object": "ERP_WORK_ORDER",
+            "source_field": "due_time",
+            "canonical_object": "WorkOrder",
+            "canonical_field": "due_time",
+            "type": "datetime-tz",
+            "required": True,
+            "authority": "order_authority",
+        },
+        {
+            "source_object": "MES_OPERATION",
+            "source_field": "operation_id",
+            "canonical_object": "Operation",
+            "canonical_field": "operation_id",
+            "type": "string",
+            "required": True,
+            "authority": "execution_authority",
+        },
+        {
+            "source_object": "MES_OPERATION",
+            "source_field": "machine_id",
+            "canonical_object": "Operation",
+            "canonical_field": "machine_id",
+            "type": "string",
+            "required": True,
+            "authority": "execution_authority",
+        },
+        {
+            "source_object": "MES_INCIDENT",
+            "source_field": "start_time",
+            "canonical_object": "Incident",
+            "canonical_field": "start_time",
+            "type": "datetime-tz",
+            "required": True,
+            "authority": "execution_authority",
+        },
+        {
+            "source_object": "MES_RECEIPT",
+            "source_field": "status",
+            "canonical_object": "ExecutionFeedback",
+            "canonical_field": "status",
+            "type": "enum",
+            "required": True,
+            "authority": "execution_authority",
+        },
+        {
+            "source_object": "PLANNER_DECISION",
+            "source_field": "disposition",
+            "canonical_object": "DecisionRecord",
+            "canonical_field": "planner_disposition",
+            "type": "enum",
+            "required": True,
+            "authority": "schedule_authority",
+        },
     ]
     write_csv(rehearsal / "mes_data_dictionary.csv", list(dictionary_rows[0]), dictionary_rows)
     cases, planner_rows, rehearsal_receipts = [], [], []
@@ -595,37 +929,82 @@ def build_ulster_surrogate_and_twin(pack: Path) -> dict[str, Any]:
         disposition = dispositions[index % len(dispositions)]
         occurred_at = epoch + timedelta(hours=index * 5)
         receipt_id = f"REHEARSAL-RECEIPT-{number:03d}"
-        reason = {"accepted": "meets_constraints", "adjusted": "hidden_shift_constraint", "rejected": "material_status_unconfirmed"}[disposition]
-        cases.append({
-            "case_id": case_id,
-            "provenance": "synthetic_customer_admission_rehearsal",
-            "incident": {"type": seed_incident.get("type", "machine_down"), "occurred_at": iso(occurred_at), "machine_id": operation["machine_id"], "affected_operation_id": operation["operation_id"]},
-            "pre_incident_snapshot": {"snapshot_id": f"REHEARSAL-SNAPSHOT-{number:03d}", "snapshot_hash": hashlib.sha256(f"{case_id}:snapshot".encode()).hexdigest(), "as_of": iso(occurred_at - timedelta(minutes=1))},
-            "planner_result": {"disposition": disposition, "reason_code": reason},
-            "execution_outcome": {"receipt_id": receipt_id, "status": "completed" if disposition != "rejected" else "not_executed"},
-            "source_refs": [f"surrogate_sample/mes_operations.csv#{operation['seed_operation_id']}", f"surrogate_sample/mes_downtime_events.csv#{seed_incident['incident_id']}", f"customer_admission_rehearsal/execution_receipts.csv#{receipt_id}"],
-        })
-        planner_rows.append({"case_id": case_id, "planner_role": "synthetic_planner", "disposition": disposition, "reason_code": reason, "decided_at": iso(occurred_at + timedelta(minutes=20)), "provenance": "synthetic_customer_admission_rehearsal"})
-        rehearsal_receipts.append({"receipt_id": receipt_id, "case_id": case_id, "operation_id": operation["operation_id"], "status": "completed" if disposition != "rejected" else "not_executed", "terminal": True, "provenance": "synthetic_customer_admission_rehearsal"})
+        reason = {
+            "accepted": "meets_constraints",
+            "adjusted": "hidden_shift_constraint",
+            "rejected": "material_status_unconfirmed",
+        }[disposition]
+        cases.append(
+            {
+                "case_id": case_id,
+                "provenance": "synthetic_customer_admission_rehearsal",
+                "incident": {
+                    "type": seed_incident.get("type", "machine_down"),
+                    "occurred_at": iso(occurred_at),
+                    "machine_id": operation["machine_id"],
+                    "affected_operation_id": operation["operation_id"],
+                },
+                "pre_incident_snapshot": {
+                    "snapshot_id": f"REHEARSAL-SNAPSHOT-{number:03d}",
+                    "snapshot_hash": hashlib.sha256(f"{case_id}:snapshot".encode()).hexdigest(),
+                    "as_of": iso(occurred_at - timedelta(minutes=1)),
+                },
+                "planner_result": {"disposition": disposition, "reason_code": reason},
+                "execution_outcome": {
+                    "receipt_id": receipt_id,
+                    "status": "completed" if disposition != "rejected" else "not_executed",
+                },
+                "source_refs": [
+                    f"surrogate_sample/mes_operations.csv#{operation['seed_operation_id']}",
+                    f"surrogate_sample/mes_downtime_events.csv#{seed_incident['incident_id']}",
+                    f"customer_admission_rehearsal/execution_receipts.csv#{receipt_id}",
+                ],
+            }
+        )
+        planner_rows.append(
+            {
+                "case_id": case_id,
+                "planner_role": "synthetic_planner",
+                "disposition": disposition,
+                "reason_code": reason,
+                "decided_at": iso(occurred_at + timedelta(minutes=20)),
+                "provenance": "synthetic_customer_admission_rehearsal",
+            }
+        )
+        rehearsal_receipts.append(
+            {
+                "receipt_id": receipt_id,
+                "case_id": case_id,
+                "operation_id": operation["operation_id"],
+                "status": "completed" if disposition != "rejected" else "not_executed",
+                "terminal": True,
+                "provenance": "synthetic_customer_admission_rehearsal",
+            }
+        )
     write_json(rehearsal / "historical_incident_cases_30.json", cases)
     write_csv(rehearsal / "planner_dispositions.csv", list(planner_rows[0]), planner_rows)
     write_csv(rehearsal / "execution_receipts.csv", list(rehearsal_receipts[0]), rehearsal_receipts)
-    write_json(rehearsal / "admission_gate.json", {
-        "rehearsal_case_count": 30,
-        "real_customer_case_count": 0,
-        "real_mes_data_dictionary_received": False,
-        "real_execution_receipts_received": False,
-        "real_planner_dispositions_received": False,
-        "customer_admission_ready": False,
-        "provenance": "synthetic_customer_admission_rehearsal",
-    })
-    counts.update({
-        "admission_rehearsal_cases": len(cases),
-        "admission_rehearsal_dictionary_fields": len(dictionary_rows),
-        "admission_rehearsal_planner_dispositions": len(planner_rows),
-        "admission_rehearsal_execution_receipts": len(rehearsal_receipts),
-        "real_customer_cases": 0,
-    })
+    write_json(
+        rehearsal / "admission_gate.json",
+        {
+            "rehearsal_case_count": 30,
+            "real_customer_case_count": 0,
+            "real_mes_data_dictionary_received": False,
+            "real_execution_receipts_received": False,
+            "real_planner_dispositions_received": False,
+            "customer_admission_ready": False,
+            "provenance": "synthetic_customer_admission_rehearsal",
+        },
+    )
+    counts.update(
+        {
+            "admission_rehearsal_cases": len(cases),
+            "admission_rehearsal_dictionary_fields": len(dictionary_rows),
+            "admission_rehearsal_planner_dispositions": len(planner_rows),
+            "admission_rehearsal_execution_receipts": len(rehearsal_receipts),
+            "real_customer_cases": 0,
+        }
+    )
     return {
         "counts": counts,
         "digital_twin_status": "built_from_small_surrogate",
@@ -655,7 +1034,13 @@ def file_inventory(pack: Path) -> list[dict[str, Any]]:
             and "__pycache__" not in path.parts
             and path.suffix != ".pyc"
         ):
-            inventory.append({"path": str(path.relative_to(pack)), "bytes": path.stat().st_size, "sha256": sha256(path)})
+            inventory.append(
+                {
+                    "path": str(path.relative_to(pack)),
+                    "bytes": path.stat().st_size,
+                    "sha256": sha256(path),
+                }
+            )
     return inventory
 
 
@@ -679,7 +1064,9 @@ def build_pack(pack_id: str) -> dict[str, Any]:
         elif pack_id == "p1_tablets_manufacturing":
             result = build_tablets(pack)
     else:
-        result["limitations"] = ["Official source was unavailable during acquisition; no synthetic substitute was created."]
+        result["limitations"] = [
+            "Official source was unavailable during acquisition; no synthetic substitute was created."
+        ]
 
     quality = {
         "pack_id": pack_id,
@@ -710,7 +1097,8 @@ def build_pack(pack_id: str) -> dict[str, Any]:
             "Local p0_ulster_mes has no real anonymized MES raw files; all 5 expected files are missing and acquisition_status is acquisition_blocked. "
             "Available MES-shaped evidence is a 7-operation, 2-downtime-event surrogate plus digital-twin MES receipts. "
             "This does not validate real MES data, real Shadow, or real ROI."
-            if pack_id == "p0_ulster_mes" else None
+            if pack_id == "p0_ulster_mes"
+            else None
         ),
         "gate_interpretation": (
             {
@@ -724,7 +1112,8 @@ def build_pack(pack_id: str) -> dict[str, Any]:
                 "real_roi": False,
                 "production_writeback_authorization": False,
             }
-            if pack_id == "p0_ulster_mes" else None
+            if pack_id == "p0_ulster_mes"
+            else None
         ),
         "acquisition_status": quality["acquisition_status"],
         "generated_at": "2026-07-13T00:00:00+08:00",

@@ -103,7 +103,9 @@ async def seed_demo_data(
         encoding="utf-8",
     )
 
-    print(f"Demo data validated: blocking_errors={report.blocking_errors}, warnings={report.warnings}")
+    print(
+        f"Demo data validated: blocking_errors={report.blocking_errors}, warnings={report.warnings}"
+    )
     print(f"Wrote runtime artifacts to {runtime_dir}")
     print(f"Wrote validation report to {report_path}")
     if api_base_url:
@@ -201,10 +203,13 @@ def _affected_operations(
 def _render_markdown_report(artifacts: dict[str, Any]) -> str:
     validation = artifacts["validation_report"]
     issues = validation["issues"]
-    issue_lines = "\n".join(
-        f"- `{item['severity']}` `{item['code']}` {item['entity_type']} {item.get('entity_id')}: {item['message']}"
-        for item in issues
-    ) or "- No validation issues."
+    issue_lines = (
+        "\n".join(
+            f"- `{item['severity']}` `{item['code']}` {item['entity_type']} {item.get('entity_id')}: {item['message']}"
+            for item in issues
+        )
+        or "- No validation issues."
+    )
     return f"""# Demo Validation Report
 
 ## Dataset

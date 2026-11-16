@@ -11,14 +11,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+import asyncio  # noqa: E402
+
 from demo.scripts.seed_demo_data import (  # noqa: E402
     DEFAULT_REPORT_PATH,
     DEFAULT_RUNTIME_DIR,
     DEFAULT_SOURCE_DIR,
     seed_demo_data,
 )
-
-import asyncio  # noqa: E402
 
 
 def main() -> int:

@@ -28,19 +28,18 @@ from app.models.integration_control import (
     VersionedAssetRecord,
     WritebackCertificationReport,
 )
-from app.services.decision_readiness import (
+from app.services.data_gate.decision_readiness import (
     DecisionReadinessError,
     DecisionReadinessService,
 )
-from app.services.integration_control_validation import (
+from app.services.data_gate.integration_control_validation import (
     IntegrationControlValidationHarness,
 )
-from app.services.integration_registry import (
+from app.services.data_gate.integration_registry import (
     IntegrationRegistryError,
     IntegrationRegistryService,
 )
-from app.services.schema_drift_guard import SchemaDriftError, SchemaDriftGuard
-
+from app.services.data_gate.schema_drift_guard import SchemaDriftError, SchemaDriftGuard
 
 router = APIRouter(prefix="/api/v1/integration-control", tags=["integration-control"])
 
@@ -304,9 +303,7 @@ async def evaluate_decision_readiness(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
-@router.post(
-    "/validation/digital-twin", response_model=IntegrationControlValidationResult
-)
+@router.post("/validation/digital-twin", response_model=IntegrationControlValidationResult)
 async def validate_integration_control_plane(
     body: IntegrationControlValidationRequest,
     user: CurrentUser = Depends(get_optional_current_user),

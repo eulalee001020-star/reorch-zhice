@@ -5,7 +5,7 @@ ConstraintValidationReport, and CandidatePlan used by the
 Hybrid_Solver and downstream evaluation/recommendation layers.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -71,6 +71,4 @@ class CandidatePlan(ReOrchModel):
     feasibility_status: str  # "feasible" | "infeasible" | "timeout_partial"
     solver_metadata: SolverMetadata
     constraint_report: ConstraintValidationReport
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))

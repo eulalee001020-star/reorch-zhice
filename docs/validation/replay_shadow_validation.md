@@ -20,7 +20,7 @@ It answers:
 | Item | Implementation |
 | --- | --- |
 | Replay models | `app/models/replay_validation.py` |
-| Replay service | `app/services/replay_validation.py` |
+| Replay service | `app/services/validation/replay_validation.py` |
 | API endpoint | `POST /api/v1/planning/replay-validation/evaluate` |
 | Frontend API/types | `frontend/src/api/planning.ts`, `frontend/src/types/models.ts` |
 | Tests | `app/tests/test_replay_validation.py` |
@@ -49,7 +49,7 @@ Run:
 
 ```bash
 pytest app/tests/test_replay_validation.py -q
-python -m ruff check app/models/replay_validation.py app/services/replay_validation.py app/tests/test_replay_validation.py app/api/planning.py
+python -m ruff check app/models/replay_validation.py app/services/validation/replay_validation.py app/tests/test_replay_validation.py app/api/planning.py
 ```
 
 Expected outcome:

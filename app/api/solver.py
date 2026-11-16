@@ -14,7 +14,7 @@ Provides:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
@@ -45,6 +45,7 @@ _recommendation_store: dict[str, PlanSelectionOutput] = {}  # incident_id -> out
 
 class SolveRequest(BaseModel):
     """Optional body for POST /solve — currently empty, may carry overrides."""
+
     pass
 
 
@@ -77,18 +78,20 @@ class RecommendRequest(BaseModel):
     ),
     responses={404: {"description": "Incident 或依赖数据不存在"}},
 )
-async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) -> list[CandidatePlan]:
+async def solve_incident(
+    incident_id: UUID, body: SolveRequest | None = None
+) -> list[CandidatePlan]:
     from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
     from app.api.incidents import _incident_store
-    from app.services.hybrid_solver import HybridSolver
-    from app.services.persistence import (
+    from app.services.solver.hybrid_solver import HybridSolver
+    from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
+    from app.services.storage.persistence import (
         fetch_any_snapshot,
         fetch_impact_report,
         fetch_incident,
         fetch_strategy_recommendation,
         persist_candidate_plans,
     )
-    from app.services.solver_policy_orchestrator import SolverPolicyOrchestrator
 
     key = str(incident_id)
 
@@ -149,7 +152,7 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
         strategy_preferences={},
         adjustment_patterns=[],
         override_history=[],
-        updated_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=UTC),
     )
 
     orchestrator = SolverPolicyOrchestrator()
@@ -196,7 +199,7 @@ async def solve_incident(incident_id: UUID, body: SolveRequest | None = None) ->
     responses={404: {"description": "Incident 不存在或尚未求解"}},
 )
 async def list_candidate_plans(incident_id: UUID) -> list[CandidatePlan]:
-    from app.services.persistence import list_candidate_plans_from_db
+    from app.services.storage.persistence import list_candidate_plans_from_db
 
     key = str(incident_id)
     plans = _candidate_plans_store.get(key)
@@ -228,7 +231,7 @@ async def list_candidate_plans(incident_id: UUID) -> list[CandidatePlan]:
     responses={404: {"description": "方案不存在"}},
 )
 async def get_candidate_plan(plan_id: UUID) -> CandidatePlan:
-    from app.services.persistence import fetch_candidate_plan
+    from app.services.storage.persistence import fetch_candidate_plan
 
     key = str(plan_id)
     plan = _plan_index.get(key)
@@ -297,18 +300,18 @@ async def recommend_plan(
 ) -> PlanSelectionOutput:
     from app.api.analysis import _snapshot_store
     from app.api.incidents import _incident_store
-    from app.services.persistence import (
+    from app.services.recommendation.plan_quality_gate import PlanQualityGate
+    from app.services.recommendation.plan_recommendation_engine import (
+        NoFeasiblePlanError,
+        PlanRecommendationEngine,
+    )
+    from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
+    from app.services.storage.persistence import (
         fetch_any_snapshot,
         fetch_incident,
         list_candidate_plans_from_db,
         persist_plan_recommendation,
     )
-    from app.services.plan_recommendation_engine import (
-        NoFeasiblePlanError,
-        PlanRecommendationEngine,
-    )
-    from app.services.plan_quality_gate import PlanQualityGate
-    from app.services.plan_selection_input_builder import PlanSelectionInputBuilder
 
     key = str(incident_id)
 
@@ -434,7 +437,7 @@ async def recommend_plan(
     responses={404: {"description": "推荐结果不存在"}},
 )
 async def get_recommendation(incident_id: UUID) -> PlanSelectionOutput:
-    from app.services.persistence import fetch_plan_recommendation
+    from app.services.storage.persistence import fetch_plan_recommendation
 
     key = str(incident_id)
     output = _recommendation_store.get(key)

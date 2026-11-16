@@ -11,7 +11,7 @@ result. Cost telemetry is evidence, not permission to automate.
 | Item | Implementation |
 | --- | --- |
 | Observability models | `app/models/agent_observability.py` |
-| Cost summary service | `app/services/agent_observability.py` |
+| Cost summary service | `app/services/agent/agent_observability.py` |
 | API endpoint | `POST /api/v1/planning/agent-observability/summarize` |
 | Frontend API/types | `frontend/src/api/planning.ts`, `frontend/src/types/models.ts` |
 | Tests | `app/tests/test_shadow_observability.py` |

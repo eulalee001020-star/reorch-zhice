@@ -23,9 +23,7 @@ class SolverPolicyVersion(Base):
     module_name: Mapped[str] = mapped_column(String(128), nullable=False)
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
     config: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=utcnow,

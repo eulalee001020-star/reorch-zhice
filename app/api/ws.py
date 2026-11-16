@@ -13,29 +13,30 @@ Features:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
 # Supported event types
-EVENT_TYPES = frozenset({
-    "incident_created",
-    "incident_updated",
-    "impact_report_ready",
-    "strategy_selected",
-    "plans_generated",
-    "recommendation_updated",
-    "writeback_status_changed",
-})
+EVENT_TYPES = frozenset(
+    {
+        "incident_created",
+        "incident_updated",
+        "impact_report_ready",
+        "strategy_selected",
+        "plans_generated",
+        "recommendation_updated",
+        "writeback_status_changed",
+    }
+)
 
 # Max events to buffer for reconnect compensation
 MAX_EVENT_BUFFER = 100
@@ -44,11 +45,12 @@ MAX_EVENT_BUFFER = 100
 @dataclass
 class WSClient:
     """Represents a connected WebSocket client."""
+
     websocket: WebSocket
     user_id: str = "anonymous"
     role: str = "Shop_Floor_Executor"
     workshop_ids: list[str] = field(default_factory=list)
-    connected_at: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    connected_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class WebSocketManager:
@@ -95,7 +97,9 @@ class WebSocketManager:
         self._clients.pop(client_id, None)
         logger.info("WebSocket client disconnected: %s", client_id)
 
-    async def broadcast(self, event_type: str, data: dict[str, Any], workshop_id: str | None = None) -> None:
+    async def broadcast(
+        self, event_type: str, data: dict[str, Any], workshop_id: str | None = None
+    ) -> None:
         """Broadcast an event to all matching clients.
 
         Filters by role and workshop_id if applicable.
@@ -103,7 +107,7 @@ class WebSocketManager:
         event = {
             "event_type": event_type,
             "data": data,
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
             "workshop_id": workshop_id,
         }
         # Buffer for reconnect compensation
@@ -148,9 +152,7 @@ class WebSocketManager:
         """Check if a client should receive this event based on role/workshop."""
         # All roles receive all event types for MVP
         # Workshop filtering: if client has workshop_ids set, only send matching events
-        if client.workshop_ids and workshop_id and workshop_id not in client.workshop_ids:
-            return False
-        return True
+        return not (client.workshop_ids and workshop_id and workshop_id not in client.workshop_ids)
 
 
 # Module-level singleton
@@ -176,6 +178,7 @@ def _authenticate_ws(api_key: str | None) -> dict[str, str] | None:
 
 
 # ── WebSocket endpoint (Req 10.7, 15.4) ──────────────────────────
+
 
 @router.websocket("/api/v1/ws/incidents")
 async def websocket_incidents(

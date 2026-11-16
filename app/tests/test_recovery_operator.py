@@ -4,7 +4,7 @@ from app.models.recovery_operator import (
     RecoveryOperatorReplayCase,
     RecoveryOperatorRequest,
 )
-from app.services.recovery_operator import NonEquipmentRecoveryOperatorService
+from app.services.solver.recovery_operator import NonEquipmentRecoveryOperatorService
 
 
 def test_non_equipment_operators_cover_required_incident_types() -> None:

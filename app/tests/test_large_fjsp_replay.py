@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.large_fjsp_replay import LargeFjspReplayRequest
-from app.services.large_fjsp_replay import LargeFjspReplayService
+from app.services.solver.large_fjsp_replay import LargeFjspReplayService
 
 
 def test_large_fjsp_replay_generates_multiple_solver_backed_options() -> None:
@@ -44,7 +44,9 @@ def test_large_fjsp_replay_blocks_when_affected_operation_is_missing() -> None:
     assert response.results[1].can_generate_executable_plan is True
 
 
-def test_large_fjsp_replay_uses_controlled_frozen_release_when_frozen_successor_blocks_repair() -> None:
+def test_large_fjsp_replay_uses_controlled_frozen_release_when_frozen_successor_blocks_repair() -> (
+    None
+):
     request = _request()
     for row in request.schedule_rows:
         if row["operation_id"] == "WO-1-OP2":
@@ -55,9 +57,7 @@ def test_large_fjsp_replay_uses_controlled_frozen_release_when_frozen_successor_
 
     first = response.results[0]
     release = next(
-        option
-        for option in first.options
-        if option.policy_type == "controlled_frozen_zone_release"
+        option for option in first.options if option.policy_type == "controlled_frozen_zone_release"
     )
     assert release.feasibility_status == "feasible"
     assert release.kpi.frozen_change_count >= 1

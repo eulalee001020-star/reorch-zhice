@@ -8,7 +8,6 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 
-
 SyntheticReplayRow = dict[str, str | int | float | bool | None]
 
 

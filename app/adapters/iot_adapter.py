@@ -9,8 +9,9 @@ them to the Anomaly Intake Center for processing.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -90,7 +91,9 @@ class IoTAdapter:
 
         logger.info(
             "IoT event received: %s resource=%s type=%s",
-            event.event_id, event.resource_id, event.event_type,
+            event.event_id,
+            event.resource_id,
+            event.event_type,
         )
         return event
 
@@ -151,7 +154,7 @@ class IoTAdapter:
             elif isinstance(occurred_at_raw, datetime):
                 occurred_at = occurred_at_raw
             else:
-                occurred_at = datetime.now(tz=timezone.utc)
+                occurred_at = datetime.now(tz=UTC)
 
             return IoTEvent(
                 event_id=event_id,

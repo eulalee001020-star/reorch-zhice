@@ -7,7 +7,7 @@ before data enters planning, incident intake, or writeback workflows.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import Field
@@ -163,7 +163,9 @@ class AdapterMappingIssue(ReOrchModel):
 def map_work_order(raw: dict[str, Any], profile: AdapterMappingProfile) -> CanonicalWorkOrder:
     fields = profile.field_mapping.work_order
     work_order_id = str(_get(raw, fields["work_order_id"], raw.get("id", "")))
-    product_name = str(_get(raw, fields["product_name"], _get(raw, fields.get("product_id", ""), work_order_id)))
+    product_name = str(
+        _get(raw, fields["product_name"], _get(raw, fields.get("product_id", ""), work_order_id))
+    )
     return CanonicalWorkOrder(
         work_order_id=work_order_id,
         product_id=_optional_str(_get(raw, fields.get("product_id", ""), None)),
@@ -184,16 +186,12 @@ def map_operation(
 ) -> CanonicalOperation:
     fields = profile.field_mapping.operation
     required_capability = _optional_str(_get(raw, fields.get("required_capability", ""), None))
-    required_capabilities = _as_str_list(
-        _get(raw, fields.get("required_capabilities", ""), [])
-    )
+    required_capabilities = _as_str_list(_get(raw, fields.get("required_capabilities", ""), []))
     if required_capability and required_capability not in required_capabilities:
         required_capabilities.append(required_capability)
 
     machine_id = _optional_str(_get(raw, fields.get("machine_id", ""), None))
-    eligible_machine_ids = _as_str_list(
-        _get(raw, fields.get("eligible_machine_ids", ""), [])
-    )
+    eligible_machine_ids = _as_str_list(_get(raw, fields.get("eligible_machine_ids", ""), []))
     if machine_id and machine_id not in eligible_machine_ids:
         eligible_machine_ids.append(machine_id)
 
@@ -243,7 +241,9 @@ def map_incident(raw: dict[str, Any], profile: AdapterMappingProfile) -> Canonic
     incident_id = str(_get(raw, fields["incident_id"], raw.get("id", "")))
     return CanonicalIncident(
         incident_id=incident_id,
-        incident_type=str(_get(raw, fields["incident_type"], raw.get("incident_type", "machine_down"))),
+        incident_type=str(
+            _get(raw, fields["incident_type"], raw.get("incident_type", "machine_down"))
+        ),
         machine_id=str(_get(raw, fields["machine_id"], raw.get("resource_id", ""))),
         start_time=_parse_datetime(_get(raw, fields["start_time"], raw.get("occurred_at"))),
         severity=str(_get(raw, fields.get("severity", ""), IncidentSeverity.P3_MEDIUM.value)),
@@ -263,7 +263,7 @@ def build_schedule_snapshot(
     raw_data: dict[str, Any] | None = None,
 ) -> ScheduleSnapshot:
     """Convert canonical adapter objects into the ReOrch schedule model."""
-    reference_time = captured_at or datetime.now(tz=timezone.utc)
+    reference_time = captured_at or datetime.now(tz=UTC)
     ops_by_order: dict[str, list[CanonicalOperation]] = {}
     for operation in operations:
         ops_by_order.setdefault(operation.work_order_id, []).append(operation)
@@ -286,7 +286,8 @@ def build_schedule_snapshot(
                 Operation(
                     operation_id=op.operation_id,
                     work_order_id=op.work_order_id,
-                    resource_id=op.machine_id or (op.eligible_machine_ids[0] if op.eligible_machine_ids else ""),
+                    resource_id=op.machine_id
+                    or (op.eligible_machine_ids[0] if op.eligible_machine_ids else ""),
                     required_capabilities=op.required_capabilities,
                     start_time=start,
                     end_time=end,

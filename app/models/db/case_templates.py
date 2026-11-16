@@ -23,9 +23,7 @@ class CaseTemplate(TimestampMixin, Base):
     applicable_incident_type: Mapped[str] = mapped_column(String(64), nullable=False)
     recommended_strategy: Mapped[str] = mapped_column(String(64), nullable=False)
     parameters: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    status: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="draft"
-    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
 
     __table_args__ = (
         Index("ix_case_templates_status", "status"),

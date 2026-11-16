@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -48,7 +48,7 @@ from app.models.flexible_shop import (
     TransportConstraint,
     WipItem,
 )
-from app.services.flexible_shop_capability import (
+from app.services.solver.flexible_shop_capability import (
     CounterfactualReplayMatrixService,
     CounterfactualReplayRunner,
     DecompositionDynamicSolver,
@@ -176,8 +176,24 @@ def test_counterfactual_replay_matrix_aggregates_policy_effectiveness() -> None:
             cases=[
                 _case("C1", "bottleneck_failure_slack_lt_4h", "local_repair", True, True, -60, 10),
                 _case("C2", "bottleneck_failure_slack_lt_4h", "local_repair", True, True, -45, 12),
-                _case("C3", "bottleneck_failure_slack_lt_4h", "global_reschedule", True, False, -80, 45),
-                _case("C4", "bottleneck_failure_slack_lt_4h", "global_reschedule", True, False, -90, 52),
+                _case(
+                    "C3",
+                    "bottleneck_failure_slack_lt_4h",
+                    "global_reschedule",
+                    True,
+                    False,
+                    -80,
+                    45,
+                ),
+                _case(
+                    "C4",
+                    "bottleneck_failure_slack_lt_4h",
+                    "global_reschedule",
+                    True,
+                    False,
+                    -90,
+                    52,
+                ),
                 _case("C5", "material_eta_unknown", "wait_and_shift", True, False, 20, 5),
             ],
         )
@@ -207,9 +223,7 @@ def test_real_data_integration_blocks_core_mock_sources() -> None:
     response = RealDataIntegrationService().assess(request)
 
     assert response.overall_status == "blocked"
-    erp_check = next(
-        check for check in response.source_checks if check.source_system == "ERP"
-    )
+    erp_check = next(check for check in response.source_checks if check.source_system == "ERP")
     assert "erp_is_mock_source" in erp_check.blockers
 
 
@@ -327,7 +341,7 @@ def test_production_writeback_safety_gate_requires_audit_and_rollback() -> None:
 
 
 def test_execution_feedback_generates_policy_graph_update() -> None:
-    now = datetime(2026, 7, 6, 8, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 6, 8, tzinfo=UTC)
     response = ExecutionFeedbackService().ingest(
         ExecutionFeedbackIngestionRequest(
             site_id="SITE-FJSP",
@@ -464,7 +478,7 @@ async def test_flexible_shop_planning_api_endpoints() -> None:
                     ExecutionFeedbackSignal(
                         source_system="QMS",
                         event_type="rejected",
-                        observed_at=datetime(2026, 7, 6, 8, tzinfo=timezone.utc),
+                        observed_at=datetime(2026, 7, 6, 8, tzinfo=UTC),
                         quality_state="rejected",
                     )
                 ],
@@ -608,7 +622,7 @@ def _real_data_request() -> RealDataIntegrationRequest:
 
 
 def _large_context(operation_multiplier: int = 1) -> FlexibleShopContext:
-    now = datetime(2026, 7, 6, 8, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 6, 8, tzinfo=UTC)
     operations: list[FlexibleOperation] = []
     for index in range(max(2, operation_multiplier)):
         work_order_id = f"WO-{index + 1}"
@@ -792,7 +806,11 @@ def _large_context(operation_multiplier: int = 1) -> FlexibleShopContext:
                     eta_minutes=8,
                 )
             ],
-            buffers=[BufferConstraint(buffer_id="BUF-RAW", location_id="BUF-RAW", capacity=50, current_wip=10)],
+            buffers=[
+                BufferConstraint(
+                    buffer_id="BUF-RAW", location_id="BUF-RAW", capacity=50, current_wip=10
+                )
+            ],
         ),
         integration_sources={
             "ERP": "readonly_adapter",

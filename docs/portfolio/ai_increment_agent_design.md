@@ -76,7 +76,7 @@
 - 错误自动建单次数，应为 0。
 - 异常从输入到标准 Incident 的耗时。
 
-当前状态：`app/services/agent_workflow.py` 中已有 `IncidentAgent`，通过规则、正则和结构化模型完成 MVP 级异常理解；`app/models/agent.py` 中已有 `IncidentUnderstandingOutput`。后续如果接入 LLM，应优先替换抽取/归一层，而不是放开求解权限。
+当前状态：`app/services/agent/agent_workflow.py` 中已有 `IncidentAgent`，通过规则、正则和结构化模型完成 MVP 级异常理解；`app/models/agent.py` 中已有 `IncidentUnderstandingOutput`。后续如果接入 LLM，应优先替换抽取/归一层，而不是放开求解权限。
 
 ## 3. 规则候选 Agent
 
@@ -140,7 +140,7 @@ candidate
 - 同类 override 重复发生率是否下降。
 - 候选规则导致的求解不可行次数。
 
-当前状态：`RuleCandidateAgent` 已在 `app/services/agent_workflow.py` 落地，`/api/v1/agents/rules/compile` 可以把规则文本转成 `ConstraintCandidate`，并强制保持 `pending_human_review`。`FeedbackAgent` 也已接入规则候选输出，override 原因不会直接修改生产约束。
+当前状态：`RuleCandidateAgent` 已在 `app/services/agent/agent_workflow.py` 落地，`/api/v1/agents/rules/compile` 可以把规则文本转成 `ConstraintCandidate`，并强制保持 `pending_human_review`。`FeedbackAgent` 也已接入规则候选输出，override 原因不会直接修改生产约束。
 
 ## 4. 推荐解释 Agent
 
@@ -249,7 +249,7 @@ candidate
 - 失败案例占比和归因完整度。
 - 案例复用后是否减少同类人工 override。
 
-当前状态：`CaseMemoryAgent` 已在 `app/services/agent_workflow.py` 落地，`/api/v1/agents/case-memory/archive` 可以把 `DecisionRecord` 和 `ExecutionResult` 归档为 `CaseRecord`。MVP 仍以 in-memory 或基础持久化为主，下一步应补 pgvector 检索质量、执行结果回流和案例版本治理。
+当前状态：`CaseMemoryAgent` 已在 `app/services/agent/agent_workflow.py` 落地，`/api/v1/agents/case-memory/archive` 可以把 `DecisionRecord` 和 `ExecutionResult` 归档为 `CaseRecord`。MVP 仍以 in-memory 或基础持久化为主，下一步应补 pgvector 检索质量、执行结果回流和案例版本治理。
 
 ## 6. 偏好学习 Agent
 
@@ -302,7 +302,7 @@ candidate
 - replay 中延期、扰动、换线风险是否恶化。
 - 偏好建议被撤回或人工纠正的次数。
 
-当前状态：`PreferenceLearningAgent` 已在 `app/services/agent_workflow.py` 落地，`/api/v1/agents/preference/learn` 可以基于案例库生成 `PreferenceProfile`、证据摘要和 `ranking_tiebreaker_only` 建议。下一步仍应把偏好学习放在离线/准实时资产层：先跑历史 replay，再进入 shadow mode，最后只作为推荐排序的辅助因子。
+当前状态：`PreferenceLearningAgent` 已在 `app/services/agent/agent_workflow.py` 落地，`/api/v1/agents/preference/learn` 可以基于案例库生成 `PreferenceProfile`、证据摘要和 `ranking_tiebreaker_only` 建议。下一步仍应把偏好学习放在离线/准实时资产层：先跑历史 replay，再进入 shadow mode，最后只作为推荐排序的辅助因子。
 
 ## 7. 五个 Agent 与确定性模块的边界
 

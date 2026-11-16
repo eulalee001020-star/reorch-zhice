@@ -1,14 +1,8 @@
 """Tests for database schema definitions — verifies tables, columns, constraints, indexes."""
 
-import uuid
-
-from sqlalchemy import inspect as sa_inspect
-
-from app.core.database import Base
-
 # Ensure all models are loaded
 import app.models.db  # noqa: F401
-
+from app.core.database import Base
 
 EXPECTED_TABLES = [
     "workshops",
@@ -53,11 +47,24 @@ def test_incidents_table_columns():
     table = Base.metadata.tables["incidents"]
     col_names = {c.name for c in table.columns}
     required = {
-        "incident_id", "incident_type", "external_event_id", "occurred_at",
-        "workshop_id", "resource_id", "report_source", "source_system",
-        "severity", "status", "description",
-        "deduplicated_from", "raw_payload", "idempotency_key", "created_by", "version",
-        "created_at", "updated_at",
+        "incident_id",
+        "incident_type",
+        "external_event_id",
+        "occurred_at",
+        "workshop_id",
+        "resource_id",
+        "report_source",
+        "source_system",
+        "severity",
+        "status",
+        "description",
+        "deduplicated_from",
+        "raw_payload",
+        "idempotency_key",
+        "created_by",
+        "version",
+        "created_at",
+        "updated_at",
     }
     assert required.issubset(col_names), f"Missing: {required - col_names}"
 
@@ -116,9 +123,15 @@ def test_schedule_snapshots_has_versioning_fields():
     table = Base.metadata.tables["schedule_snapshots"]
     col_names = {c.name for c in table.columns}
     required = {
-        "source_system", "schema_version", "snapshot_version",
-        "parent_snapshot_id", "baseline_snapshot_id", "import_batch_id",
-        "snapshot_hash", "is_active", "created_by",
+        "source_system",
+        "schema_version",
+        "snapshot_version",
+        "parent_snapshot_id",
+        "baseline_snapshot_id",
+        "import_batch_id",
+        "snapshot_hash",
+        "is_active",
+        "created_by",
     }
     assert required.issubset(col_names)
 
@@ -135,7 +148,15 @@ def test_entity_versions_table_exists():
     """entity_versions table exists for audit trail."""
     table = Base.metadata.tables["entity_versions"]
     col_names = {c.name for c in table.columns}
-    required = {"id", "entity_type", "entity_id", "version_number", "data", "changed_by", "created_at"}
+    required = {
+        "id",
+        "entity_type",
+        "entity_id",
+        "version_number",
+        "data",
+        "changed_by",
+        "created_at",
+    }
     assert required.issubset(col_names)
 
 
@@ -184,8 +205,14 @@ def test_schedule_snapshot_operations_are_queryable_by_resource_time():
     table = Base.metadata.tables["schedule_snapshot_operations"]
     col_names = {c.name for c in table.columns}
     required = {
-        "snapshot_id", "operation_id", "work_order_id", "resource_id",
-        "start_time", "end_time", "is_frozen", "required_capabilities",
+        "snapshot_id",
+        "operation_id",
+        "work_order_id",
+        "resource_id",
+        "start_time",
+        "end_time",
+        "is_frozen",
+        "required_capabilities",
     }
     assert required.issubset(col_names)
     assert "ix_snapshot_ops_resource_time" in {idx.name for idx in table.indexes}
@@ -196,9 +223,14 @@ def test_candidate_plan_operations_are_queryable_by_resource_time():
     table = Base.metadata.tables["candidate_plan_operations"]
     col_names = {c.name for c in table.columns}
     required = {
-        "plan_id", "operation_id", "work_order_id",
-        "original_resource_id", "planned_resource_id",
-        "planned_start_time", "planned_end_time", "is_adjusted",
+        "plan_id",
+        "operation_id",
+        "work_order_id",
+        "original_resource_id",
+        "planned_resource_id",
+        "planned_start_time",
+        "planned_end_time",
+        "is_adjusted",
     }
     assert required.issubset(col_names)
     assert "ix_plan_ops_resource_time" in {idx.name for idx in table.indexes}
@@ -209,8 +241,15 @@ def test_outbox_events_support_pending_publish_scan():
     table = Base.metadata.tables["outbox_events"]
     col_names = {c.name for c in table.columns}
     required = {
-        "event_id", "aggregate_type", "aggregate_id", "event_type",
-        "payload", "status", "retry_count", "next_retry_at", "published_at",
+        "event_id",
+        "aggregate_type",
+        "aggregate_id",
+        "event_type",
+        "payload",
+        "status",
+        "retry_count",
+        "next_retry_at",
+        "published_at",
     }
     assert required.issubset(col_names)
     assert "ix_outbox_pending" in {idx.name for idx in table.indexes}

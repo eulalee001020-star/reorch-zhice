@@ -30,9 +30,7 @@ class ImpactReport(TimestampMixin, Base):
         ForeignKey("schedule_snapshots.snapshot_id", ondelete="SET NULL"),
         nullable=True,
     )
-    analysis_mode: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="normal"
-    )
+    analysis_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="normal")
     report_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
     analysis_reference_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

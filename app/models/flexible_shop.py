@@ -9,7 +9,6 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 
-
 IncidentCategory = Literal[
     "equipment_failure",
     "rush_order",
@@ -222,9 +221,7 @@ class FlexibleShopCapabilityRequest(ReOrchModel):
     execution_feedback_case_count: int = Field(default=0, ge=0)
     sandbox_writeback_ready: bool = False
     approved_writeback_roles: list[str] = Field(default_factory=list)
-    benchmark_operation_targets: list[int] = Field(
-        default_factory=lambda: [1000, 5000, 10000]
-    )
+    benchmark_operation_targets: list[int] = Field(default_factory=lambda: [1000, 5000, 10000])
 
 
 class FlexibleShopCapabilityResponse(ReOrchModel):

@@ -45,17 +45,13 @@ class Incident(TimestampMixin, Base):
     )
     incident_type: Mapped[str] = mapped_column(String(64), nullable=False)
     external_event_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    occurred_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     workshop_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     resource_id: Mapped[str] = mapped_column(String(128), nullable=False)
     report_source: Mapped[str] = mapped_column(String(32), nullable=False)
     source_system: Mapped[str | None] = mapped_column(String(64), nullable=True)
     severity: Mapped[str] = mapped_column(String(16), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="pending_analysis"
-    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending_analysis")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     deduplicated_from: Mapped[list[uuid.UUID] | None] = mapped_column(
         ARRAY(UUID(as_uuid=True)), nullable=True, default=list

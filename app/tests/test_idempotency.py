@@ -3,9 +3,7 @@
 Validates: Requirements 1.3, 7.6, 8.1, 17.2
 """
 
-import pytest
-
-from app.services.idempotency import (
+from app.services.governance.idempotency import (
     IdempotencyRecord,
     IdempotencyStore,
     check_idempotency,
@@ -58,8 +56,12 @@ class TestIdempotencyStore:
         assert existing.status_code == 201
 
     def test_different_keys_independent(self) -> None:
-        self.store.set("key-1", IdempotencyRecord(key="key-1", status_code=201, response_body={"id": "1"}))
-        self.store.set("key-2", IdempotencyRecord(key="key-2", status_code=201, response_body={"id": "2"}))
+        self.store.set(
+            "key-1", IdempotencyRecord(key="key-1", status_code=201, response_body={"id": "1"})
+        )
+        self.store.set(
+            "key-2", IdempotencyRecord(key="key-2", status_code=201, response_body={"id": "2"})
+        )
         assert self.store.get("key-1").response_body["id"] == "1"
         assert self.store.get("key-2").response_body["id"] == "2"
 

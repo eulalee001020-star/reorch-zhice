@@ -24,8 +24,7 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
-from app.services.evaluation_center import EvaluationCenter
-
+from app.services.recommendation.evaluation_center import EvaluationCenter
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -269,7 +268,10 @@ async def test_balanced_goal_mode_default(engine, baseline_snapshot):
     result_default = await engine.evaluate([plan], baseline_snapshot)
     result_balanced = await engine.evaluate([plan], baseline_snapshot, GoalMode.BALANCED)
 
-    assert result_default.rows[0].kpi_vector.normalized_score == result_balanced.rows[0].kpi_vector.normalized_score
+    assert (
+        result_default.rows[0].kpi_vector.normalized_score
+        == result_balanced.rows[0].kpi_vector.normalized_score
+    )
 
 
 @pytest.mark.asyncio

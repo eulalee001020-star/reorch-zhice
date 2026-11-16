@@ -11,7 +11,6 @@ Covers:
 - Rule-driven and learning-driven protocol (Req 24.9)
 """
 
-from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -28,15 +27,14 @@ from app.models.solver import (
     SolverMetadata,
 )
 from app.models.strategy import NeighborhoodConfig, StrategyRecommendation
-from app.services.neighborhood_selector import (
+from app.services.solver.neighborhood_selector import (
+    _STAGNATION_ESCALATION_THRESHOLD,
     MODULE_VERSION,
     NeighborhoodSelector,
-    _STAGNATION_ESCALATION_THRESHOLD,
-    _LOW_BUDGET_SECONDS,
 )
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
+
 
 def _make_strategy(
     strategy_type: StrategyType = StrategyType.LOCAL_REPAIR,
@@ -347,6 +345,7 @@ class TestPerturbationConstraint:
             strategy=_make_strategy(StrategyType.GLOBAL_RESCHEDULE),
             perturbation_constraint=0.8,
         )
+
         # With tight constraint, device_reassignment should rank lower
         def _find_rank(results: list[NeighborhoodConfig], nh_type: str) -> int:
             for i, r in enumerate(results):

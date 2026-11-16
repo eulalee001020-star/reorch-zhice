@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.services.production_validation_harness import ProductionValidationHarness  # noqa: E402
+from app.services.validation.production_validation_harness import ProductionValidationHarness  # noqa: E402
 
 
 def main() -> int:
@@ -23,9 +23,7 @@ def main() -> int:
         default=Path("output/production_digital_twin_validation.json"),
     )
     args = parser.parse_args()
-    response = ProductionValidationHarness().run(
-        scale_repetitions=args.scale_repetitions
-    )
+    response = ProductionValidationHarness().run(scale_repetitions=args.scale_repetitions)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(response.model_dump(mode="json"), ensure_ascii=False, indent=2),

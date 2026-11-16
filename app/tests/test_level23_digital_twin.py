@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.planning import router as planning_router
 from app.models.level23_digital_twin import Level23DigitalTwinReplayRequest
-from app.services.level23_digital_twin import Level23DigitalTwinReplayEvaluator
+from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
 
 
 def test_level23_digital_twin_evaluator_scores_rehearsal_pack() -> None:
@@ -68,9 +68,7 @@ def _request() -> Level23DigitalTwinReplayRequest:
         resources=[
             {"resource_id": "CNC-01", "resource_group": "CNC", "source_basis": "digital_twin"}
         ],
-        work_orders=[
-            {"work_order_id": "WO-1", "due_time": "2026-07-06 20:00:00"}
-        ],
+        work_orders=[{"work_order_id": "WO-1", "due_time": "2026-07-06 20:00:00"}],
         operations=[
             {
                 "operation_id": "OP-1",
