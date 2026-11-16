@@ -29,11 +29,7 @@ class SimulationSandbox:
         frozen_operation_ids: list[str] | None = None,
     ) -> SimulationResult:
         frozen = set(frozen_operation_ids or [])
-        baseline = {
-            op.operation_id: op
-            for wo in snapshot.work_orders
-            for op in wo.operations
-        }
+        baseline = {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
         total_shift = 0.0
         resource_switches = 0
         frozen_violations = 0
@@ -85,4 +81,3 @@ class SimulationSandbox:
             bottleneck_queue_risk=round(bottleneck_queue_risk, 4),
             risk_flags=flags,
         )
-

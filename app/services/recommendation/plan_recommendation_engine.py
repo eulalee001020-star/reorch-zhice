@@ -71,9 +71,7 @@ class PlanRecommendationEngine:
         feasible = _filter_feasible(candidates, selection_input.execution_constraints)
 
         if not feasible:
-            raise NoFeasiblePlanError(
-                "no_feasible_candidate_after_hard_constraint_filter"
-            )
+            raise NoFeasiblePlanError("no_feasible_candidate_after_hard_constraint_filter")
 
         # --- 2. Rank by normalized_score (descending) -------------------
         ranked = _rank_plans(feasible, weights_used)
@@ -89,14 +87,10 @@ class PlanRecommendationEngine:
         risk_flags = _collect_risk_flags(recommended, selection_input)
 
         # --- 6. Auto-preselection (Req 29.7, 29.8) ----------------------
-        auto_preselected = _should_auto_preselect(
-            confidence, risk_flags, self.confidence_threshold
-        )
+        auto_preselected = _should_auto_preselect(confidence, risk_flags, self.confidence_threshold)
 
         # --- 7. Build alternative_plan_ids (Req 29.4, 29.11) -----------
-        alternative_ids = [
-            p.plan_id for p in ranked if p.plan_id != recommended.plan_id
-        ]
+        alternative_ids = [p.plan_id for p in ranked if p.plan_id != recommended.plan_id]
 
         # --- 8. Build reason codes & summary (Req 29.9) -----------------
         reason_codes, reason_summary = _build_reasons(
@@ -157,9 +151,7 @@ def _filter_feasible(
     return feasible
 
 
-def _rank_plans(
-    plans: list[CandidatePlan], weights: dict[str, float]
-) -> list[CandidatePlan]:
+def _rank_plans(plans: list[CandidatePlan], weights: dict[str, float]) -> list[CandidatePlan]:
     """Sort plans by normalized_score descending."""
     # Rank by feasibility first, then by a deterministic KPI proxy computed
     # from the schedule itself. This keeps recommendation useful even when an
@@ -204,10 +196,7 @@ def _select_recommended(
                 _compute_kpi(ranked[0], weights).normalized_score
                 - _compute_kpi(ranked[1], weights).normalized_score
             )
-            if (
-                score_gap < 0.10
-                and ranked[1].feasibility_status == ranked[0].feasibility_status
-            ):
+            if score_gap < 0.10 and ranked[1].feasibility_status == ranked[0].feasibility_status:
                 recommended = ranked[1]
 
     return recommended
@@ -478,17 +467,12 @@ def _compute_kpi(plan: CandidatePlan, weights: dict[str, float]) -> KPIVector:
 
     effective_weights = weights or resolve_goal_weights("balanced")
     penalty = (
-        effective_weights.get("delayed_order_count", 0.0)
-        * min(delayed_order_count / 5, 1)
-        + effective_weights.get("max_delay_minutes", 0.0)
-        * min(max_delay_minutes / 480, 1)
+        effective_weights.get("delayed_order_count", 0.0) * min(delayed_order_count / 5, 1)
+        + effective_weights.get("max_delay_minutes", 0.0) * min(max_delay_minutes / 480, 1)
         + effective_weights.get("spi", 0.0) * min(spi, 1)
-        + effective_weights.get("resource_utilization_delta", 0.0)
-        * min(utilization_delta, 1)
-        + effective_weights.get("changeover_count_delta", 0.0)
-        * min(changeovers / 10, 1)
-        + effective_weights.get("critical_order_otd_impact", 0.0)
-        * (1 - critical_otd)
+        + effective_weights.get("resource_utilization_delta", 0.0) * min(utilization_delta, 1)
+        + effective_weights.get("changeover_count_delta", 0.0) * min(changeovers / 10, 1)
+        + effective_weights.get("critical_order_otd_impact", 0.0) * (1 - critical_otd)
     )
 
     return KPIVector(

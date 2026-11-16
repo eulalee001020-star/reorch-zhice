@@ -47,8 +47,7 @@ class CustomerConstraintIngestionService:
                 for row in material_availability or []
             ],
             quality_holds=[
-                QualityHoldRow.model_validate(_normalize_lists(row))
-                for row in quality_holds or []
+                QualityHoldRow.model_validate(_normalize_lists(row)) for row in quality_holds or []
             ],
             tooling_calendar=[
                 ToolingCalendarRow.model_validate(_normalize_lists(row))
@@ -67,8 +66,7 @@ class CustomerConstraintIngestionService:
                 for row in transport_lanes or []
             ],
             buffer_flows=[
-                BufferFlowRow.model_validate(_normalize_lists(row))
-                for row in buffer_flows or []
+                BufferFlowRow.model_validate(_normalize_lists(row)) for row in buffer_flows or []
             ],
             outsourcing_approvals=[
                 OutsourcingApprovalRow.model_validate(_normalize_lists(row))

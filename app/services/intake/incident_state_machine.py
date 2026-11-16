@@ -15,7 +15,6 @@ Any other transition raises IllegalStateTransitionError.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from app.models.enums import IncidentStatus
 
@@ -28,9 +27,7 @@ class IllegalStateTransitionError(Exception):
     def __init__(self, current: IncidentStatus, target: IncidentStatus) -> None:
         self.current = current
         self.target = target
-        super().__init__(
-            f"Illegal state transition: {current.value} → {target.value}"
-        )
+        super().__init__(f"Illegal state transition: {current.value} → {target.value}")
 
 
 # Legal transitions: current_state → set of allowed next states

@@ -100,9 +100,7 @@ class DecisionGraphService:
             "edge_count": len(graph.edges),
             "affected_operation_count": len(affected),
             "repairable_frontier_count": len(repairable),
-            "alternative_resource_options": sum(
-                len(values) for values in alternatives.values()
-            ),
+            "alternative_resource_options": sum(len(values) for values in alternatives.values()),
         }
         return DecisionGraphBuildResponse(
             graph=graph,
@@ -120,8 +118,7 @@ class RecoveryOperatorPortfolioService:
     def select(self, request: RecoveryOperatorRequest) -> RecoveryOperatorResponse:
         affected_count = len(request.decision_graph.affected_operation_ids)
         alternative_count = sum(
-            len(values)
-            for values in request.decision_graph.alternative_resources.values()
+            len(values) for values in request.decision_graph.alternative_resources.values()
         )
         scope = _repair_scope(affected_count, alternative_count)
         candidates = _operator_candidates(
@@ -256,9 +253,7 @@ def _directly_affected_operations(
     operation_map: dict[str, Operation],
 ) -> list[str]:
     if request.incident is None:
-        return sorted(
-            op_id for op_id, operation in operation_map.items() if operation.is_affected
-        )
+        return sorted(op_id for op_id, operation in operation_map.items() if operation.is_affected)
     incident = request.incident
     duration = 0
     if incident.raw_payload and incident.raw_payload.get("estimated_duration_minutes"):
@@ -393,9 +388,7 @@ def _operator_candidates(
                     "sequence_repair",
                     "cp_sat_lns",
                     scope,
-                    [
-                        f"{affected_count} affected operations can be isolated as a subgraph."
-                    ],
+                    [f"{affected_count} affected operations can be isolated as a subgraph."],
                     ["ConstraintGate", "QualityGate"],
                     [
                         "changed_operation_count",
@@ -506,9 +499,7 @@ def _constraint_gate(
     plans = request.candidate_plans
     if not plans:
         findings.append(
-            _finding(
-                "ConstraintGate", "fail", "blocker", "No candidate plans supplied."
-            )
+            _finding("ConstraintGate", "fail", "blocker", "No candidate plans supplied.")
         )
         return False
     if any(not plan.constraint_report.is_feasible for plan in plans):
@@ -538,9 +529,7 @@ def _evidence_gate(
 ) -> bool:
     if not request.source_refs:
         findings.append(
-            _finding(
-                "EvidenceGate", "fail", "warning", "Source references are missing."
-            )
+            _finding("EvidenceGate", "fail", "warning", "Source references are missing.")
         )
         return False
     findings.append(
@@ -579,9 +568,7 @@ def _replay_gate(
             )
         )
         return False
-    findings.append(
-        _finding("ReplayGate", "pass", "info", "Replay Top-N hit is valid.")
-    )
+    findings.append(_finding("ReplayGate", "pass", "info", "Replay Top-N hit is valid."))
     return True
 
 

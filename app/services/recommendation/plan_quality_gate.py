@@ -24,9 +24,7 @@ class PlanQualityGate:
         )
 
         if plan.feasibility_status == "timeout_partial":
-            warnings.append(
-                "Solver timed out; plan is partial and requires planner review."
-            )
+            warnings.append("Solver timed out; plan is partial and requires planner review.")
         if plan.solver_metadata.degradation_occurred:
             warnings.append(
                 f"Solver degraded: {plan.solver_metadata.degradation_reason or 'no reason recorded'}."

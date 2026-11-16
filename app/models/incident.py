@@ -5,8 +5,7 @@ Defines the IncidentCreateRequest (intake payload) and Incident
 and lifecycle metadata).
 """
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -24,15 +23,15 @@ class IncidentCreateRequest(ReOrchModel):
     """Payload accepted by Anomaly_Intake_Center to create an Incident."""
 
     incident_type: IncidentType
-    external_event_id: Optional[str] = None
+    external_event_id: str | None = None
     occurred_at: datetime
-    workshop_id: Optional[str] = None
+    workshop_id: str | None = None
     resource_id: str
     report_source: ReportSource
-    source_system: Optional[str] = None
-    description: Optional[str] = None
-    idempotency_key: Optional[str] = None
-    raw_payload: Optional[dict] = None
+    source_system: str | None = None
+    description: str | None = None
+    idempotency_key: str | None = None
+    raw_payload: dict | None = None
 
 
 class Incident(ReOrchModel):
@@ -40,19 +39,17 @@ class Incident(ReOrchModel):
 
     incident_id: UUID = Field(default_factory=uuid4)
     incident_type: IncidentType
-    external_event_id: Optional[str] = None
+    external_event_id: str | None = None
     occurred_at: datetime
-    workshop_id: Optional[str] = None
+    workshop_id: str | None = None
     resource_id: str
     report_source: ReportSource
-    source_system: Optional[str] = None
+    source_system: str | None = None
     severity: IncidentSeverity
     status: IncidentStatus = IncidentStatus.PENDING_ANALYSIS
-    description: Optional[str] = None
+    description: str | None = None
     deduplicated_from: list[UUID] = Field(default_factory=list)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
-    idempotency_key: Optional[str] = None
-    created_by: Optional[str] = None
-    raw_payload: Optional[dict] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    idempotency_key: str | None = None
+    created_by: str | None = None
+    raw_payload: dict | None = None

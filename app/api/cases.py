@@ -62,9 +62,7 @@ class CreateTemplateRequest(BaseModel):
         default_factory=list, description="适用异常类型列表"
     )
     recommended_strategy: str = Field(description="推荐策略类型")
-    key_parameter_thresholds: dict = Field(
-        default_factory=dict, description="关键参数阈值"
-    )
+    key_parameter_thresholds: dict = Field(default_factory=dict, description="关键参数阈值")
     created_by: str = Field(description="创建人标识")
 
 
@@ -75,12 +73,8 @@ class EditTemplateRequest(BaseModel):
     applicable_incident_types: list[str] | None = Field(
         default=None, description="适用异常类型列表"
     )
-    recommended_strategy: str | None = Field(
-        default=None, description="推荐策略类型"
-    )
-    key_parameter_thresholds: dict | None = Field(
-        default=None, description="关键参数阈值"
-    )
+    recommended_strategy: str | None = Field(default=None, description="推荐策略类型")
+    key_parameter_thresholds: dict | None = Field(default=None, description="关键参数阈值")
 
 
 class PublishResponse(BaseModel):
@@ -214,9 +208,7 @@ async def create_template(body: CreateTemplateRequest) -> CaseTemplate:
         404: {"description": "模板不存在"},
     },
 )
-async def edit_template(
-    template_id: UUID, body: EditTemplateRequest
-) -> CaseTemplate:
+async def edit_template(template_id: UUID, body: EditTemplateRequest) -> CaseTemplate:
     try:
         if _template_manager.get_template(template_id) is None:
             persisted = await fetch_case_template(template_id)

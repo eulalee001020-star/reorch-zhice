@@ -2,11 +2,10 @@
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text, text
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import Boolean, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from pgvector.sqlalchemy import Vector
 
 from app.core.database import Base
 from app.models.db.mixins import TimestampMixin
@@ -37,9 +36,7 @@ class CaseRecord(TimestampMixin, Base):
     execution_result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # pgvector embedding for similarity search
-    embedding: Mapped[list[float] | None] = mapped_column(
-        Vector(768), nullable=True
-    )
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
 
     __table_args__ = (
         Index("ix_case_records_incident_id", "incident_id"),

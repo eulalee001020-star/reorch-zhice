@@ -5,8 +5,8 @@ from __future__ import annotations
 from pydantic import Field
 
 from app.models.base import ReOrchModel
-from app.models.incident import Incident
 from app.models.impact import ImpactReport
+from app.models.incident import Incident
 from app.models.planning import DataReadinessReport, PlanQualityGateReport
 from app.models.replay_validation import ReplayValidationResponse
 from app.models.schedule import ScheduleSnapshot
@@ -82,9 +82,7 @@ class RecoveryOperatorRecommendation(ReOrchModel):
     why_selected: list[str] = Field(default_factory=list)
     required_gates: list[str] = Field(default_factory=list)
     expected_metrics: list[str] = Field(default_factory=list)
-    llm_role: str = (
-        "No final scheduling authority; explanation and rule-candidate support only."
-    )
+    llm_role: str = "No final scheduling authority; explanation and rule-candidate support only."
 
 
 class RecoveryOperatorResponse(ReOrchModel):

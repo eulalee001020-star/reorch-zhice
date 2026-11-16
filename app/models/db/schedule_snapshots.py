@@ -20,9 +20,7 @@ class ScheduleSnapshot(TimestampMixin, Base):
         default=uuid.uuid4,
         server_default=text("gen_random_uuid()"),
     )
-    captured_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     workshop_id: Mapped[str] = mapped_column(String(128), nullable=False)
     source_system: Mapped[str | None] = mapped_column(String(64), nullable=True)
     schema_version: Mapped[str] = mapped_column(

@@ -67,9 +67,7 @@ class PlanSelectionInputBuilder:
         PlanSelectionInput
             Fully assembled input ready for ``PlanRecommendationEngine``.
         """
-        goal_mode_str = (
-            goal_mode if isinstance(goal_mode, str) else goal_mode.value
-        )
+        goal_mode_str = goal_mode if isinstance(goal_mode, str) else goal_mode.value
 
         pref_dict: dict = {}
         if preference_profile is not None:

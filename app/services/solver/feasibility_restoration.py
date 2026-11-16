@@ -7,9 +7,10 @@ import hashlib
 import heapq
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Callable
+from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from app.core.config import settings
@@ -34,14 +35,13 @@ from app.models.production_runtime import (
 )
 from app.models.schedule import Resource, ScheduleDetail, ScheduleSnapshot
 from app.models.solver import ConstraintValidationReport, ConstraintViolation
-from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
 from app.services.constraints.constraint_assumption_registry import ConstraintAssumptionRegistry
 from app.services.constraints.constraint_conflict_refiner import ConstraintConflictRefiner
-from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
 from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.governance.recovery_approval_policy import RecoveryApprovalPolicy
-
+from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
+from app.services.solver.decomposition_executor import DecompositionExecutor
 
 _CLAIM_BOUNDARY = (
     "A feasibility certificate proves zero detected hard-constraint violations on "
@@ -107,9 +107,7 @@ class FeasibilityRestorationEngine:
         self._validator = validator or OperationalConstraintValidator()
         self._refiner = refiner or ConstraintConflictRefiner()
 
-    def evaluate(
-        self, request: FeasibilityRestorationRequest
-    ) -> FeasibilityRestorationResponse:
+    def evaluate(self, request: FeasibilityRestorationRequest) -> FeasibilityRestorationResponse:
         started = time.perf_counter()
         deadline = started + request.timeout_seconds
         if settings.app.env in {"staging", "production"} and (
@@ -237,9 +235,7 @@ class FeasibilityRestorationEngine:
         )
         if search.first_minimum_action_ids:
             conflict_report.core_status = "minimum_correction_set"
-            conflict_report.minimum_correction_action_ids = (
-                search.first_minimum_action_ids
-            )
+            conflict_report.minimum_correction_action_ids = search.first_minimum_action_ids
             conflict_report.optimality_proven = search.first_minimum_proven
             conflict_report.probe_count = search.trials
             conflict_report.explanation = (
@@ -248,9 +244,7 @@ class FeasibilityRestorationEngine:
                 "not extend to unregistered recovery operators."
             )
 
-        executable = [
-            pack for pack in search.packs if pack.status == "validated_feasible"
-        ]
+        executable = [pack for pack in search.packs if pack.status == "validated_feasible"]
         pending = [pack for pack in search.packs if pack.status == "pending_approval"]
         if executable:
             response_status = "recovery_available"
@@ -270,8 +264,7 @@ class FeasibilityRestorationEngine:
             unavailable_actions=generated.unavailable,
             safe_hold=safe_hold,
             trials=(
-                search.trials
-                + (2 if requested_strategy != StrategyType.GLOBAL_RESCHEDULE else 1)
+                search.trials + (2 if requested_strategy != StrategyType.GLOBAL_RESCHEDULE else 1)
             ),
             started=started,
         )
@@ -290,9 +283,7 @@ class FeasibilityRestorationEngine:
         seen: set[tuple[int, ...]] = set()
         for index in range(len(ordered)):
             initial_state: tuple[int, ...] = (index,)
-            heapq.heappush(
-                queue, (_state_key(initial_state, ordered), initial_state)
-            )
+            heapq.heappush(queue, (_state_key(initial_state, ordered), initial_state))
             seen.add(initial_state)
 
         packs: list[RecoveryPack] = []
@@ -328,9 +319,7 @@ class FeasibilityRestorationEngine:
             }:
                 unknown_seen = True
             if probe.schedule is not None and probe.validation.is_feasible:
-                optimality_proven = (
-                    not packs and not unknown_seen and action_space_complete
-                )
+                optimality_proven = not packs and not unknown_seen and action_space_complete
                 pack = self._build_pack(
                     request=request,
                     policy=policy,
@@ -341,9 +330,7 @@ class FeasibilityRestorationEngine:
                 )
                 packs.append(pack)
                 if not first_minimum_action_ids:
-                    first_minimum_action_ids = [
-                        action.action_id for action in selected
-                    ]
+                    first_minimum_action_ids = [action.action_id for action in selected]
                     first_minimum_proven = optimality_proven
                 if len(packs) >= target_pool and any(
                     item.status == "validated_feasible" for item in packs
@@ -556,34 +543,22 @@ class FeasibilityRestorationEngine:
                 tenant_id=request.tenant_id,
                 snapshot=snapshot,
                 incidents=[incident],
-                max_subproblem_operations=min(
-                    200, max(20, settings.solver.max_model_operations)
-                ),
+                max_subproblem_operations=min(200, max(20, settings.solver.max_model_operations)),
                 max_parallelism=min(4, settings.solver.max_concurrent_jobs),
                 timeout_seconds=max(0.1, min(deadline - time.perf_counter(), 60.0)),
                 goal_mode=_enum_value(request.goal_mode),
             )
         )
         feasible = response.status == "feasible" and response.final_schedule is not None
-        statuses = {
-            item.solver_status.upper() for item in response.subproblem_results
-        }
+        statuses = {item.solver_status.upper() for item in response.subproblem_results}
         subproblem_failure_classes = {
-            str(
-                item.solver_metadata.get("failure_classification", {}).get(
-                    "failure_class", ""
-                )
-            )
+            str(item.solver_metadata.get("failure_classification", {}).get("failure_class", ""))
             for item in response.subproblem_results
         }
         all_blockers = sorted(
             {
                 *response.blockers,
-                *(
-                    blocker
-                    for item in response.subproblem_results
-                    for blocker in item.blockers
-                ),
+                *(blocker for item in response.subproblem_results for blocker in item.blockers),
                 *(
                     str(blocker)
                     for item in response.subproblem_results
@@ -595,10 +570,7 @@ class FeasibilityRestorationEngine:
             raw_status = "FEASIBLE"
         elif "data_or_governance_blocked" in subproblem_failure_classes:
             raw_status = "GOVERNANCE_CONSTRAINT_BLOCKED"
-        elif (
-            "INFEASIBLE" in statuses
-            or "proven_infeasible" in subproblem_failure_classes
-        ):
+        elif "INFEASIBLE" in statuses or "proven_infeasible" in subproblem_failure_classes:
             raw_status = "INFEASIBLE"
         else:
             raw_status = "UNKNOWN"
@@ -607,9 +579,7 @@ class FeasibilityRestorationEngine:
             is_feasible=feasible,
             blockers=all_blockers,
         )
-        violations = [
-            ConstraintViolation.model_validate(item) for item in response.violations
-        ]
+        violations = [ConstraintViolation.model_validate(item) for item in response.violations]
         validation = ConstraintValidationReport(
             is_feasible=feasible,
             violations=violations,
@@ -741,9 +711,7 @@ def conservative_default_recovery_policy() -> RecoveryPolicy:
         version="1.0",
         customer_owned=False,
         rules=[
-            RecoveryActionRule(
-                action_type="expand_repair_scope", tier=0, auto_execute=True
-            ),
+            RecoveryActionRule(action_type="expand_repair_scope", tier=0, auto_execute=True),
             RecoveryActionRule(
                 action_type="release_planning_freeze",
                 tier=2,
@@ -810,8 +778,7 @@ def _generate_actions(
         quality_frozen = {
             str(operation_id)
             for row in raw.get("quality_holds", []) or []
-            if str(row.get("status", "held")).lower()
-            not in {"released", "cleared", "closed"}
+            if str(row.get("status", "held")).lower() not in {"released", "cleared", "closed"}
             for operation_id in row.get("blocked_operation_ids", []) or []
         }
         frozen = set(request.frozen_operation_ids) | {
@@ -921,9 +888,7 @@ def _generate_actions(
                     policy=policy,
                     rule=rule,
                     targets={
-                        "operation_ids": [
-                            str(item) for item in row.get("operation_ids", []) or []
-                        ],
+                        "operation_ids": [str(item) for item in row.get("operation_ids", []) or []],
                         "row_fingerprint": _row_fingerprint(row),
                     },
                     description=description,
@@ -935,8 +900,7 @@ def _generate_actions(
     rule = rules.get("defer_work_order")
     if rule:
         raw_work_orders = {
-            str(row.get("work_order_id", "")): row
-            for row in raw.get("work_orders", []) or []
+            str(row.get("work_order_id", "")): row for row in raw.get("work_orders", []) or []
         }
         for work_order in sorted(
             request.snapshot.work_orders, key=lambda item: (item.priority, item.work_order_id)
@@ -991,13 +955,9 @@ def _action(
 ) -> RecoveryAction:
     constraint_family = _ACTION_FAMILY[rule.action_type]
     if constraint_family not in {"schedule_scope", "operational_safety"} and not (
-        _CONSTRAINT_REGISTRY.action_is_registered(
-            constraint_family, rule.action_type
-        )
+        _CONSTRAINT_REGISTRY.action_is_registered(constraint_family, rule.action_type)
     ):
-        raise ValueError(
-            f"unregistered_recovery_action:{constraint_family}:{rule.action_type}"
-        )
+        raise ValueError(f"unregistered_recovery_action:{constraint_family}:{rule.action_type}")
     action_id = _fingerprint(
         {
             "snapshot_id": str(request.snapshot.snapshot_id),
@@ -1041,7 +1001,7 @@ def _approval_status(
         return "invalid", sorted(set(evidence_blockers))
     if rule.auto_execute:
         return "approved", []
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     matching = [item for item in approvals if item.action_id == action_id]
     invalid: list[str] = []
     valid_roles: set[str] = set()
@@ -1061,11 +1021,7 @@ def _approval_status(
                 invalid.append(reason or "approval_signature_invalid")
                 continue
         valid_roles.add(item.approver_role.casefold())
-    missing = [
-        role
-        for role in rule.required_approval_roles
-        if role.casefold() not in valid_roles
-    ]
+    missing = [role for role in rule.required_approval_roles if role.casefold() not in valid_roles]
     blockers = [*invalid, *(f"missing_approval_role:{role}" for role in missing)]
     if missing:
         return "pending", sorted(set(blockers))
@@ -1185,9 +1141,7 @@ def _remove_work_orders(
             row = dict(source)
             if key in row:
                 row[key] = [
-                    item
-                    for item in row.get(key, []) or []
-                    if str(item) not in removed_operations
+                    item for item in row.get(key, []) or [] if str(item) not in removed_operations
                 ]
                 if not row[key]:
                     continue
@@ -1243,11 +1197,7 @@ def _certificate(
         raise ValueError("cannot_issue_certificate_for_constraint_violating_schedule")
     action_ids = {action.action_id for action in actions}
     source_refs = sorted(
-        {
-            approval.source_ref
-            for approval in approvals
-            if approval.action_id in action_ids
-        }
+        {approval.source_ref for approval in approvals if approval.action_id in action_ids}
     )
     deferred = sorted(
         {
@@ -1259,9 +1209,7 @@ def _certificate(
     effective_fingerprint = _fingerprint(
         effective_snapshot.model_dump(mode="json"), prefix="snapshot"
     )
-    schedule_fingerprint = _fingerprint(
-        schedule.model_dump(mode="json"), prefix="schedule"
-    )
+    schedule_fingerprint = _fingerprint(schedule.model_dump(mode="json"), prefix="schedule")
     payload = {
         "original_snapshot_id": str(request.snapshot.snapshot_id),
         "effective_snapshot_fingerprint": effective_fingerprint,
@@ -1301,9 +1249,7 @@ def _expansion_action(
             for item in policy.rules
             if item.action_type == "expand_repair_scope" and item.enabled
         ),
-        RecoveryActionRule(
-            action_type="expand_repair_scope", tier=0, auto_execute=True
-        ),
+        RecoveryActionRule(action_type="expand_repair_scope", tier=0, auto_execute=True),
     )
     return _action(
         request=request,
@@ -1319,9 +1265,7 @@ def _expansion_action(
 def _safe_hold(
     request: FeasibilityRestorationRequest, policy: RecoveryPolicy
 ) -> SafeHoldDisposition:
-    affected = sorted(
-        {item.operation_id for item in request.impact_report.affected_operations}
-    )
+    affected = sorted({item.operation_id for item in request.impact_report.affected_operations})
     action_id = _fingerprint(
         {
             "snapshot_id": str(request.snapshot.snapshot_id),
@@ -1364,8 +1308,7 @@ def _planning_frozen_incident_ids(
     quality_frozen = {
         str(operation_id)
         for row in raw.get("quality_holds", []) or []
-        if str(row.get("status", "held")).lower()
-        not in {"released", "cleared", "closed"}
+        if str(row.get("status", "held")).lower() not in {"released", "cleared", "closed"}
         for operation_id in row.get("blocked_operation_ids", []) or []
     }
     frozen = set(frozen_operation_ids) | {
@@ -1401,14 +1344,8 @@ def _resources(snapshot: ScheduleSnapshot) -> list[Resource]:
     return result
 
 
-def _within_type_limits(
-    actions: list[RecoveryAction], policy: RecoveryPolicy
-) -> bool:
-    limits = {
-        rule.action_type: rule.max_uses_per_pack
-        for rule in policy.rules
-        if rule.enabled
-    }
+def _within_type_limits(actions: list[RecoveryAction], policy: RecoveryPolicy) -> bool:
+    limits = {rule.action_type: rule.max_uses_per_pack for rule in policy.rules if rule.enabled}
     counts: dict[str, int] = {}
     for action in actions:
         counts[action.action_type] = counts.get(action.action_type, 0) + 1
@@ -1421,9 +1358,7 @@ def _single_action_key(action: RecoveryAction) -> tuple[float, ...]:
     return (*_actions_key([action]), float(int(action.action_id[-8:], 16)))
 
 
-def _state_key(
-    state: tuple[int, ...], actions: list[RecoveryAction]
-) -> tuple[float, ...]:
+def _state_key(state: tuple[int, ...], actions: list[RecoveryAction]) -> tuple[float, ...]:
     return (*_actions_key([actions[index] for index in state]), *map(float, state))
 
 

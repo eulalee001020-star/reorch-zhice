@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.core.config import settings
+from app.main import app
 from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.feasibility_restoration import (
     FeasibilityRestorationRequest,
@@ -18,17 +18,16 @@ from app.models.feasibility_restoration import (
 )
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
-from app.services.solver.cp_sat_scheduler import CpSatScheduleResult
 from app.services.constraints.constraint_assumption_registry import ConstraintAssumptionRegistry
+from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
+from app.services.governance.recovery_approval_policy import RecoveryApprovalPolicy
+from app.services.solver.cp_sat_scheduler import CpSatScheduleResult
 from app.services.solver.feasibility_restoration import (
     FeasibilityRestorationEngine,
     conservative_default_recovery_policy,
 )
-from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
-from app.services.governance.recovery_approval_policy import RecoveryApprovalPolicy
 
-
-NOW = datetime(2026, 7, 13, 8, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 13, 8, 0, tzinfo=UTC)
 
 
 def test_classifier_does_not_treat_timeout_as_proven_infeasible() -> None:
@@ -60,9 +59,7 @@ def test_constraint_registry_forbids_direct_quality_relaxation() -> None:
     assert qms.direct_relaxation == "forbidden"
     assert "safe_hold" in qms.recovery_action_types
     assert planning_freeze is not None
-    assert planning_freeze.direct_relaxation == (
-        "versioned_policy_and_approval_required"
-    )
+    assert planning_freeze.direct_relaxation == ("versioned_policy_and_approval_required")
 
 
 def test_relaxable_deadline_produces_pending_minimum_correction_set() -> None:
@@ -74,9 +71,7 @@ def test_relaxable_deadline_produces_pending_minimum_correction_set() -> None:
     assert response.classification.failure_class == "proven_infeasible"
     assert response.conflict_report.core_status == "minimum_correction_set"
     first = response.recovery_packs[0]
-    assert [action.action_type for action in first.actions] == [
-        "relax_operation_deadline"
-    ]
+    assert [action.action_type for action in first.actions] == ["relax_operation_deadline"]
     assert first.status == "pending_approval"
     assert first.preview_schedule is not None
     assert first.executable_schedule is None
@@ -114,9 +109,7 @@ def test_two_independent_conflicts_require_minimum_two_action_pack() -> None:
 
     first = response.recovery_packs[0]
     assert len(first.actions) == 2
-    assert {action.action_type for action in first.actions} == {
-        "relax_operation_deadline"
-    }
+    assert {action.action_type for action in first.actions} == {"relax_operation_deadline"}
     assert first.total_penalty_cost == 2000
     assert first.optimality_proven is True
     assert response.conflict_report.minimum_correction_action_ids == [
@@ -128,13 +121,9 @@ def test_material_shortage_uses_substitute_only_as_pending_what_if() -> None:
     response = FeasibilityRestorationEngine().evaluate(_request("material"))
 
     assert response.status == "pending_approval"
-    assert response.conflict_report.conflicts[0].constraint_family == (
-        "material_availability"
-    )
+    assert response.conflict_report.conflicts[0].constraint_family == ("material_availability")
     first = response.recovery_packs[0]
-    assert [action.action_type for action in first.actions] == [
-        "activate_substitute_material"
-    ]
+    assert [action.action_type for action in first.actions] == ["activate_substitute_material"]
     assert first.pending_approval_roles == ["Engineering", "Quality"]
     assert first.executable_schedule is None
 
@@ -145,9 +134,7 @@ def test_planned_freeze_requires_explicit_release_approval() -> None:
     assert response.classification.failure_class == "proven_infeasible"
     assert response.status == "pending_approval"
     first = response.recovery_packs[0]
-    assert [action.action_type for action in first.actions] == [
-        "release_planning_freeze"
-    ]
+    assert [action.action_type for action in first.actions] == ["release_planning_freeze"]
     assert first.actions[0].approval_status == "pending"
 
 
@@ -163,9 +150,7 @@ def test_qms_block_is_never_sent_to_relaxation_search() -> None:
 
 
 def test_unknown_solver_status_preserves_baseline_without_relaxation() -> None:
-    engine = FeasibilityRestorationEngine(
-        scheduler_factory=lambda: _AlwaysUnknownScheduler()
-    )
+    engine = FeasibilityRestorationEngine(scheduler_factory=lambda: _AlwaysUnknownScheduler())
 
     response = engine.evaluate(_request("deadline"))
 
@@ -199,9 +184,7 @@ def test_production_certificate_requires_signed_multi_role_approvals(
         request.model_copy(update={"approvals": unsigned})
     )
     signed = [
-        approval.model_copy(
-            update={"signature": RecoveryApprovalPolicy.sign(approval)}
-        )
+        approval.model_copy(update={"signature": RecoveryApprovalPolicy.sign(approval)})
         for approval in unsigned
     ]
     signed_response = FeasibilityRestorationEngine().evaluate(
@@ -241,9 +224,7 @@ async def test_production_api_requires_customer_owned_policy(monkeypatch) -> Non
         )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == (
-        "active_customer_owned_recovery_policy_required"
-    )
+    assert response.json()["detail"] == ("active_customer_owned_recovery_policy_required")
 
 
 def test_large_snapshot_routes_through_bounded_decomposition(monkeypatch) -> None:
@@ -261,16 +242,12 @@ def test_large_snapshot_routes_through_bounded_decomposition(monkeypatch) -> Non
 def test_large_infeasible_snapshot_restores_inside_decomposition(monkeypatch) -> None:
     monkeypatch.setattr(settings.solver, "max_model_operations", 20)
 
-    response = FeasibilityRestorationEngine().evaluate(
-        _large_request(material_conflict=True)
-    )
+    response = FeasibilityRestorationEngine().evaluate(_large_request(material_conflict=True))
 
     assert response.classification.failure_class == "proven_infeasible"
     assert response.status == "pending_approval"
     assert response.recovery_packs
-    assert response.recovery_packs[0].actions[0].action_type == (
-        "activate_substitute_material"
-    )
+    assert response.recovery_packs[0].actions[0].action_type == ("activate_substitute_material")
 
 
 class _AlwaysUnknownScheduler:
@@ -284,9 +261,7 @@ class _AlwaysUnknownScheduler:
 
 def _request(kind: str) -> FeasibilityRestorationRequest:
     raw_data: dict[str, object] = {
-        "resources": [
-            {"resource_id": "M1", "name": "M1", "capabilities": ["cnc"]}
-        ],
+        "resources": [{"resource_id": "M1", "name": "M1", "capabilities": ["cnc"]}],
         "work_orders": [
             {
                 "work_order_id": "WO1",
@@ -558,9 +533,7 @@ def _two_deadline_request() -> FeasibilityRestorationRequest:
     )
     snapshot = request.snapshot.model_copy(deep=True)
     raw = copy.deepcopy(snapshot.raw_data or {})
-    raw["resources"].append(
-        {"resource_id": "M2", "name": "M2", "capabilities": ["cnc"]}
-    )
+    raw["resources"].append({"resource_id": "M2", "name": "M2", "capabilities": ["cnc"]})
     raw["work_orders"].append(
         {
             "work_order_id": "WO2",
@@ -600,6 +573,4 @@ def _two_deadline_request() -> FeasibilityRestorationRequest:
     impact = request.impact_report.model_copy(
         update={"schedule_snapshot_id": snapshot.snapshot_id}, deep=True
     )
-    return request.model_copy(
-        update={"snapshot": snapshot, "impact_report": impact}, deep=True
-    )
+    return request.model_copy(update={"snapshot": snapshot, "impact_report": impact}, deep=True)

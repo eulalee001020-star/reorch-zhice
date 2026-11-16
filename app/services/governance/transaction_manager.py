@@ -10,10 +10,10 @@ Provides:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Awaitable
-from uuid import UUID
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,9 @@ class TransactionError(Exception):
         self.operation = operation
         self.reason = reason
         self.rollback_performed = rollback_performed
-        super().__init__(f"Transaction failed [{operation}]: {reason} (rollback={'yes' if rollback_performed else 'no'})")
+        super().__init__(
+            f"Transaction failed [{operation}]: {reason} (rollback={'yes' if rollback_performed else 'no'})"
+        )
 
 
 class ReferentialIntegrityError(Exception):
@@ -40,6 +42,7 @@ class ReferentialIntegrityError(Exception):
 @dataclass
 class TransactionResult:
     """Result of a managed transaction."""
+
     success: bool
     operation: str
     data: Any = None
@@ -49,7 +52,7 @@ class TransactionResult:
 
     def __post_init__(self) -> None:
         if not self.timestamp:
-            self.timestamp = datetime.now(tz=timezone.utc).isoformat()
+            self.timestamp = datetime.now(tz=UTC).isoformat()
 
 
 class TransactionManager:

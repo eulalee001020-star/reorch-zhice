@@ -15,7 +15,7 @@ import json
 import math
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -55,12 +55,8 @@ def run_load_gate(
     incident_total = sum(int(sample["incident_count"]) for sample in samples)
     solved_total = sum(int(sample["solved_incident_count"]) for sample in samples)
     solved_rate = solved_total / incident_total if incident_total else 0.0
-    capacity_rejections = sum(
-        int(sample["solver_capacity_rejection_count"]) for sample in samples
-    )
-    decomposition_required = sum(
-        int(sample["decomposition_required_count"]) for sample in samples
-    )
+    capacity_rejections = sum(int(sample["solver_capacity_rejection_count"]) for sample in samples)
+    decomposition_required = sum(int(sample["decomposition_required_count"]) for sample in samples)
     p50 = _percentile(durations, 0.50)
     p95 = _percentile(durations, 0.95)
     load_gate_passed = (
@@ -76,7 +72,7 @@ def run_load_gate(
 
     first = samples[0] if samples else {}
     return {
-        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
+        "generated_at": datetime.now(tz=UTC).isoformat(),
         "evidence_scope": evidence_scope,
         "input_sha256": input_sha256,
         "workshop_id": request.workshop_id,
@@ -112,9 +108,7 @@ def _run_once(payload: dict[str, Any], run_index: int) -> dict[str, Any]:
     started = time.perf_counter()
     response = LargeFjspReplayService().run(request)
     duration = time.perf_counter() - started
-    statuses = [
-        option.solver_status for result in response.results for option in result.options
-    ]
+    statuses = [option.solver_status for result in response.results for option in result.options]
     return {
         "run_index": run_index,
         "duration_seconds": round(duration, 6),
@@ -124,9 +118,7 @@ def _run_once(payload: dict[str, Any], run_index: int) -> dict[str, Any]:
         "solved_incident_count": response.solved_incident_count,
         "feasible_option_count": response.feasible_option_count,
         "solver_capacity_rejection_count": statuses.count("SOLVER_CAPACITY_EXHAUSTED"),
-        "decomposition_required_count": statuses.count(
-            "INSTANCE_REQUIRES_DECOMPOSITION"
-        ),
+        "decomposition_required_count": statuses.count("INSTANCE_REQUIRES_DECOMPOSITION"),
         "permission_level": response.permission_level,
         "readiness_score": response.readiness_score,
     }

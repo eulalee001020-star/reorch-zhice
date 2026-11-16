@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from app.models.integration_control import (
     ConstraintDefinitionDraft,
     DataFieldObservation,
     DecisionReadinessRequest,
+    SchemaObservationRequest,
     SourceAuthorityMatrixDraft,
     SourceAuthorityRule,
 )
@@ -28,14 +29,12 @@ from app.services.data_gate.integration_registry import (
     IntegrationRegistryError,
     IntegrationRegistryService,
 )
-from app.services.storage.operational_store import RelationalOperationalStore
 from app.services.data_gate.schema_drift_guard import SchemaDriftGuard
-from app.models.integration_control import SchemaObservationRequest
-
+from app.services.storage.operational_store import RelationalOperationalStore
 
 TENANT = "TENANT-TEST"
 ACTOR = "admin-test"
-REFERENCE_TIME = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+REFERENCE_TIME = datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
 
 
 def test_full_integration_control_digital_twin_passes() -> None:
@@ -52,8 +51,7 @@ def test_full_integration_control_digital_twin_passes() -> None:
     assert result.writeback_certification.passed is True
     assert len(result.writeback_certification.checks) == 15
     assert any(
-        check.check_id == "transient_retry_single_apply"
-        and check.status == "pass"
+        check.check_id == "transient_retry_single_apply" and check.status == "pass"
         for check in result.writeback_certification.checks
     )
     assert result.overview.production_writeback_certified is False
@@ -83,11 +81,7 @@ def test_asset_versions_are_immutable_and_activation_requires_named_admin() -> N
         )
 
     changed = draft.model_copy(
-        update={
-            "rules": [
-                draft.rules[0].model_copy(update={"source_system": "ERP"})
-            ]
-        }
+        update={"rules": [draft.rules[0].model_copy(update={"source_system": "ERP"})]}
     )
     with pytest.raises(IntegrationRegistryError, match="immutable_integration_asset_collision"):
         registry.register_authority_matrix(changed, ACTOR)
@@ -111,9 +105,9 @@ def test_equal_priority_authority_conflict_is_rejected() -> None:
     )
 
     with pytest.raises(IntegrationRegistryError, match="equal_priority_conflict"):
-        IntegrationRegistryService(
-            RelationalOperationalStore()
-        ).register_authority_matrix(draft, ACTOR)
+        IntegrationRegistryService(RelationalOperationalStore()).register_authority_matrix(
+            draft, ACTOR
+        )
 
 
 def test_constraint_activation_requires_three_executed_results() -> None:
@@ -144,9 +138,7 @@ def test_constraint_activation_requires_three_executed_results() -> None:
 
 def test_missing_hard_field_blocks_scenario_readiness() -> None:
     store = RelationalOperationalStore()
-    result = IntegrationControlValidationHarness(store).run(
-        tenant_id=TENANT, actor_id=ACTOR
-    )
+    result = IntegrationControlValidationHarness(store).run(tenant_id=TENANT, actor_id=ACTOR)
     observations = [
         DataFieldObservation(
             canonical_path=check.check_id.removeprefix("field:"),
@@ -163,8 +155,7 @@ def test_missing_hard_field_blocks_scenario_readiness() -> None:
             evidence_refs=["test:field"],
         )
         for check in result.readiness_manifest.checks
-        if check.check_id.startswith("field:")
-        and not check.check_id.endswith("planned_end")
+        if check.check_id.startswith("field:") and not check.check_id.endswith("planned_end")
     ]
 
     blocked = DecisionReadinessService(store).evaluate(
@@ -206,9 +197,7 @@ def test_breaking_schema_observation_is_deduplicated_in_quarantine() -> None:
 
 def test_readiness_manifest_tampering_is_detected() -> None:
     store = RelationalOperationalStore()
-    result = IntegrationControlValidationHarness(store).run(
-        tenant_id=TENANT, actor_id=ACTOR
-    )
+    result = IntegrationControlValidationHarness(store).run(tenant_id=TENANT, actor_id=ACTOR)
     with store.session() as session, session.begin():
         row = session.scalar(
             select(IntegrationAssetRecordORM).where(
@@ -219,7 +208,7 @@ def test_readiness_manifest_tampering_is_detected() -> None:
         )
         assert row is not None
         payload = dict(row.payload)
-        payload["expires_at"] = (datetime.now(tz=timezone.utc) + timedelta(days=30)).isoformat()
+        payload["expires_at"] = (datetime.now(tz=UTC) + timedelta(days=30)).isoformat()
         row.payload = payload
 
     with pytest.raises(DecisionReadinessError, match="fingerprint_mismatch"):

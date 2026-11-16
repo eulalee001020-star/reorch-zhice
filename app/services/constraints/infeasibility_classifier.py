@@ -7,7 +7,6 @@ from typing import Any
 
 from app.models.feasibility_restoration import FailureClassification
 
-
 _GOVERNANCE_MARKERS = (
     "GOVERNANCE",
     "QMS_",

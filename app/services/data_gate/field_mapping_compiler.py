@@ -31,9 +31,19 @@ _ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
         "sequence": ("sequence", "seq", "step_no", "step"),
         "required_capability": ("required_capability", "capability", "process_type"),
         "required_capabilities": ("required_capabilities", "capabilities", "skills"),
-        "processing_time_min": ("processing_time_min", "duration_minutes", "minutes", "process_minutes"),
+        "processing_time_min": (
+            "processing_time_min",
+            "duration_minutes",
+            "minutes",
+            "process_minutes",
+        ),
         "machine_id": ("machine_id", "resource_id", "equipment_id", "workcenter_id"),
-        "eligible_machine_ids": ("eligible_machine_ids", "eligible_resource_ids", "machines", "resources"),
+        "eligible_machine_ids": (
+            "eligible_machine_ids",
+            "eligible_resource_ids",
+            "machines",
+            "resources",
+        ),
         "start_time": ("start_time", "start", "planned_start"),
         "end_time": ("end_time", "end", "planned_end"),
         "predecessors": ("predecessors", "predecessor_ids", "prev_ops"),
@@ -125,9 +135,7 @@ def _compile_entity(
     mapping: dict[str, str] = {}
     normalized_headers = {_normalize(header): header for header in headers}
     for canonical_field, aliases in _ALIASES[entity_type].items():
-        source_field, confidence, reason = _best_match(
-            canonical_field, aliases, normalized_headers
-        )
+        source_field, confidence, reason = _best_match(canonical_field, aliases, normalized_headers)
         if source_field:
             mapping[canonical_field] = source_field
         suggestions.append(

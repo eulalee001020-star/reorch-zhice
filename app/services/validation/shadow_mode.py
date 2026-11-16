@@ -54,8 +54,7 @@ def _missing_required_fields(request: ShadowCaseCaptureRequest) -> list[str]:
     if not request.source_refs:
         missing.append("source_refs")
     if request.planner_decision.decision_status in {"rejected", "tweaked"} and not (
-        request.planner_decision.override_reason
-        or request.planner_decision.tweak_summary
+        request.planner_decision.override_reason or request.planner_decision.tweak_summary
     ):
         missing.append("planner_decision.override_reason_or_tweak_summary")
     return missing

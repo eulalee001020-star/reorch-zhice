@@ -23,15 +23,13 @@ class DatabaseSettings(BaseSettings):
     @property
     def async_url(self) -> str:
         return (
-            f"postgresql+asyncpg://{self.user}:{self.password}"
-            f"@{self.host}:{self.port}/{self.name}"
+            f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
         )
 
     @property
     def sync_url(self) -> str:
         return (
-            f"postgresql+psycopg2://{self.user}:{self.password}"
-            f"@{self.host}:{self.port}/{self.name}"
+            f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
         )
 
 
@@ -79,9 +77,7 @@ class AppSettings(BaseSettings):
     name: str = "ReOrch 智策"
     version: str = "0.1.0"
     debug: bool = False
-    env: str = Field(
-        default="development", description="development | staging | production"
-    )
+    env: str = Field(default="development", description="development | staging | production")
     log_level: str = "INFO"
     require_durable_persistence: bool = False
 

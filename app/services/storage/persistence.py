@@ -9,7 +9,7 @@ can keep the existing in-memory behavior.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -17,6 +17,7 @@ from uuid import UUID
 from sqlalchemy import desc, func, select
 
 from app.core.database import async_session_factory
+from app.models.case import CaseRecord, CaseTemplate, PreferenceProfile
 from app.models.db.audit_logs import AuditLog as AuditLogORM
 from app.models.db.candidate_plans import CandidatePlan as CandidatePlanORM
 from app.models.db.decision_records import DecisionRecord as DecisionRecordORM
@@ -28,7 +29,6 @@ from app.models.db.schedule_fact import PlanRecommendation as PlanRecommendation
 from app.models.db.schedule_fact import WritebackJob as WritebackJobORM
 from app.models.db.schedule_snapshots import ScheduleSnapshot as ScheduleSnapshotORM
 from app.models.decision import DecisionRecord
-from app.models.case import CaseRecord, CaseTemplate, PreferenceProfile
 from app.models.enums import WritebackStatus
 from app.models.execution import ExecutionResult
 from app.models.impact import ImpactReport
@@ -73,7 +73,7 @@ async def persist_audit_log(
                     request_id=request_id,
                     ip_address=ip_address,
                     details=details or {},
-                    timestamp=datetime.now(tz=timezone.utc),
+                    timestamp=datetime.now(tz=UTC),
                 )
             )
             await session.commit()
@@ -147,15 +147,19 @@ async def list_latest_entity_versions(entity_type: str) -> list[dict[str, Any]] 
     try:
         async with async_session_factory() as session:
             rows = (
-                await session.execute(
-                    select(EntityVersionORM)
-                    .where(EntityVersionORM.entity_type == entity_type)
-                    .order_by(
-                        EntityVersionORM.entity_id,
-                        desc(EntityVersionORM.version_number),
+                (
+                    await session.execute(
+                        select(EntityVersionORM)
+                        .where(EntityVersionORM.entity_type == entity_type)
+                        .order_by(
+                            EntityVersionORM.entity_id,
+                            desc(EntityVersionORM.version_number),
+                        )
                     )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             latest: dict[str, dict[str, Any]] = {}
             for row in rows:
                 latest.setdefault(row.entity_id, dict(row.data))
@@ -408,9 +412,7 @@ async def fetch_snapshot(snapshot_id: UUID) -> ScheduleSnapshot | None:
         return None
 
 
-async def persist_impact_report(
-    report: ImpactReport, *, user_id: str | None = None
-) -> bool:
+async def persist_impact_report(report: ImpactReport, *, user_id: str | None = None) -> bool:
     """Persist an impact report as JSONB."""
     payload = _json(report)
     try:
@@ -536,12 +538,14 @@ def _candidate_from_row(row: CandidatePlanORM) -> CandidatePlan:
         "gantt_version": row.gantt_version or "1.0",
         "solver_chain": row.solver_chain,
         "feasibility_status": row.feasibility_status,
-        "solver_metadata": row.solver_metadata or {
+        "solver_metadata": row.solver_metadata
+        or {
             "solve_time_seconds": 0.0,
             "iteration_count": 0,
             "objective_trajectory": [],
         },
-        "constraint_report": row.constraint_report or {
+        "constraint_report": row.constraint_report
+        or {
             "is_feasible": row.feasibility_status != "infeasible",
             "violations": [],
             "checked_constraints": [],
@@ -593,13 +597,17 @@ async def persist_plan_recommendation(
     try:
         async with async_session_factory() as session:
             rows = (
-                await session.execute(
-                    select(PlanRecommendationORM).where(
-                        PlanRecommendationORM.incident_id == incident_id,
-                        PlanRecommendationORM.is_active.is_(True),
+                (
+                    await session.execute(
+                        select(PlanRecommendationORM).where(
+                            PlanRecommendationORM.incident_id == incident_id,
+                            PlanRecommendationORM.is_active.is_(True),
+                        )
                     )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             for row in rows:
                 row.is_active = False
             session.add(
@@ -652,9 +660,7 @@ async def fetch_plan_recommendation(incident_id: UUID) -> PlanSelectionOutput | 
     return PlanSelectionOutput.model_validate(payload) if payload else None
 
 
-async def persist_decision_record(
-    record: DecisionRecord, *, user_id: str | None = None
-) -> bool:
+async def persist_decision_record(record: DecisionRecord, *, user_id: str | None = None) -> bool:
     """Persist a planner decision record and full audit payload."""
     payload = _json(record)
     try:
@@ -836,9 +842,7 @@ async def fetch_writeback_job_by_incident(incident_id: UUID) -> dict[str, Any] |
                 "target_system": row.target_system,
                 "status": row.status,
                 "retry_count": row.retry_count,
-                "next_retry_at": row.next_retry_at.isoformat()
-                if row.next_retry_at
-                else None,
+                "next_retry_at": row.next_retry_at.isoformat() if row.next_retry_at else None,
                 "request_payload": row.request_payload,
                 "response_payload": row.response_payload,
                 "error_message": row.error_message,
@@ -852,7 +856,7 @@ async def fetch_writeback_job_by_incident(incident_id: UUID) -> dict[str, Any] |
 
 async def list_retryable_writeback_jobs(now: datetime | None = None) -> list[dict[str, Any]]:
     """List failed writeback jobs whose retry window is due."""
-    due_at = now or datetime.now(tz=timezone.utc)
+    due_at = now or datetime.now(tz=UTC)
     try:
         async with async_session_factory() as session:
             stmt = (
@@ -964,9 +968,7 @@ async def fetch_case_record(case_id: UUID) -> CaseRecord | None:
     return CaseRecord.model_validate(payload) if payload else None
 
 
-async def persist_case_template(
-    template: CaseTemplate, *, user_id: str | None = None
-) -> bool:
+async def persist_case_template(template: CaseTemplate, *, user_id: str | None = None) -> bool:
     return await record_entity_version(
         entity_type="case_template",
         entity_id=str(template.template_id),

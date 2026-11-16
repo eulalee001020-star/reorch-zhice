@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import Field, field_validator, model_validator
 
 from app.models.base import ReOrchModel
-
 
 AssetStatus = Literal["draft", "active", "retired"]
 Criticality = Literal["hard", "soft"]
@@ -90,9 +89,7 @@ class DataQualityRule(ReOrchModel):
 class ScenarioFieldRequirement(ReOrchModel):
     canonical_path: str
     authority_role: str
-    data_type: Literal[
-        "string", "integer", "number", "boolean", "datetime", "object", "array"
-    ]
+    data_type: Literal["string", "integer", "number", "boolean", "datetime", "object", "array"]
     criticality: Criticality = "hard"
     nullable: bool = False
     minimum_coverage: float = Field(default=1.0, ge=0.0, le=1.0)
@@ -114,9 +111,7 @@ class ScenarioDataContractDraft(ReOrchModel):
     scenario_type: str
     version: str
     field_requirements: list[ScenarioFieldRequirement] = Field(min_length=1)
-    constraint_requirements: list[ScenarioConstraintRequirement] = Field(
-        default_factory=list
-    )
+    constraint_requirements: list[ScenarioConstraintRequirement] = Field(default_factory=list)
     description: str = ""
     evidence_refs: list[str] = Field(default_factory=list)
 
@@ -132,9 +127,7 @@ class ScenarioDataContractDraft(ReOrchModel):
 
 
 class ConnectorFieldSchema(ReOrchModel):
-    data_type: Literal[
-        "string", "integer", "number", "boolean", "datetime", "object", "array"
-    ]
+    data_type: Literal["string", "integer", "number", "boolean", "datetime", "object", "array"]
     required: bool = True
     nullable: bool = False
 
@@ -185,7 +178,7 @@ class ConnectorConformanceReport(ReOrchModel):
     connector_version: str
     source_system: str
     evidence_scope: Literal["digital_twin", "customer_sandbox", "customer_production"]
-    executed_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    executed_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     checks: list[ConformanceCheck]
     passed: bool
     artifact_fingerprint: str
@@ -199,7 +192,7 @@ class SchemaObservationRequest(ReOrchModel):
     entity_type: str
     schema_version: str
     fields: dict[str, str] = Field(min_length=1)
-    observed_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    observed_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     sample_record_count: int = Field(default=1, ge=1)
     source_refs: list[str] = Field(default_factory=list)
 
@@ -223,7 +216,7 @@ class SchemaDriftReport(ReOrchModel):
     blockers: list[str] = Field(default_factory=list)
     quarantine_id: str | None = None
     fingerprint: str
-    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class QuarantineRecord(ReOrchModel):
@@ -289,7 +282,7 @@ class WritebackCertificationReport(ReOrchModel):
     tenant_id: str
     profile: WritebackAdapterProfile
     evidence_scope: Literal["digital_twin", "customer_sandbox"]
-    executed_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    executed_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     valid_until: datetime
     checks: list[ConformanceCheck]
     passed: bool
@@ -342,9 +335,7 @@ class DecisionReadinessRequest(ReOrchModel):
     as_of: datetime
     field_observations: list[DataFieldObservation] = Field(default_factory=list)
     canonical_records: list[CanonicalDataEnvelope] = Field(default_factory=list)
-    constraint_observations: list[ConstraintCoverageObservation] = Field(
-        default_factory=list
-    )
+    constraint_observations: list[ConstraintCoverageObservation] = Field(default_factory=list)
     required_connector_ids: list[str] = Field(default_factory=list)
     evidence_scope: Literal[
         "digital_twin", "customer_historical", "customer_shadow", "customer_production"

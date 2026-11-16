@@ -7,7 +7,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 BENCHMARK_DIR = ROOT / "benchmark"
 
@@ -36,4 +35,3 @@ def test_benchmark_runner_validates_default_dataset():
     report = json.loads(result.stdout)
     assert report["valid"] is True
     assert report["kpis"]["operation_count"] == 3
-

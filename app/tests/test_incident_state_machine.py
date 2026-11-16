@@ -7,10 +7,10 @@ import pytest
 
 from app.models.enums import IncidentStatus
 from app.services.intake.incident_state_machine import (
-    IllegalStateTransitionError,
-    IncidentStateMachine,
     LEGAL_TRANSITIONS,
     STATE_ORDER,
+    IllegalStateTransitionError,
+    IncidentStateMachine,
     validate_transition,
 )
 

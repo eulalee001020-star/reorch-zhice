@@ -13,7 +13,6 @@ from app.models.recovery_operator import (
     RecoveryOperatorResponse,
 )
 
-
 _CLAIM_BOUNDARY = (
     "Non-equipment operator replay is a planner-review gate, not proof of "
     "autonomous production writeback. Customer-calibrated constraints, planner "
@@ -26,15 +25,11 @@ class NonEquipmentRecoveryOperatorService:
 
     def run(self, request: RecoveryOperatorRequest) -> RecoveryOperatorResponse:
         builders = _BUILDERS[request.incident_type]
-        candidates = [
-            candidate for builder in builders for candidate in [builder(request)]
-        ][: request.top_n]
+        candidates = [candidate for builder in builders for candidate in [builder(request)]][
+            : request.top_n
+        ]
         recommended = next(
-            (
-                candidate.operator_id
-                for candidate in candidates
-                if candidate.gate_report.pass_gate
-            ),
+            (candidate.operator_id for candidate in candidates if candidate.gate_report.pass_gate),
             None,
         )
         return RecoveryOperatorResponse(

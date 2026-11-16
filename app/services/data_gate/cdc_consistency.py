@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.models.production_runtime import (
@@ -30,7 +30,9 @@ class CdcConsistencyService:
                 event.tenant_id, event.source_system, event.partition_key
             )
             committed = checkpoint.committed_sequence if checkpoint else 0
-            watermark = _aware(checkpoint.watermark_at) if checkpoint and checkpoint.watermark_at else None
+            watermark = (
+                _aware(checkpoint.watermark_at) if checkpoint and checkpoint.watermark_at else None
+            )
             return CdcIngestResult(
                 event_id=event.event_id,
                 status="checksum_rejected",
@@ -92,9 +94,7 @@ class CdcConsistencyService:
             gap_sequences=_missing_sequences(row.committed_sequence, pending),
         )
 
-    def materialize_as_of(
-        self, request: AsOfSnapshotRequest
-    ) -> AsOfSnapshotResponse:
+    def materialize_as_of(self, request: AsOfSnapshotRequest) -> AsOfSnapshotResponse:
         watermarks = [
             self.watermark(request.tenant_id, source, request.partition_key)
             for source in request.required_sources
@@ -198,11 +198,9 @@ def _missing_sequences(committed: int, pending: list[int]) -> list[int]:
         return []
     pending_set = set(pending)
     return [
-        number
-        for number in range(committed + 1, max(pending) + 1)
-        if number not in pending_set
+        number for number in range(committed + 1, max(pending) + 1) if number not in pending_set
     ][:100]
 
 
 def _aware(value: datetime) -> datetime:
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo else value.replace(tzinfo=UTC)

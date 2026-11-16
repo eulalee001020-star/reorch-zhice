@@ -11,8 +11,8 @@ from typing import Any
 from app.models.enums import StrategyType
 from app.models.impact import ImpactReport
 from app.models.schedule import Operation, ScheduleDetail, ScheduleSnapshot, WorkOrder
-from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
 from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
+from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
 from app.services.solver.schedule_objective import evaluate_schedule
 
 
@@ -57,11 +57,7 @@ class ConstraintAwareSsgsScheduler:
         timeout_seconds: float | None = None,
     ) -> HeuristicScheduleResult:
         started = time.perf_counter()
-        deadline = (
-            started + max(0.01, timeout_seconds)
-            if timeout_seconds is not None
-            else None
-        )
+        deadline = started + max(0.01, timeout_seconds) if timeout_seconds is not None else None
         if not snapshot.work_orders:
             return self._failure("HEURISTIC_NO_OPERATIONS", ["missing_operations"], started)
 
@@ -70,14 +66,10 @@ class ConstraintAwareSsgsScheduler:
         refs = parser._collect_operation_refs(snapshot, origin)
         governance_blockers = parser._strict_governance_blockers(snapshot, refs)
         if governance_blockers:
-            return self._failure(
-                "HEURISTIC_GOVERNANCE_BLOCKED", governance_blockers, started
-            )
+            return self._failure("HEURISTIC_GOVERNANCE_BLOCKED", governance_blockers, started)
 
         refs_by_id = {ref.operation.operation_id: ref for ref in refs}
-        operations = {
-            op.operation_id: op for wo in snapshot.work_orders for op in wo.operations
-        }
+        operations = {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
         work_orders = {wo.work_order_id: wo for wo in snapshot.work_orders}
         affected = set(affected_op_ids)
         quality_frozen = parser._quality_frozen_operation_ids(snapshot)
@@ -130,13 +122,9 @@ class ConstraintAwareSsgsScheduler:
                 )
             )
             for tooling_id in tooling_by_op.get(operation_id, []):
-                secondary_intervals.setdefault(f"tool:{tooling_id}", []).append(
-                    (start, end, 1)
-                )
+                secondary_intervals.setdefault(f"tool:{tooling_id}", []).append((start, end, 1))
             for skill_code in skill_by_op.get(operation_id, []):
-                secondary_intervals.setdefault(f"skill:{skill_code}", []).append(
-                    (start, end, 1)
-                )
+                secondary_intervals.setdefault(f"skill:{skill_code}", []).append((start, end, 1))
             if operation.resource_id.startswith("OUTSOURCE:"):
                 outsource_usage[operation.resource_id] = (
                     outsource_usage.get(operation.resource_id, 0) + 1
@@ -231,11 +219,14 @@ class ConstraintAwareSsgsScheduler:
             for resource_id in ref.eligible_resources:
                 known_caps = resource_caps.get(resource_id)
                 required_caps = set(operation.required_capabilities)
-                if required_caps and known_caps is not None and not required_caps.issubset(known_caps):
+                if (
+                    required_caps
+                    and known_caps is not None
+                    and not required_caps.issubset(known_caps)
+                ):
                     continue
                 if resource_id.startswith("OUTSOURCE:") and (
-                    outsource_usage.get(resource_id, 0)
-                    >= outsource_capacity.get(resource_id, 0)
+                    outsource_usage.get(resource_id, 0) >= outsource_capacity.get(resource_id, 0)
                 ):
                     continue
                 duration = ref.duration_by_resource.get(resource_id, ref.duration)
@@ -309,16 +300,10 @@ class ConstraintAwareSsgsScheduler:
                 _Interval(start, end, operation_id, family_by_op.get(operation_id))
             )
             for tooling_id in tooling_by_op.get(operation_id, []):
-                secondary_intervals.setdefault(f"tool:{tooling_id}", []).append(
-                    (start, end, 1)
-                )
+                secondary_intervals.setdefault(f"tool:{tooling_id}", []).append((start, end, 1))
             for skill_code in skill_by_op.get(operation_id, []):
-                secondary_intervals.setdefault(f"skill:{skill_code}", []).append(
-                    (start, end, 1)
-                )
-            _reserve_operation_transports(
-                operation_id, end, transport_out, lane_intervals
-            )
+                secondary_intervals.setdefault(f"skill:{skill_code}", []).append((start, end, 1))
+            _reserve_operation_transports(operation_id, end, transport_out, lane_intervals)
             _reserve_operation_buffers(
                 operation_id,
                 start,
@@ -452,9 +437,7 @@ class ConstraintAwareSsgsScheduler:
             ):
                 candidate += 1
                 continue
-            if not _transport_capacity_available(
-                outgoing_transports, end, lane_intervals
-            ):
+            if not _transport_capacity_available(outgoing_transports, end, lane_intervals):
                 candidate += 1
                 continue
             if not _buffer_capacity_available(
@@ -508,16 +491,11 @@ def _precedence_graph(
     snapshot: ScheduleSnapshot,
     variable: set[str],
 ) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
-    operations = {
-        op.operation_id: op for wo in snapshot.work_orders for op in wo.operations
-    }
+    operations = {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
     predecessors = {
-        operation_id: set(operations[operation_id].predecessor_ids)
-        for operation_id in operations
+        operation_id: set(operations[operation_id].predecessor_ids) for operation_id in operations
     }
-    successors: dict[str, set[str]] = {
-        operation_id: set() for operation_id in operations
-    }
+    successors: dict[str, set[str]] = {operation_id: set() for operation_id in operations}
     for operation_id, predecessor_ids in predecessors.items():
         for predecessor_id in predecessor_ids:
             if predecessor_id in successors:
@@ -571,7 +549,9 @@ def _dispatch_key(
     operation = operations[operation_id]
     work_order = work_orders[operation.work_order_id]
     urgent_rank = 0 if operation.work_order_id in urgent else 1
-    stability_rank = operation.start_time if goal_mode == "stability_priority" else work_order.due_date
+    stability_rank = (
+        operation.start_time if goal_mode == "stability_priority" else work_order.due_date
+    )
     return (
         urgent_rank,
         stability_rank,
@@ -594,17 +574,13 @@ def _machine_slot(
     previous: _Interval | None = None
     for interval in ordered:
         before = (
-            CpSatFjspScheduler._setup_minutes(
-                setup_lookup, resource_id, previous.family, family
-            )
+            CpSatFjspScheduler._setup_minutes(setup_lookup, resource_id, previous.family, family)
             if previous and previous.family
             else 0
         )
         candidate = max(candidate, (previous.end + before) if previous else candidate)
         after = (
-            CpSatFjspScheduler._setup_minutes(
-                setup_lookup, resource_id, family, interval.family
-            )
+            CpSatFjspScheduler._setup_minutes(setup_lookup, resource_id, family, interval.family)
             if interval.family
             else 0
         )
@@ -616,9 +592,7 @@ def _machine_slot(
         previous = interval
     if previous:
         setup = (
-            CpSatFjspScheduler._setup_minutes(
-                setup_lookup, resource_id, previous.family, family
-            )
+            CpSatFjspScheduler._setup_minutes(setup_lookup, resource_id, previous.family, family)
             if previous.family
             else 0
         )
@@ -713,9 +687,7 @@ def _skill_capacity(
 
 def _resource_capabilities(snapshot: ScheduleSnapshot) -> dict[str, set[str]]:
     result = {
-        str(row.get("resource_id")): {
-            str(item) for item in row.get("capabilities", []) or []
-        }
+        str(row.get("resource_id")): {str(item) for item in row.get("capabilities", []) or []}
         for row in (snapshot.raw_data or {}).get("resources", []) or []
         if row.get("resource_id")
     }
@@ -731,9 +703,7 @@ def _outsourcing_capacity(raw: dict[str, Any]) -> dict[str, int]:
             continue
         if not row.get("approved_by") or not row.get("source_ref"):
             continue
-        resource_id = str(
-            row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}"
-        )
+        resource_id = str(row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}")
         value = max(1, int(row.get("capacity_per_day", 1) or 1))
         result[resource_id] = min(result.get(resource_id, value), value)
     return result
@@ -789,9 +759,7 @@ def _reserve_operation_transports(
         if eta <= 0:
             continue
         lane_id = str(row.get("lane_id", "unmapped"))
-        lane_intervals.setdefault(lane_id, []).append(
-            (operation_end, operation_end + eta, 1)
-        )
+        lane_intervals.setdefault(lane_id, []).append((operation_end, operation_end + eta, 1))
 
 
 def _transport_capacity_available(
@@ -851,9 +819,7 @@ def _reserve_operation_buffers(
         if operation_start > start:
             buffer_id = str(row.get("buffer_id", "unmapped"))
             demand = max(1, int(row.get("occupancy_quantity", 1) or 1))
-            buffer_intervals.setdefault(buffer_id, []).append(
-                (start, operation_start, demand)
-            )
+            buffer_intervals.setdefault(buffer_id, []).append((start, operation_start, demand))
 
 
 def _buffer_capacity_available(

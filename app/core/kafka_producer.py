@@ -79,9 +79,7 @@ class KafkaProducer:
             else:
                 loop.call_soon_threadsafe(future.set_result, None)
 
-        kafka_headers = (
-            [(k, v.encode("utf-8")) for k, v in headers.items()] if headers else None
-        )
+        kafka_headers = [(k, v.encode("utf-8")) for k, v in headers.items()] if headers else None
 
         self._producer.produce(
             topic=topic,
@@ -106,6 +104,4 @@ class KafkaProducer:
         """Flush and release resources."""
         remaining = self._producer.flush(timeout=10.0)
         if remaining > 0:
-            logger.warning(
-                "Kafka producer closed with %d undelivered messages", remaining
-            )
+            logger.warning("Kafka producer closed with %d undelivered messages", remaining)

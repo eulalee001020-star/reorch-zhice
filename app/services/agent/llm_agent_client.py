@@ -127,9 +127,7 @@ class LLMAgentClient:
                 _record_failure(circuit)
                 if attempt >= settings.llm.max_attempts or not _is_retryable(exc):
                     break
-                await asyncio.sleep(
-                    settings.llm.retry_backoff_seconds * (2 ** (attempt - 1))
-                )
+                await asyncio.sleep(settings.llm.retry_backoff_seconds * (2 ** (attempt - 1)))
 
         raise LLMProviderUnavailable(
             f"llm_request_failed:{type(last_error).__name__ if last_error else 'unknown'}"

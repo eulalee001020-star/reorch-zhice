@@ -16,10 +16,10 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from app.models.case import CaseRecord, CaseTemplate, PreferenceProfile
+from app.models.case import CaseRecord, PreferenceProfile
 from app.models.decision import DecisionRecord
 from app.models.execution import ExecutionResult
 
@@ -119,11 +119,13 @@ class CaseLibrary:
             neighborhood_selection=decision_record.solver_chain.neighborhood_selection,
             repair_policy=decision_record.solver_chain.repair_policy,
             solver_chain=decision_record.solver_chain,
-            created_at=datetime.now(tz=timezone.utc),
-            embedding_vector=_build_feature_vector({
-                "strategy_type": decision_record.strategy_type,
-                "is_override": decision_record.is_override,
-            }),
+            created_at=datetime.now(tz=UTC),
+            embedding_vector=_build_feature_vector(
+                {
+                    "strategy_type": decision_record.strategy_type,
+                    "is_override": decision_record.is_override,
+                }
+            ),
         )
 
         self._case_store[str(case.case_id)] = case
@@ -167,9 +169,7 @@ class CaseLibrary:
         scored: list[tuple[CaseRecord, float]] = []
 
         for case in self._case_store.values():
-            case_vector = case.embedding_vector or _build_feature_vector(
-                case.incident_features
-            )
+            case_vector = case.embedding_vector or _build_feature_vector(case.incident_features)
             sim = _cosine_similarity(query_vector, case_vector)
             if sim >= threshold:
                 scored.append((case, round(sim, 4)))
@@ -193,12 +193,14 @@ class CaseLibrary:
 
         if decision_record.is_override:
             # Record override in history
-            profile.override_history.append({
-                "incident_id": str(decision_record.incident_id),
-                "original_strategy": decision_record.strategy_type,
-                "override_reason": decision_record.override_reason,
-                "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            })
+            profile.override_history.append(
+                {
+                    "incident_id": str(decision_record.incident_id),
+                    "original_strategy": decision_record.strategy_type,
+                    "override_reason": decision_record.override_reason,
+                    "timestamp": datetime.now(tz=UTC).isoformat(),
+                }
+            )
 
             # Decrease weight for the overridden strategy, increase others
             overridden = decision_record.strategy_type
@@ -206,24 +208,24 @@ class CaseLibrary:
                 if strategy == overridden:
                     profile.strategy_preferences[strategy] = max(
                         0.0,
-                        profile.strategy_preferences[strategy]
-                        - _OVERRIDE_WEIGHT_ADJUSTMENT,
+                        profile.strategy_preferences[strategy] - _OVERRIDE_WEIGHT_ADJUSTMENT,
                     )
                 else:
                     profile.strategy_preferences[strategy] = min(
                         1.0,
-                        profile.strategy_preferences[strategy]
-                        + _OVERRIDE_WEIGHT_ADJUSTMENT / 2,
+                        profile.strategy_preferences[strategy] + _OVERRIDE_WEIGHT_ADJUSTMENT / 2,
                     )
 
         if decision_record.is_manual_adjusted:
-            profile.adjustment_patterns.append({
-                "incident_id": str(decision_record.incident_id),
-                "strategy_type": decision_record.strategy_type,
-                "timestamp": datetime.now(tz=timezone.utc).isoformat(),
-            })
+            profile.adjustment_patterns.append(
+                {
+                    "incident_id": str(decision_record.incident_id),
+                    "strategy_type": decision_record.strategy_type,
+                    "timestamp": datetime.now(tz=UTC).isoformat(),
+                }
+            )
 
-        profile.updated_at = datetime.now(tz=timezone.utc)
+        profile.updated_at = datetime.now(tz=UTC)
         self._preference_store[planner_id] = profile
 
         logger.info(
@@ -292,9 +294,7 @@ class CaseLibrary:
         # Compute adoption rates
         for key, entry in stats.items():
             total = entry["total"]
-            entry["adoption_rate"] = (
-                (total - entry["overrides"]) / total if total > 0 else 0.0
-            )
+            entry["adoption_rate"] = (total - entry["overrides"]) / total if total > 0 else 0.0
 
         return stats
 
@@ -342,19 +342,15 @@ class CaseLibrary:
             strategy_preferences=dict(_DEFAULT_STRATEGY_WEIGHTS),
             adjustment_patterns=[],
             override_history=[],
-            updated_at=datetime.now(tz=timezone.utc),
+            updated_at=datetime.now(tz=UTC),
         )
         self._preference_store[planner_id] = profile
         return profile
 
-    def _check_template_suggestion(
-        self, new_case: CaseRecord
-    ) -> dict | None:
+    def _check_template_suggestion(self, new_case: CaseRecord) -> dict | None:
         """Check if case count > 10 with similar patterns → suggest template (Req 9.2)."""
         same_strategy = [
-            c
-            for c in self._case_store.values()
-            if c.strategy_type == new_case.strategy_type
+            c for c in self._case_store.values() if c.strategy_type == new_case.strategy_type
         ]
 
         if len(same_strategy) > _TEMPLATE_SUGGESTION_THRESHOLD:

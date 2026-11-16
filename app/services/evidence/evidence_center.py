@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.core.paths import REPO_ROOT
@@ -17,7 +17,6 @@ from app.models.planning import (
 )
 from app.services.data_gate.data_readiness import DataReadinessService
 from app.services.ngs.ngs_lab import NgsProtectedPortfolioService
-
 
 VALIDATION_DIR = REPO_ROOT / "docs" / "validation"
 
@@ -177,7 +176,14 @@ class EvidenceCenterService:
             source_refs=["api:/api/v1/ngs-lab/batch-replay"],
             metrics=batch.aggregate_metrics,
             table=EvidenceTable(
-                columns=["case_id", "pass_replay", "recommended", "feasible", "rejected", "failures"],
+                columns=[
+                    "case_id",
+                    "pass_replay",
+                    "recommended",
+                    "feasible",
+                    "rejected",
+                    "failures",
+                ],
                 rows=rows,
             ),
             limitations=[
@@ -206,7 +212,7 @@ class EvidenceCenterService:
 
 
 def _readiness_sample_request(*, include_qc: bool) -> InitialScheduleRequest:
-    start = datetime(2026, 5, 12, 8, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, 0, tzinfo=UTC)
     resources = [
         PlanningResourceInput(
             resource_id="CNC-01",

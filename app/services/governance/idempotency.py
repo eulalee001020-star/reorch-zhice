@@ -15,11 +15,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import Request, Response
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,7 @@ IDEMPOTENCY_TTL_SECONDS = 86400
 @dataclass
 class IdempotencyRecord:
     """Stored result for an idempotency key."""
+
     key: str
     status_code: int
     response_body: Any
@@ -41,7 +42,7 @@ class IdempotencyRecord:
 
     def __post_init__(self) -> None:
         if not self.created_at:
-            self.created_at = datetime.now(tz=timezone.utc).isoformat()
+            self.created_at = datetime.now(tz=UTC).isoformat()
 
 
 class IdempotencyStore:
@@ -98,7 +99,9 @@ def check_idempotency(key: str) -> IdempotencyRecord | None:
     return idempotency_store.get(key)
 
 
-def record_idempotency(key: str, status_code: int, response_body: Any, request_body: Any = None) -> None:
+def record_idempotency(
+    key: str, status_code: int, response_body: Any, request_body: Any = None
+) -> None:
     """Record the result of a request for idempotency.
 
     Future requests with the same key will return this result.

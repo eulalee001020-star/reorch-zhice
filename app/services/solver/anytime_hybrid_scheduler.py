@@ -9,13 +9,13 @@ from app.core.config import settings
 from app.models.enums import StrategyType
 from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleDetail, ScheduleSnapshot
+from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
+from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.solver.constraint_aware_ssgs import (
     ConstraintAwareSsgsScheduler,
     HeuristicScheduleResult,
 )
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler, CpSatScheduleResult
-from app.services.constraints.infeasibility_classifier import InfeasibilityClassifier
-from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.solver.schedule_objective import evaluate_schedule
 
 
@@ -38,9 +38,7 @@ class AnytimeHybridScheduler:
     ) -> None:
         self._cp_sat = cp_sat_scheduler or CpSatFjspScheduler()
         self._validator = validator or OperationalConstraintValidator()
-        self._heuristic = heuristic_scheduler or ConstraintAwareSsgsScheduler(
-            self._validator
-        )
+        self._heuristic = heuristic_scheduler or ConstraintAwareSsgsScheduler(self._validator)
         self._max_alns_iterations = max(
             0,
             settings.solver.max_alns_iterations
@@ -96,18 +94,15 @@ class AnytimeHybridScheduler:
         else:
             failures.extend(heuristic.blockers or [heuristic.status_name])
 
-        warm_start = (
-            initial_solution
-            or (heuristic.schedule_detail if heuristic.is_feasible else None)
+        warm_start = initial_solution or (
+            heuristic.schedule_detail if heuristic.is_feasible else None
         )
         remaining = deadline - time.perf_counter()
         direct_result: CpSatScheduleResult | None = None
         if remaining > 0.02:
             reserve_for_alns = bool(enable_alns and warm_start and self._max_alns_iterations)
             direct_budget = remaining * (
-                settings.solver.initial_cp_sat_budget_ratio
-                if reserve_for_alns
-                else 1.0
+                settings.solver.initial_cp_sat_budget_ratio if reserve_for_alns else 1.0
             )
             direct_result = self._cp_sat.solve(
                 snapshot=snapshot,
@@ -234,9 +229,7 @@ class AnytimeHybridScheduler:
                     "failures": sorted(set(failures)),
                     "failure_classification": classification.model_dump(mode="json"),
                     "recovery_required": True,
-                    "restoration_endpoint": (
-                        "/api/v1/runtime/feasibility-restoration/evaluate"
-                    ),
+                    "restoration_endpoint": ("/api/v1/runtime/feasibility-restoration/evaluate"),
                     "writeback_allowed": False,
                     **alns_metadata,
                 },
@@ -260,18 +253,14 @@ class AnytimeHybridScheduler:
             "algorithm_path": algorithm_path,
             "heuristic_status": heuristic.status_name,
             "cp_sat_status": direct_result.status_name if direct_result else None,
-            "cp_sat_hint_applied": (
-                direct_result.hint_applied if direct_result else False
-            ),
+            "cp_sat_hint_applied": (direct_result.hint_applied if direct_result else False),
             "cp_sat_hinted_operation_count": (
                 direct_result.hinted_operation_count if direct_result else 0
             ),
             "cp_sat_best_objective_bound": (
                 direct_result.best_objective_bound if direct_result else None
             ),
-            "cp_sat_relative_gap": (
-                direct_result.relative_gap if direct_result else None
-            ),
+            "cp_sat_relative_gap": (direct_result.relative_gap if direct_result else None),
             "validated_incumbent": True,
             "incumbent_source": best.source,
             "time_to_first_feasible_ms": round(first_feasible_ms or 0.0, 3),
@@ -312,9 +301,7 @@ class AnytimeHybridScheduler:
         mutable_operation_ids = set(result.variable_operation_ids) | set(
             previously_mutable_operation_ids or set()
         )
-        effective_frozen = set(frozen_operation_ids) | (
-            all_operation_ids - mutable_operation_ids
-        )
+        effective_frozen = set(frozen_operation_ids) | (all_operation_ids - mutable_operation_ids)
         report = self._validator.validate(
             result.schedule_detail,
             snapshot,
@@ -387,7 +374,9 @@ def _build_neighborhoods(
     operations = {
         op.operation_id: op for work_order in snapshot.work_orders for op in work_order.operations
     }
-    affected = {operation_id for operation_id in affected_operation_ids if operation_id in operations}
+    affected = {
+        operation_id for operation_id in affected_operation_ids if operation_id in operations
+    }
     if not affected:
         return []
     downstream = set(affected)
@@ -488,9 +477,7 @@ def _dominance_vector(
 
 
 def _dominates(left: tuple[float, ...], right: tuple[float, ...]) -> bool:
-    return all(a <= b for a, b in zip(left, right)) and any(
-        a < b for a, b in zip(left, right)
-    )
+    return all(a <= b for a, b in zip(left, right)) and any(a < b for a, b in zip(left, right))
 
 
 def _contains_schedule(

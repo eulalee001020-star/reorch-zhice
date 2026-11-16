@@ -6,7 +6,7 @@ planning run. It deliberately does not create writeback permission.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import Field
@@ -30,7 +30,7 @@ class P0RealityHarnessRequest(ReOrchModel):
 
     source_system: str = "customer_p0_pack"
     workshop_id: str = "P0-WORKSHOP"
-    planning_start: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    planning_start: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     raw_work_orders: list[dict] = Field(default_factory=list)
     raw_operations: list[dict] = Field(default_factory=list)
     raw_machines: list[dict] = Field(default_factory=list)

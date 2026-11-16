@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import Field
@@ -17,7 +17,7 @@ class PlannerShadowDecision(ReOrchModel):
     decision_status: str
     selected_plan_id: str | None = None
     decided_by: str = "planner-1"
-    decided_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    decided_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     override_reason: str | None = None
     tweak_summary: str | None = None
 
@@ -40,7 +40,7 @@ class ShadowCaseCaptureResponse(ReOrchModel):
     """Stored shadow case with safety and feedback status."""
 
     shadow_case_id: str = Field(default_factory=lambda: f"shadow-{uuid4()}")
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     advisory_only: bool
     writeback_blocked: bool
     feedback_capture_complete: bool

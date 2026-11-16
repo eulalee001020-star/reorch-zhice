@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.models.integration_control import (
+    CanonicalDataEnvelope,
     ConnectorConformanceReport,
     ConnectorRegistrationRequest,
-    CanonicalDataEnvelope,
     ConstraintDefinitionDraft,
     DataFieldObservation,
     DecisionReadinessManifest,
@@ -48,15 +48,11 @@ class DecisionReadinessService:
 
         matrix = SourceAuthorityMatrixDraft.model_validate(matrix_asset.payload)
         contract = ScenarioDataContractDraft.model_validate(contract_asset.payload)
-        field_observations = {
-            item.canonical_path: item for item in request.field_observations
-        }
+        field_observations = {item.canonical_path: item for item in request.field_observations}
         field_observations.update(
             {
                 item.canonical_path: item
-                for item in _observations_from_records(
-                    contract, request.canonical_records
-                )
+                for item in _observations_from_records(contract, request.canonical_records)
             }
         )
         constraint_observations = {
@@ -80,18 +76,11 @@ class DecisionReadinessService:
             if conformance_asset is None:
                 reasons.append("active_conformance_missing")
             if manifest_asset and conformance_asset:
-                registration = ConnectorRegistrationRequest.model_validate(
-                    manifest_asset.payload
-                )
-                conformance = ConnectorConformanceReport.model_validate(
-                    conformance_asset.payload
-                )
+                registration = ConnectorRegistrationRequest.model_validate(manifest_asset.payload)
+                conformance = ConnectorConformanceReport.model_validate(conformance_asset.payload)
                 if not conformance.passed:
                     reasons.append("conformance_failed")
-                if (
-                    registration.manifest.connector_version
-                    != conformance.connector_version
-                ):
+                if registration.manifest.connector_version != conformance.connector_version:
                     reasons.append("conformance_version_mismatch")
                 connector_refs.extend(
                     [
@@ -105,9 +94,7 @@ class DecisionReadinessService:
                     status="pass" if not reasons else "fail",
                     criticality="hard",
                     message="connector_ready" if not reasons else ";".join(reasons),
-                    evidence_refs=(
-                        [_asset_ref(manifest_asset)] if manifest_asset else []
-                    )
+                    evidence_refs=([_asset_ref(manifest_asset)] if manifest_asset else [])
                     + ([_asset_ref(conformance_asset)] if conformance_asset else []),
                 )
             )
@@ -135,9 +122,7 @@ class DecisionReadinessService:
                 if not _compatible_type(requirement.data_type, observation.data_type):
                     reasons.append("data_type_mismatch")
                 if observation.coverage < requirement.minimum_coverage:
-                    reasons.append(
-                        f"coverage_below_threshold:{observation.coverage:.4f}"
-                    )
+                    reasons.append(f"coverage_below_threshold:{observation.coverage:.4f}")
                 if not observation.quality_passed:
                     reasons.append("quality_rules_failed")
                 if requirement.max_age_seconds is not None:
@@ -171,9 +156,7 @@ class DecisionReadinessService:
             if active_constraint is None:
                 reasons.append("active_constraint_version_missing")
             else:
-                definition = ConstraintDefinitionDraft.model_validate(
-                    active_constraint.payload
-                )
+                definition = ConstraintDefinitionDraft.model_validate(active_constraint.payload)
                 if requirement.authority_role not in definition.authority_roles:
                     reasons.append("constraint_authority_role_mismatch")
                 constraint_refs.append(_asset_ref(active_constraint))
@@ -213,8 +196,10 @@ class DecisionReadinessService:
             if check.status in {"fail", "warning"} and check.criticality == "soft"
         ]
         status = "blocked" if hard_gaps else "degraded" if warnings else "ready"
-        evaluated_at = datetime.now(tz=timezone.utc)
-        expires_at = min(expiry_candidates) if expiry_candidates else evaluated_at + timedelta(minutes=15)
+        evaluated_at = datetime.now(tz=UTC)
+        expires_at = (
+            min(expiry_candidates) if expiry_candidates else evaluated_at + timedelta(minutes=15)
+        )
         if expires_at <= evaluated_at and status != "blocked":
             status = "blocked"
             hard_gaps.append("manifest:freshness_window_already_expired")
@@ -276,7 +261,7 @@ class DecisionReadinessService:
             raise DecisionReadinessError("readiness_manifest_scenario_mismatch")
         if manifest.status != "ready":
             raise DecisionReadinessError("readiness_manifest_is_not_ready")
-        if _aware(manifest.expires_at) <= datetime.now(tz=timezone.utc):
+        if _aware(manifest.expires_at) <= datetime.now(tz=UTC):
             raise DecisionReadinessError("readiness_manifest_has_expired")
         return manifest
 
@@ -299,7 +284,7 @@ class DecisionReadinessService:
             if (
                 report.passed
                 and report.evidence_scope == "customer_sandbox"
-                and _aware(report.valid_until) > datetime.now(tz=timezone.utc)
+                and _aware(report.valid_until) > datetime.now(tz=UTC)
             ):
                 writeback_certified = True
                 break
@@ -307,9 +292,7 @@ class DecisionReadinessService:
             tenant_id=tenant_id,
             active_assets=active_assets,
             draft_asset_count=sum(asset.status == "draft" for asset in assets),
-            open_quarantine_count=len(
-                self.store.list_quarantine_records(tenant_id, status="open")
-            ),
+            open_quarantine_count=len(self.store.list_quarantine_records(tenant_id, status="open")),
             latest_readiness_manifest=latest_manifest,
             production_writeback_certified=writeback_certified,
             claim_boundary=(
@@ -396,7 +379,7 @@ def _asset_ref(asset: VersionedAssetRecord) -> str:
 
 
 def _aware(value: datetime) -> datetime:
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def _observations_from_records(
@@ -414,14 +397,12 @@ def _observations_from_records(
         present_records = [
             item
             for item in entity_records
-            if field in item.data
-            and (requirement.nullable or item.data.get(field) is not None)
+            if field in item.data and (requirement.nullable or item.data.get(field) is not None)
         ]
         values = [item.data.get(field) for item in present_records]
         non_null_values = [value for value in values if value is not None]
         types_valid = all(
-            _value_matches_type(value, requirement.data_type)
-            for value in non_null_values
+            _value_matches_type(value, requirement.data_type) for value in non_null_values
         )
         sources = {item.source_system for item in present_records}
         quality_passed = types_valid and _quality_rules_pass(
@@ -442,11 +423,7 @@ def _observations_from_records(
                 ),
                 quality_passed=quality_passed,
                 evidence_refs=sorted(
-                    {
-                        ref
-                        for item in entity_records
-                        for ref in item.evidence_refs
-                    }
+                    {ref for item in entity_records for ref in item.evidence_refs}
                 ),
             )
         )

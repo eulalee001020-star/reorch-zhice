@@ -39,12 +39,16 @@ class MachineRankService:
         for wo in snapshot.work_orders:
             for op in wo.operations:
                 duration = max(0.0, (op.end_time - op.start_time).total_seconds() / 60)
-                load_by_resource[op.resource_id] = load_by_resource.get(op.resource_id, 0.0) + duration
+                load_by_resource[op.resource_id] = (
+                    load_by_resource.get(op.resource_id, 0.0) + duration
+                )
                 ops_by_resource.setdefault(op.resource_id, []).append(op)
 
         affected_by_resource: dict[str, int] = {}
         for affected in impact_report.affected_operations:
-            affected_by_resource[affected.resource_id] = affected_by_resource.get(affected.resource_id, 0) + 1
+            affected_by_resource[affected.resource_id] = (
+                affected_by_resource.get(affected.resource_id, 0) + 1
+            )
 
         bottleneck_resources = self._bottleneck_resources(snapshot)
         reference_time = impact_report.analysis_reference_time
@@ -58,7 +62,9 @@ class MachineRankService:
             affected_score = min(1.0, affected_count / 5)
             bottleneck_hint = resource_id in bottleneck_resources
             bottleneck_score = 1.0 if bottleneck_hint else 0.0
-            due_risk = self._due_risk_score(snapshot, ops_by_resource.get(resource_id, []), reference_time)
+            due_risk = self._due_risk_score(
+                snapshot, ops_by_resource.get(resource_id, []), reference_time
+            )
 
             score = (
                 0.40 * normalized_load
@@ -95,7 +101,10 @@ class MachineRankService:
         raw = snapshot.raw_data or {}
         bottlenecks: set[str] = set()
         for res in raw.get("resources", []):
-            if res.get("is_bottleneck") or res.get("criticality") in {"critical", "high_risk_config"}:
+            if res.get("is_bottleneck") or res.get("criticality") in {
+                "critical",
+                "high_risk_config",
+            }:
                 resource_id = res.get("resource_id")
                 if resource_id:
                     bottlenecks.add(str(resource_id))
@@ -124,4 +133,3 @@ class MachineRankService:
             else:
                 scores.append(0.0)
         return max(scores, default=0.0)
-

@@ -24,9 +24,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    result = IntegrationControlValidationHarness(
-        RelationalOperationalStore(args.database_url)
-    ).run(tenant_id=args.tenant_id, actor_id="cli-it-admin")
+    result = IntegrationControlValidationHarness(RelationalOperationalStore(args.database_url)).run(
+        tenant_id=args.tenant_id, actor_id="cli-it-admin"
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(result.model_dump(mode="json"), indent=2, ensure_ascii=False),
@@ -38,9 +38,7 @@ def main() -> int:
                 "all_checks_passed": result.all_checks_passed,
                 "check_count": len(result.checks),
                 "readiness": result.readiness_manifest.status,
-                "customer_writeback_certified": (
-                    result.overview.production_writeback_certified
-                ),
+                "customer_writeback_certified": (result.overview.production_writeback_certified),
                 "artifact_fingerprint": result.artifact_fingerprint,
                 "output": str(args.output),
             },

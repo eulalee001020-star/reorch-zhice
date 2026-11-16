@@ -11,7 +11,7 @@ Provides:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -22,6 +22,7 @@ from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleSnapshot
 from app.models.strategy import StrategyRecommendation
 from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.solver.strategy_selector import StrategySelector
 from app.services.storage.persistence import (
     assign_snapshot_version,
     fetch_any_snapshot,
@@ -32,7 +33,6 @@ from app.services.storage.persistence import (
     persist_schedule_snapshot,
     persist_strategy_recommendation,
 )
-from app.services.solver.strategy_selector import StrategySelector
 
 logger = logging.getLogger(__name__)
 
@@ -135,10 +135,7 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
     "/api/v1/incidents/{incident_id}/strategy",
     response_model=StrategyRecommendation,
     summary="查询策略推荐",
-    description=(
-        "根据 incident_id 查询高层策略推荐。"
-        "需要先有影响报告（自动触发分析）。"
-    ),
+    description=("根据 incident_id 查询高层策略推荐。需要先有影响报告（自动触发分析）。"),
     responses={404: {"description": "Incident 不存在或影响报告尚未生成"}},
 )
 async def get_strategy(
@@ -178,7 +175,7 @@ async def get_strategy(
         strategy_preferences={},
         adjustment_patterns=[],
         override_history=[],
-        updated_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=UTC),
     )
 
     selector = StrategySelector()

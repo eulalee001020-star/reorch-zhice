@@ -35,19 +35,18 @@ from app.models.production_runtime import (
     TenantSolveQuota,
 )
 from app.services.data_gate.cdc_consistency import CdcConsistencyService
-from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.data_gate.decision_readiness import (
     DecisionReadinessError,
     DecisionReadinessService,
 )
-from app.services.storage.operational_store import RelationalOperationalStore
-from app.services.solver.feasibility_restoration import FeasibilityRestorationEngine
-from app.services.validation.production_validation_harness import ProductionValidationHarness
-from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
-from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 from app.services.data_gate.schema_drift_guard import SchemaDriftGuard
+from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
+from app.services.solver.decomposition_executor import DecompositionExecutor
+from app.services.solver.feasibility_restoration import FeasibilityRestorationEngine
 from app.services.solver.solve_job_runtime import DurableSolveQueue, SolveJobWorker
-
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.validation.production_validation_harness import ProductionValidationHarness
+from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 
 router = APIRouter(prefix="/api/v1/runtime", tags=["production-runtime"])
 _store: RelationalOperationalStore | None = None
@@ -151,9 +150,7 @@ async def ingest_cdc_event(
             status_code=409,
             detail="governed_cdc_ingestion_requires_connector_schema_observation",
         )
-    return await run_in_threadpool(
-        CdcConsistencyService(get_operational_store()).ingest, body
-    )
+    return await run_in_threadpool(CdcConsistencyService(get_operational_store()).ingest, body)
 
 
 @router.post("/cdc/as-of", response_model=AsOfSnapshotResponse)
@@ -237,9 +234,7 @@ async def run_readonly_shadow(
     user: CurrentUser = Depends(get_optional_current_user),
 ) -> ShadowExecutionStatus:
     _enforce_tenant(user, body.tenant_id)
-    return await run_in_threadpool(
-        ReadOnlyShadowRunner(get_operational_store()).run, body
-    )
+    return await run_in_threadpool(ReadOnlyShadowRunner(get_operational_store()).run, body)
 
 
 @router.post(
@@ -282,9 +277,7 @@ async def ingest_shadow_execution_receipts(
         raise HTTPException(status_code=404, detail="shadow_case_not_found")
     _enforce_tenant(user, current.tenant_id)
     try:
-        return await run_in_threadpool(
-            runner.ingest_receipts, shadow_case_id, body.receipts
-        )
+        return await run_in_threadpool(runner.ingest_receipts, shadow_case_id, body.receipts)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -309,9 +302,7 @@ async def build_customer_evidence_ledger(
     _ = user
     try:
         return await run_in_threadpool(
-            RecoveryEvidenceLedgerService(
-                store=get_operational_store()
-            ).build_customer_ledger,
+            RecoveryEvidenceLedgerService(store=get_operational_store()).build_customer_ledger,
             body.rows,
         )
     except (ValueError, TypeError) as exc:

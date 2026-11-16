@@ -6,10 +6,11 @@ import hashlib
 import json
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 from uuid import NAMESPACE_URL, uuid5
 
 from app.models.enums import DeliveryRiskLevel, StrategyType
@@ -21,10 +22,9 @@ from app.models.production_runtime import (
     SubproblemExecutionResult,
 )
 from app.models.schedule import Operation, Resource, ScheduleDetail, ScheduleSnapshot, WorkOrder
+from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
-from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
-
 
 CancelCheck = Callable[[], bool]
 CheckpointCallback = Callable[[SubproblemExecutionResult], None]
@@ -42,8 +42,7 @@ class DecompositionExecutor:
 
     def __init__(
         self,
-        scheduler_factory: Callable[[], CpSatFjspScheduler | AnytimeHybridScheduler]
-        | None = None,
+        scheduler_factory: Callable[[], CpSatFjspScheduler | AnytimeHybridScheduler] | None = None,
         validator: OperationalConstraintValidator | None = None,
     ) -> None:
         self._scheduler_factory = scheduler_factory or AnytimeHybridScheduler
@@ -107,7 +106,9 @@ class DecompositionExecutor:
 
         results: list[SubproblemExecutionResult] = []
         workers = min(request.max_parallelism, len(subproblems))
-        with ThreadPoolExecutor(max_workers=max(1, workers), thread_name_prefix="reorch-solve") as pool:
+        with ThreadPoolExecutor(
+            max_workers=max(1, workers), thread_name_prefix="reorch-solve"
+        ) as pool:
             future_map = {pool.submit(run_one, item): item for item in subproblems}
             for future in as_completed(future_map):
                 problem = future_map[future]
@@ -175,7 +176,12 @@ class DecompositionExecutor:
             for problem in ordered:
                 if cancel_check():
                     return self._cancelled_response(
-                        request, operation_count, groups, results, started, "cancelled_during_repair"
+                        request,
+                        operation_count,
+                        groups,
+                        results,
+                        started,
+                        "cancelled_during_repair",
                     )
                 current_snapshot = request.snapshot.model_copy(
                     update={"work_orders": merged.work_orders}, deep=True
@@ -213,9 +219,7 @@ class DecompositionExecutor:
 
     @staticmethod
     def _input_blockers(request: DecompositionExecutionRequest) -> list[str]:
-        op_ids = {
-            op.operation_id for wo in request.snapshot.work_orders for op in wo.operations
-        }
+        op_ids = {op.operation_id for wo in request.snapshot.work_orders for op in wo.operations}
         blockers: list[str] = []
         if not op_ids:
             blockers.append("missing_operations")
@@ -416,9 +420,7 @@ class DecompositionExecutor:
             "status": status,
             "solver_status": result.status_name,
             "schedule": (
-                result.schedule_detail.model_dump(mode="json")
-                if result.schedule_detail
-                else None
+                result.schedule_detail.model_dump(mode="json") if result.schedule_detail else None
             ),
             "solver_metadata": {
                 **result.solver_log,
@@ -451,9 +453,7 @@ class DecompositionExecutor:
         )
 
     @staticmethod
-    def _cancelled_subproblem(
-        problem: _Subproblem, reason: str
-    ) -> SubproblemExecutionResult:
+    def _cancelled_subproblem(problem: _Subproblem, reason: str) -> SubproblemExecutionResult:
         return SubproblemExecutionResult(
             subproblem_id=problem.subproblem_id,
             incident_ids=problem.incident_ids,
@@ -656,9 +656,7 @@ def _bounded_distances(
 
 def _project_snapshot(snapshot: ScheduleSnapshot, operation_ids: set[str]) -> ScheduleSnapshot:
     op_map = _operation_map(snapshot)
-    selected_resources = {
-        op_map[op_id].resource_id for op_id in operation_ids if op_id in op_map
-    }
+    selected_resources = {op_map[op_id].resource_id for op_id in operation_ids if op_id in op_map}
     raw = dict(snapshot.raw_data or {})
     raw_work_orders = []
     raw_by_op: dict[str, dict[str, Any]] = {}
@@ -713,7 +711,9 @@ def _project_snapshot(snapshot: ScheduleSnapshot, operation_ids: set[str]) -> Sc
             raw_op.setdefault("operation_id", op.operation_id)
             raw_op.setdefault("eligible_resources", [op.resource_id])
             projected_raw_ops.append(raw_op)
-            selected_resources.update(str(item) for item in raw_op.get("eligible_resources", []) or [])
+            selected_resources.update(
+                str(item) for item in raw_op.get("eligible_resources", []) or []
+            )
         if projected_ops:
             copied_wo = wo.model_copy(update={"operations": projected_ops}, deep=True)
             projected_work_orders.append(copied_wo)
@@ -728,9 +728,7 @@ def _project_snapshot(snapshot: ScheduleSnapshot, operation_ids: set[str]) -> Sc
     excluded_by_resource: dict[str, list[tuple[datetime, datetime]]] = {}
     for op in op_map.values():
         if op.operation_id not in operation_ids and op.resource_id in selected_resources:
-            excluded_by_resource.setdefault(op.resource_id, []).append(
-                (op.start_time, op.end_time)
-            )
+            excluded_by_resource.setdefault(op.resource_id, []).append((op.start_time, op.end_time))
     boundary_calendar = []
     for resource_id, intervals in excluded_by_resource.items():
         for index, (start, end) in enumerate(_merge_intervals(intervals)):
@@ -820,9 +818,7 @@ def _merge_intervals(
     return [(item[0], item[1]) for item in merged]
 
 
-def _impact_report(
-    snapshot: ScheduleSnapshot, incidents: list[RuntimeIncident]
-) -> ImpactReport:
+def _impact_report(snapshot: ScheduleSnapshot, incidents: list[RuntimeIncident]) -> ImpactReport:
     op_map = _operation_map(snapshot)
     affected: dict[str, AffectedOperation] = {}
     for incident in incidents:
@@ -913,8 +909,7 @@ def _merge_schedule(
     work_orders: list[WorkOrder] = []
     for wo in baseline.work_orders:
         operations = [
-            updated_ops.get(op.operation_id, op).model_copy(deep=True)
-            for op in wo.operations
+            updated_ops.get(op.operation_id, op).model_copy(deep=True) for op in wo.operations
         ]
         work_orders.append(wo.model_copy(update={"operations": operations}, deep=True))
     resources = {resource.resource_id: resource for resource in baseline.resources}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.models.base import ReOrchModel
 from app.models.schedule import ScheduleDetail, ScheduleSnapshot
-
 
 EvidenceScope = Literal[
     "digital_twin",
@@ -196,8 +195,8 @@ class SolveJobRecord(ReOrchModel):
     lease_owner: str | None = None
     lease_expires_at: datetime | None = None
     heartbeat_at: datetime | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     error: str | None = None
 
 
@@ -308,7 +307,7 @@ class RecoveryEvidenceLedger(ReOrchModel):
 
 class ProductionValidationRunResponse(ReOrchModel):
     run_id: str = Field(default_factory=lambda: f"prodval-{uuid4().hex}")
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     evidence_scope: EvidenceScope = "digital_twin"
     checks: dict[str, dict[str, Any]] = Field(default_factory=dict)
     scale_results: list[dict[str, Any]] = Field(default_factory=list)

@@ -20,7 +20,9 @@ def test_evidence_center_contains_required_evidence_categories():
         "quality_gate",
     }.issubset(categories)
     assert response.summary_counts["total"] >= 5
-    quality_gate = next(item for item in response.items if item.evidence_id == "ngs_quality_gate_batch")
+    quality_gate = next(
+        item for item in response.items if item.evidence_id == "ngs_quality_gate_batch"
+    )
     assert quality_gate.metrics["case_count"] == 3
     assert quality_gate.table is not None
 

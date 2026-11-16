@@ -41,7 +41,9 @@ class ScheduleSnapshotOperation(Base):
         nullable=False,
     )
     operation_pk: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="SET NULL"),
+        nullable=True,
     )
     work_order_id: Mapped[str] = mapped_column(String(128), nullable=False)
     operation_id: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -55,8 +57,12 @@ class ScheduleSnapshotOperation(Base):
 
     __table_args__ = (
         CheckConstraint("end_time > start_time", name="ck_snapshot_operations_time_valid"),
-        UniqueConstraint("snapshot_id", "operation_id", name="uq_snapshot_operations_snapshot_operation"),
-        Index("ix_snapshot_ops_resource_time", "snapshot_id", "resource_id", "start_time", "end_time"),
+        UniqueConstraint(
+            "snapshot_id", "operation_id", name="uq_snapshot_operations_snapshot_operation"
+        ),
+        Index(
+            "ix_snapshot_ops_resource_time", "snapshot_id", "resource_id", "start_time", "end_time"
+        ),
         Index("ix_snapshot_ops_work_order", "snapshot_id", "work_order_id"),
     )
 
@@ -76,7 +82,9 @@ class SolverRun(TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("incidents.incident_id", ondelete="CASCADE"), nullable=False
     )
     baseline_snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("schedule_snapshots.snapshot_id", ondelete="RESTRICT"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("schedule_snapshots.snapshot_id", ondelete="RESTRICT"),
+        nullable=False,
     )
     strategy_type: Mapped[str] = mapped_column(String(64), nullable=False)
     solver_name: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -108,17 +116,25 @@ class CandidatePlanOperation(Base):
         server_default=text("gen_random_uuid()"),
     )
     plan_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("candidate_plans.plan_id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("candidate_plans.plan_id", ondelete="CASCADE"),
+        nullable=False,
     )
     operation_pk: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operations.operation_pk", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("operations.operation_pk", ondelete="SET NULL"),
+        nullable=True,
     )
     operation_id: Mapped[str] = mapped_column(String(128), nullable=False)
     work_order_id: Mapped[str] = mapped_column(String(128), nullable=False)
     original_resource_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     planned_resource_id: Mapped[str] = mapped_column(String(128), nullable=False)
-    original_start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    original_end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    original_start_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    original_end_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     planned_start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     planned_end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_adjusted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -126,9 +142,17 @@ class CandidatePlanOperation(Base):
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, default=dict)
 
     __table_args__ = (
-        CheckConstraint("planned_end_time > planned_start_time", name="ck_plan_operations_time_valid"),
+        CheckConstraint(
+            "planned_end_time > planned_start_time", name="ck_plan_operations_time_valid"
+        ),
         UniqueConstraint("plan_id", "operation_id", name="uq_plan_operations_plan_operation"),
-        Index("ix_plan_ops_resource_time", "plan_id", "planned_resource_id", "planned_start_time", "planned_end_time"),
+        Index(
+            "ix_plan_ops_resource_time",
+            "plan_id",
+            "planned_resource_id",
+            "planned_start_time",
+            "planned_end_time",
+        ),
         Index("ix_plan_ops_work_order", "plan_id", "work_order_id"),
     )
 
@@ -148,10 +172,14 @@ class PlanRecommendation(TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("incidents.incident_id", ondelete="CASCADE"), nullable=False
     )
     recommended_plan_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("candidate_plans.plan_id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("candidate_plans.plan_id", ondelete="CASCADE"),
+        nullable=False,
     )
     top_scored_plan_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("candidate_plans.plan_id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("candidate_plans.plan_id", ondelete="SET NULL"),
+        nullable=True,
     )
     goal_mode: Mapped[str] = mapped_column(String(64), nullable=False, default="balanced")
     confidence: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
@@ -159,7 +187,9 @@ class PlanRecommendation(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     __table_args__ = (
-        CheckConstraint("confidence >= 0 AND confidence <= 1", name="ck_plan_recommendations_confidence"),
+        CheckConstraint(
+            "confidence >= 0 AND confidence <= 1", name="ck_plan_recommendations_confidence"
+        ),
         Index("ix_plan_recommendations_incident_active", "incident_id", "is_active"),
     )
 
@@ -179,10 +209,14 @@ class WritebackJob(TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("incidents.incident_id", ondelete="CASCADE"), nullable=False
     )
     decision_record_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("decision_records.decision_record_id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("decision_records.decision_record_id", ondelete="SET NULL"),
+        nullable=True,
     )
     confirmed_plan_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("candidate_plans.plan_id", ondelete="RESTRICT"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("candidate_plans.plan_id", ondelete="RESTRICT"),
+        nullable=False,
     )
     target_system: Mapped[str] = mapped_column(String(64), nullable=False, default="MES")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
@@ -197,4 +231,3 @@ class WritebackJob(TimestampMixin, Base):
         Index("ix_writeback_jobs_status_retry", "status", "next_retry_at"),
         Index("ix_writeback_jobs_incident", "incident_id"),
     )
-

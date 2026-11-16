@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from app.models.decision import DecisionRecord
@@ -37,7 +37,7 @@ class ExportResult:
         self.content_type = content_type
         self.content = content
         self.decision_record_id = decision_record_id
-        self.created_at = datetime.now(tz=timezone.utc).isoformat()
+        self.created_at = datetime.now(tz=UTC).isoformat()
 
 
 class ExportService:
@@ -86,9 +86,7 @@ class ExportService:
         key = str(decision_record_id)
         record = self._decision_records.get(key)
         if record is None:
-            raise ValueError(
-                f"Decision record {decision_record_id} not found."
-            )
+            raise ValueError(f"Decision record {decision_record_id} not found.")
 
         plan = self._confirmed_plans.get(key)
 
@@ -118,25 +116,29 @@ class ExportService:
         ]
 
         if record.is_override and record.override_reason:
-            lines.extend([
-                "--- Override ---",
-                f"Reason: {record.override_reason}",
-                f"Recommended Plan: {record.recommended_plan_id}",
-                "",
-            ])
+            lines.extend(
+                [
+                    "--- Override ---",
+                    f"Reason: {record.override_reason}",
+                    f"Recommended Plan: {record.recommended_plan_id}",
+                    "",
+                ]
+            )
 
         if plan:
-            lines.extend([
-                "--- Gantt Snapshot ---",
-                f"Gantt Version: {plan.gantt_version}",
-                f"Feasibility: {plan.feasibility_status}",
-                f"Work Orders: {len(plan.schedule_detail.work_orders)}",
-                "",
-                "--- Key KPI ---",
-                f"Solve Time: {plan.solver_metadata.solve_time_seconds}s",
-                f"Iterations: {plan.solver_metadata.iteration_count}",
-                "",
-            ])
+            lines.extend(
+                [
+                    "--- Gantt Snapshot ---",
+                    f"Gantt Version: {plan.gantt_version}",
+                    f"Feasibility: {plan.feasibility_status}",
+                    f"Work Orders: {len(plan.schedule_detail.work_orders)}",
+                    "",
+                    "--- Key KPI ---",
+                    f"Solve Time: {plan.solver_metadata.solve_time_seconds}s",
+                    f"Iterations: {plan.solver_metadata.iteration_count}",
+                    "",
+                ]
+            )
 
         lines.append("=" * 60)
 
@@ -170,9 +172,7 @@ class ExportService:
         key = str(decision_record_id)
         record = self._decision_records.get(key)
         if record is None:
-            raise ValueError(
-                f"Decision record {decision_record_id} not found."
-            )
+            raise ValueError(f"Decision record {decision_record_id} not found.")
 
         plan = self._confirmed_plans.get(key)
 
@@ -187,12 +187,8 @@ class ExportService:
         }
 
         if plan:
-            export_data["schedule_detail"] = plan.schedule_detail.model_dump(
-                mode="json"
-            )
-            export_data["solver_chain"] = plan.solver_chain.model_dump(
-                mode="json"
-            )
+            export_data["schedule_detail"] = plan.schedule_detail.model_dump(mode="json")
+            export_data["solver_chain"] = plan.solver_chain.model_dump(mode="json")
 
         content = json.dumps(export_data, indent=2, default=str).encode("utf-8")
         filename = f"decision_{key[:8]}.xlsx"

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.flexible_shop import (
     BenchmarkResult,
     CapabilityStatus,
+    ConstraintFamilyCompilation,
     CounterfactualReplayMatrixRequest,
     CounterfactualReplayMatrixResponse,
     CounterfactualReplayResult,
@@ -38,18 +39,16 @@ from app.models.flexible_shop import (
     LargeFjspConstraintModelResponse,
     MultiIncidentRecoveryRequest,
     MultiIncidentRecoveryResponse,
+    PolicyEffectivenessCell,
     PolicyOutcomeObservation,
     ProductionWritebackSafetyRequest,
     ProductionWritebackSafetyResponse,
-    PolicyEffectivenessCell,
     RealDataIntegrationRequest,
     RealDataIntegrationResponse,
     RecoveryPolicyCandidate,
     SolverStrategyPlan,
     WritebackSafetyGateCheck,
-    ConstraintFamilyCompilation,
 )
-
 
 _INCIDENT_POLICIES: dict[IncidentCategory, list[str]] = {
     "equipment_failure": [
@@ -114,9 +113,7 @@ _INCIDENT_REQUIRED_CONSTRAINTS: dict[IncidentCategory, list[str]] = {
 class FlexibleShopCapabilityService:
     """Assesses whether a large flexible shop is ready for replay/shadow/pilot."""
 
-    def assess(
-        self, request: FlexibleShopCapabilityRequest
-    ) -> FlexibleShopCapabilityResponse:
+    def assess(self, request: FlexibleShopCapabilityRequest) -> FlexibleShopCapabilityResponse:
         statuses = [
             self._data_model_status(request.context),
             self._constraint_status(request.context),
@@ -268,7 +265,9 @@ class FlexibleShopCapabilityService:
             "p95_latency_required": True,
             "concurrent_incident_required": True,
         }
-        warnings = [f"missing_benchmark_target_{label}" for label, passed in checks.items() if not passed]
+        warnings = [
+            f"missing_benchmark_target_{label}" for label, passed in checks.items() if not passed
+        ]
         return _status(
             "performance_engineering",
             checks,
@@ -352,9 +351,7 @@ class FlexibleShopCapabilityService:
 class DynamicReschedulingPlanner:
     """Builds incident-specific large-shop recovery plans."""
 
-    def plan(
-        self, request: DynamicReschedulingPlanRequest
-    ) -> DynamicReschedulingPlanResponse:
+    def plan(self, request: DynamicReschedulingPlanRequest) -> DynamicReschedulingPlanResponse:
         operation_count = _operation_count(request.context)
         global_strategy = _solver_strategy(
             operation_count=operation_count,
@@ -424,12 +421,12 @@ class FlexibleShopBenchmarkService:
     on customer snapshots.
     """
 
-    def run(
-        self, request: FlexibleShopBenchmarkRequest
-    ) -> FlexibleShopBenchmarkResponse:
-        results = [self._run_target(target, request.solve_timeout_seconds) for target in request.targets]
+    def run(self, request: FlexibleShopBenchmarkRequest) -> FlexibleShopBenchmarkResponse:
+        results = [
+            self._run_target(target, request.solve_timeout_seconds) for target in request.targets
+        ]
         return FlexibleShopBenchmarkResponse(
-            generated_at=datetime.now(tz=timezone.utc),
+            generated_at=datetime.now(tz=UTC),
             results=results,
             claim_boundary=(
                 "Synthetic benchmark estimates routing/gating scalability. "
@@ -493,11 +490,26 @@ class CounterfactualReplayMatrixService:
         for (context_key, policy_type), observations in sorted(grouped.items()):
             sample_count = len(observations)
             total_weight = sum(item.sample_weight for item in observations) or 1.0
-            feasible = sum(item.sample_weight for item in observations if item.hard_feasible) / total_weight
-            accepted = sum(item.sample_weight for item in observations if item.accepted_by_planner) / total_weight
-            failed = sum(item.sample_weight for item in observations if item.execution_failed) / total_weight
-            delay = sum(item.delay_delta_minutes * item.sample_weight for item in observations) / total_weight
-            perturb = sum(item.perturbation_cost * item.sample_weight for item in observations) / total_weight
+            feasible = (
+                sum(item.sample_weight for item in observations if item.hard_feasible)
+                / total_weight
+            )
+            accepted = (
+                sum(item.sample_weight for item in observations if item.accepted_by_planner)
+                / total_weight
+            )
+            failed = (
+                sum(item.sample_weight for item in observations if item.execution_failed)
+                / total_weight
+            )
+            delay = (
+                sum(item.delay_delta_minutes * item.sample_weight for item in observations)
+                / total_weight
+            )
+            perturb = (
+                sum(item.perturbation_cost * item.sample_weight for item in observations)
+                / total_weight
+            )
             cells.append(
                 PolicyEffectivenessCell(
                     context_key=context_key,
@@ -508,7 +520,9 @@ class CounterfactualReplayMatrixService:
                     mean_delay_delta_minutes=round(delay, 2),
                     mean_perturbation_cost=round(perturb, 2),
                     execution_failure_rate=round(failed, 4),
-                    confidence_level=_confidence(sample_count, context_key not in insufficient_contexts),
+                    confidence_level=_confidence(
+                        sample_count, context_key not in insufficient_contexts
+                    ),
                 )
             )
         return CounterfactualReplayMatrixResponse(
@@ -524,22 +538,14 @@ class CounterfactualReplayMatrixService:
 class RealDataIntegrationService:
     """Checks whether real customer sources can support replay and shadow mode."""
 
-    def assess(
-        self, request: RealDataIntegrationRequest
-    ) -> RealDataIntegrationResponse:
+    def assess(self, request: RealDataIntegrationRequest) -> RealDataIntegrationResponse:
         by_source = {source.source_system: source for source in request.sources}
         source_checks = [
             self._check_source(source_system, by_source.get(source_system), request)
             for source_system in request.required_sources
         ]
-        blockers = [
-            blocker
-            for check in source_checks
-            for blocker in check.blockers
-        ]
-        mock_checks = [
-            check for check in source_checks if check.status == "mock_only"
-        ]
+        blockers = [blocker for check in source_checks for blocker in check.blockers]
+        mock_checks = [check for check in source_checks if check.status == "mock_only"]
         canonical_entities = _canonical_entities_present(request.context)
         id_alignment_score = _id_alignment_score(request)
         lineage_score = _lineage_score(request)
@@ -616,9 +622,7 @@ class RealDataIntegrationService:
 class LargeFjspConstraintCompiler:
     """Compiles a large flexible job shop context into constraint families."""
 
-    def compile(
-        self, request: LargeFjspConstraintModelRequest
-    ) -> LargeFjspConstraintModelResponse:
+    def compile(self, request: LargeFjspConstraintModelRequest) -> LargeFjspConstraintModelResponse:
         context = request.context
         operations = _all_operations(context)
         modes = [mode for operation in operations for mode in operation.modes]
@@ -708,9 +712,7 @@ class LargeFjspConstraintCompiler:
                 "operation_modes": len(modes),
                 "resources": len(context.resources),
                 "work_orders": len(context.work_orders),
-                "predecessor_arcs": sum(
-                    len(operation.predecessor_ids) for operation in operations
-                ),
+                "predecessor_arcs": sum(len(operation.predecessor_ids) for operation in operations),
             },
             constraint_families=families,
             hard_constraints=[
@@ -795,9 +797,7 @@ class DecompositionDynamicSolver:
 class MultiIncidentRecoveryStrategyService:
     """Expands each incident into policy candidates with roles and gates."""
 
-    def build(
-        self, request: MultiIncidentRecoveryRequest
-    ) -> MultiIncidentRecoveryResponse:
+    def build(self, request: MultiIncidentRecoveryRequest) -> MultiIncidentRecoveryResponse:
         candidates: list[RecoveryPolicyCandidate] = []
         blockers: list[str] = []
         for incident in request.incidents:
@@ -809,9 +809,7 @@ class MultiIncidentRecoveryStrategyService:
                         incident_type=incident.incident_type,
                         policy_type=policy,
                         when_to_use=_policy_when_to_use(policy),
-                        hard_gates=_INCIDENT_REQUIRED_CONSTRAINTS[
-                            incident.incident_type
-                        ],
+                        hard_gates=_INCIDENT_REQUIRED_CONSTRAINTS[incident.incident_type],
                         expected_tradeoffs=_policy_tradeoffs(policy),
                         ai_role=(
                             "parse incident, retrieve similar cases, explain "
@@ -849,9 +847,7 @@ class MultiIncidentRecoveryStrategyService:
 class CounterfactualReplayRunner:
     """Runs deterministic counterfactual policy scoring for historical cases."""
 
-    def run(
-        self, request: CounterfactualReplayRunRequest
-    ) -> CounterfactualReplayRunResponse:
+    def run(self, request: CounterfactualReplayRunRequest) -> CounterfactualReplayRunResponse:
         results: list[CounterfactualReplayResult] = []
         matrix_cases = []
         for case in request.cases:
@@ -870,9 +866,7 @@ class CounterfactualReplayRunner:
                         execution_failed=result.execution_risk_score >= 0.8,
                     )
                 )
-            matrix_cases.append(
-                _historical_case_from_observations(case, observations)
-            )
+            matrix_cases.append(_historical_case_from_observations(case, observations))
 
         matrix = CounterfactualReplayMatrixService().build(
             CounterfactualReplayMatrixRequest(
@@ -915,9 +909,7 @@ class ProductionWritebackSafetyService:
                 "low_policy_confidence",
             ),
         ]
-        blocking_reasons = [
-            check.blocker for check in checks if not check.passed and check.blocker
-        ]
+        blocking_reasons = [check.blocker for check in checks if not check.passed and check.blocker]
         if blocking_reasons:
             status = "blocked"
         elif request.policy_confidence_level == "high":
@@ -953,14 +945,10 @@ class ExecutionFeedbackService:
                 feedback_updates=[],
                 observed_signal_count=0,
                 deviation_summary={"max_abs_deviation_minutes": 0, "blocked_events": 0},
-                claim_boundary=(
-                    "No execution signal was provided; no policy update can be made."
-                ),
+                claim_boundary=("No execution signal was provided; no policy update can be made."),
             )
 
-        max_abs_deviation = max(
-            abs(signal.deviation_minutes) for signal in request.signals
-        )
+        max_abs_deviation = max(abs(signal.deviation_minutes) for signal in request.signals)
         blocked_events = sum(
             1
             for signal in request.signals
@@ -1070,9 +1058,7 @@ def _id_alignment_score(request: RealDataIntegrationRequest) -> float:
     if canonical_count == 0:
         return 0.0
     covered_types = {
-        item.canonical_entity_type
-        for item in request.id_crosswalks
-        if item.confidence >= 0.8
+        item.canonical_entity_type for item in request.id_crosswalks if item.confidence >= 0.8
     }
     return min(1.0, len(covered_types) / canonical_count)
 
@@ -1128,11 +1114,7 @@ def _source_entities(source_system: str) -> list[str]:
 
 
 def _all_operations(context: FlexibleShopContext) -> list[FlexibleOperation]:
-    return [
-        operation
-        for work_order in context.work_orders
-        for operation in work_order.operations
-    ]
+    return [operation for work_order in context.work_orders for operation in work_order.operations]
 
 
 def _compile_family(
@@ -1181,11 +1163,7 @@ def _soft_objectives(include: bool) -> list[str]:
 
 
 def _frozen_operation_ids(context: FlexibleShopContext) -> list[str]:
-    frozen = {
-        operation_id
-        for zone in context.frozen_zones
-        for operation_id in zone.operation_ids
-    }
+    frozen = {operation_id for zone in context.frozen_zones for operation_id in zone.operation_ids}
     frozen.update(
         operation.operation_id
         for operation in _all_operations(context)

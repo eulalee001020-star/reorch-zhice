@@ -41,7 +41,6 @@ from app.services.data_gate.integration_registry import (
 )
 from app.services.data_gate.schema_drift_guard import SchemaDriftError, SchemaDriftGuard
 
-
 router = APIRouter(prefix="/api/v1/integration-control", tags=["integration-control"])
 
 
@@ -304,9 +303,7 @@ async def evaluate_decision_readiness(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
-@router.post(
-    "/validation/digital-twin", response_model=IntegrationControlValidationResult
-)
+@router.post("/validation/digital-twin", response_model=IntegrationControlValidationResult)
 async def validate_integration_control_plane(
     body: IntegrationControlValidationRequest,
     user: CurrentUser = Depends(get_optional_current_user),

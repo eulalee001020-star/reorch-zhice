@@ -18,7 +18,7 @@ Key responsibilities:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from app.core.auth import Role
@@ -174,8 +174,7 @@ class ConfirmationModule:
         selected_plan = plan_map.get(request.selected_plan_id)
         if selected_plan is None:
             raise ValueError(
-                f"Selected plan '{request.selected_plan_id}' not found "
-                f"in candidate plans."
+                f"Selected plan '{request.selected_plan_id}' not found in candidate plans."
             )
 
         confirmed_plan_id = selected_plan.plan_id
@@ -268,7 +267,7 @@ class ConfirmationModule:
 
     def register_pending(self, incident_id: UUID) -> None:
         """Register an incident as pending confirmation for timeout tracking."""
-        self._pending_incidents[incident_id] = datetime.now(tz=timezone.utc)
+        self._pending_incidents[incident_id] = datetime.now(tz=UTC)
 
     async def check_timeout(self, incident_id: UUID) -> bool:
         """Check if an incident has exceeded the 15-minute confirmation window.
@@ -279,7 +278,7 @@ class ConfirmationModule:
         if pending_since is None:
             return False
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         elapsed_minutes = (now - pending_since).total_seconds() / 60.0
 
         if elapsed_minutes >= _CONFIRMATION_TIMEOUT_MINUTES:
@@ -311,9 +310,7 @@ class ConfirmationModule:
     # ── Internal helpers ────────────────────────────────────────────
 
     @staticmethod
-    def _apply_adjustments(
-        schedule: ScheduleDetail, adjustments: list[dict]
-    ) -> ScheduleDetail:
+    def _apply_adjustments(schedule: ScheduleDetail, adjustments: list[dict]) -> ScheduleDetail:
         """Apply micro-adjustments to a schedule, returning a new copy.
 
         Each adjustment dict may contain:
@@ -373,13 +370,11 @@ class ConfirmationModule:
             is_manual_adjusted=is_manual_adjusted,
             override_reason=override_reason,
             confirmed_by=request.confirmed_by,
-            confirmed_at=datetime.now(tz=timezone.utc),
+            confirmed_at=datetime.now(tz=UTC),
             plan_selection_input_version=plan_selection_input_version,
             plan_selection_output_version=plan_selection_output_version,
             solver_chain=selected_plan.solver_chain,
-            rule_selector_version=self._module_versions.get(
-                "rule_selector", "unknown"
-            ),
+            rule_selector_version=self._module_versions.get("rule_selector", "unknown"),
             neighborhood_selector_version=self._module_versions.get(
                 "neighborhood_selector", "unknown"
             ),

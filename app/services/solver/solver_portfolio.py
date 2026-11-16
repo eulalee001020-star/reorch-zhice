@@ -26,9 +26,7 @@ _DEFAULT_CONFIGS: dict[StrategyType, SolverChainConfig] = {
         primary_solver="cp_sat_time_shift",
         fallback_solver="greedy_time_shift",
         fallback_rule="earliest_due_date",
-        degradation_trigger=(
-            "Primary solver timeout or infeasible after 80% budget"
-        ),
+        degradation_trigger=("Primary solver timeout or infeasible after 80% budget"),
         max_timeout_seconds=15.0,
     ),
     StrategyType.LOCAL_REPAIR: SolverChainConfig(
@@ -36,8 +34,7 @@ _DEFAULT_CONFIGS: dict[StrategyType, SolverChainConfig] = {
         fallback_solver="greedy_local_repair",
         fallback_rule="minimum_slack_time",
         degradation_trigger=(
-            "Primary solver timeout, infeasible, or 10 consecutive "
-            "stagnation iterations"
+            "Primary solver timeout, infeasible, or 10 consecutive stagnation iterations"
         ),
         max_timeout_seconds=45.0,
     ),
@@ -46,8 +43,7 @@ _DEFAULT_CONFIGS: dict[StrategyType, SolverChainConfig] = {
         fallback_solver="cp_sat_lns",
         fallback_rule="due_date_priority",
         degradation_trigger=(
-            "Primary solver timeout or infeasible; fallback to LNS "
-            "then greedy rule"
+            "Primary solver timeout or infeasible; fallback to LNS then greedy rule"
         ),
         max_timeout_seconds=90.0,
     ),

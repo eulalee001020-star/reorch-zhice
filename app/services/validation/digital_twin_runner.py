@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.models.case import PreferenceProfile
 from app.models.enums import IncidentSeverity, IncidentType, ReportSource
@@ -21,16 +21,16 @@ from app.models.planning import (
     WritebackPreviewRequest,
 )
 from app.models.schedule import ScheduleSnapshot
-from app.services.validation.digital_twin_utils import schedule_snapshot_from_initial_option
 from app.services.data_gate.enterprise_integration import EnterpriseIntegrationService
-from app.services.solver.hybrid_solver import HybridSolver
+from app.services.evidence.value_tracking import ValueTrackingService
 from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
-from app.services.solver.initial_scheduler import InitialScheduler
 from app.services.recommendation.plan_quality_gate import PlanQualityGate
-from app.services.validation.simulation_sandbox import SimulationSandbox
+from app.services.solver.hybrid_solver import HybridSolver
+from app.services.solver.initial_scheduler import InitialScheduler
 from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
 from app.services.solver.strategy_selector import StrategySelector
-from app.services.evidence.value_tracking import ValueTrackingService
+from app.services.validation.digital_twin_utils import schedule_snapshot_from_initial_option
+from app.services.validation.simulation_sandbox import SimulationSandbox
 
 
 class DigitalTwinRunner:
@@ -109,10 +109,7 @@ class DigitalTwinRunner:
         gate = PlanQualityGate()
         quality_gates = [gate.evaluate(plan) for plan in candidates]
         sandbox = SimulationSandbox()
-        simulation_results = [
-            sandbox.simulate(plan, snapshot).__dict__
-            for plan in candidates
-        ]
+        simulation_results = [sandbox.simulate(plan, snapshot).__dict__ for plan in candidates]
         writeback_preview = None
         if candidates:
             writeback_preview = EnterpriseIntegrationService().build_writeback_preview(
@@ -153,9 +150,7 @@ class DigitalTwinRunner:
                 "affected_operation_ids": [
                     item.operation_id for item in impact.affected_operations
                 ],
-                "quality_gate_plan_ids": [
-                    str(report.plan_id) for report in quality_gates
-                ],
+                "quality_gate_plan_ids": [str(report.plan_id) for report in quality_gates],
             },
             "model_cost_proxy": {
                 "external_llm_calls": 0,
@@ -185,18 +180,12 @@ class DigitalTwinRunner:
                 "quality_gate_confidence_levels": [
                     report.confidence_level for report in quality_gates
                 ],
-                "quality_gate_policies": [
-                    report.recommendation_policy for report in quality_gates
-                ],
+                "quality_gate_policies": [report.recommendation_policy for report in quality_gates],
                 "execution_risk_scores": [
                     item["execution_risk_score"] for item in simulation_results
                 ],
                 "risk_flags": sorted(
-                    {
-                        flag
-                        for item in simulation_results
-                        for flag in item.get("risk_flags", [])
-                    }
+                    {flag for item in simulation_results for flag in item.get("risk_flags", [])}
                 ),
             },
             "audit_package_proxy": {
@@ -246,7 +235,7 @@ class DigitalTwinRunner:
 
     @staticmethod
     def _build_request() -> InitialScheduleRequest:
-        start = datetime(2026, 5, 12, 8, 0, tzinfo=timezone.utc)
+        start = datetime(2026, 5, 12, 8, 0, tzinfo=UTC)
         resources = [
             PlanningResourceInput(
                 resource_id="CNC-01",
@@ -347,10 +336,46 @@ class DigitalTwinRunner:
                 start + timedelta(hours=13),
                 3,
                 [
-                    _op("WO-9001-10", "WO-9001", 150, ["CNC-01", "CNC-02"], ["milling"], [], "A", mat("AL-6061")),
-                    _op("WO-9001-20", "WO-9001", 70, ["QC-01"], ["inspection"], ["WO-9001-10"], "A", mat("CMM-FIXTURE")),
-                    _op("WO-9001-30", "WO-9001", 90, ["ASSY-01"], ["assembly"], ["WO-9001-20"], "A", mat("SERVO-KIT", 3, "reserved")),
-                    _op("WO-9001-40", "WO-9001", 40, ["PACK-01"], ["packing"], ["WO-9001-30"], "A", mat("PACK-A")),
+                    _op(
+                        "WO-9001-10",
+                        "WO-9001",
+                        150,
+                        ["CNC-01", "CNC-02"],
+                        ["milling"],
+                        [],
+                        "A",
+                        mat("AL-6061"),
+                    ),
+                    _op(
+                        "WO-9001-20",
+                        "WO-9001",
+                        70,
+                        ["QC-01"],
+                        ["inspection"],
+                        ["WO-9001-10"],
+                        "A",
+                        mat("CMM-FIXTURE"),
+                    ),
+                    _op(
+                        "WO-9001-30",
+                        "WO-9001",
+                        90,
+                        ["ASSY-01"],
+                        ["assembly"],
+                        ["WO-9001-20"],
+                        "A",
+                        mat("SERVO-KIT", 3, "reserved"),
+                    ),
+                    _op(
+                        "WO-9001-40",
+                        "WO-9001",
+                        40,
+                        ["PACK-01"],
+                        ["packing"],
+                        ["WO-9001-30"],
+                        "A",
+                        mat("PACK-A"),
+                    ),
                 ],
             ),
             _wo(
@@ -360,10 +385,46 @@ class DigitalTwinRunner:
                 start + timedelta(hours=12),
                 2,
                 [
-                    _op("WO-9002-10", "WO-9002", 120, ["LATHE-01"], ["turning"], [], "B", mat("STEEL-42CRMO")),
-                    _op("WO-9002-20", "WO-9002", 110, ["HT-01"], ["heat_treatment"], ["WO-9002-10"], "B", mat("HT-BASKET")),
-                    _op("WO-9002-30", "WO-9002", 55, ["QC-01"], ["inspection"], ["WO-9002-20"], "B", mat("CMM-FIXTURE")),
-                    _op("WO-9002-40", "WO-9002", 35, ["PACK-01"], ["packing"], ["WO-9002-30"], "B", mat("PACK-B")),
+                    _op(
+                        "WO-9002-10",
+                        "WO-9002",
+                        120,
+                        ["LATHE-01"],
+                        ["turning"],
+                        [],
+                        "B",
+                        mat("STEEL-42CRMO"),
+                    ),
+                    _op(
+                        "WO-9002-20",
+                        "WO-9002",
+                        110,
+                        ["HT-01"],
+                        ["heat_treatment"],
+                        ["WO-9002-10"],
+                        "B",
+                        mat("HT-BASKET"),
+                    ),
+                    _op(
+                        "WO-9002-30",
+                        "WO-9002",
+                        55,
+                        ["QC-01"],
+                        ["inspection"],
+                        ["WO-9002-20"],
+                        "B",
+                        mat("CMM-FIXTURE"),
+                    ),
+                    _op(
+                        "WO-9002-40",
+                        "WO-9002",
+                        35,
+                        ["PACK-01"],
+                        ["packing"],
+                        ["WO-9002-30"],
+                        "B",
+                        mat("PACK-B"),
+                    ),
                 ],
             ),
             _wo(
@@ -373,9 +434,36 @@ class DigitalTwinRunner:
                 start + timedelta(hours=10),
                 4,
                 [
-                    _op("WO-9003-10", "WO-9003", 95, ["CNC-01", "CNC-02"], ["milling"], [], "C", mat("AL-7075")),
-                    _op("WO-9003-20", "WO-9003", 45, ["QC-01"], ["inspection"], ["WO-9003-10"], "C", mat("CMM-FIXTURE")),
-                    _op("WO-9003-30", "WO-9003", 65, ["ASSY-01"], ["assembly"], ["WO-9003-20"], "C", mat("SEAL-KIT", 4, "delayed")),
+                    _op(
+                        "WO-9003-10",
+                        "WO-9003",
+                        95,
+                        ["CNC-01", "CNC-02"],
+                        ["milling"],
+                        [],
+                        "C",
+                        mat("AL-7075"),
+                    ),
+                    _op(
+                        "WO-9003-20",
+                        "WO-9003",
+                        45,
+                        ["QC-01"],
+                        ["inspection"],
+                        ["WO-9003-10"],
+                        "C",
+                        mat("CMM-FIXTURE"),
+                    ),
+                    _op(
+                        "WO-9003-30",
+                        "WO-9003",
+                        65,
+                        ["ASSY-01"],
+                        ["assembly"],
+                        ["WO-9003-20"],
+                        "C",
+                        mat("SEAL-KIT", 4, "delayed"),
+                    ),
                 ],
             ),
             _wo(
@@ -385,9 +473,36 @@ class DigitalTwinRunner:
                 start + timedelta(hours=17),
                 1,
                 [
-                    _op("WO-9004-10", "WO-9004", 180, ["CNC-01", "CNC-02"], ["milling"], [], "A", mat("AL-6061")),
-                    _op("WO-9004-20", "WO-9004", 100, ["ASSY-01"], ["assembly"], ["WO-9004-10"], "A", mat("BEARING-KIT", 5, "delayed")),
-                    _op("WO-9004-30", "WO-9004", 60, ["QC-01"], ["inspection"], ["WO-9004-20"], "A", mat("CMM-FIXTURE")),
+                    _op(
+                        "WO-9004-10",
+                        "WO-9004",
+                        180,
+                        ["CNC-01", "CNC-02"],
+                        ["milling"],
+                        [],
+                        "A",
+                        mat("AL-6061"),
+                    ),
+                    _op(
+                        "WO-9004-20",
+                        "WO-9004",
+                        100,
+                        ["ASSY-01"],
+                        ["assembly"],
+                        ["WO-9004-10"],
+                        "A",
+                        mat("BEARING-KIT", 5, "delayed"),
+                    ),
+                    _op(
+                        "WO-9004-30",
+                        "WO-9004",
+                        60,
+                        ["QC-01"],
+                        ["inspection"],
+                        ["WO-9004-20"],
+                        "A",
+                        mat("CMM-FIXTURE"),
+                    ),
                 ],
             ),
             _wo(
@@ -397,8 +512,26 @@ class DigitalTwinRunner:
                 start + timedelta(hours=15),
                 1,
                 [
-                    _op("WO-9005-10", "WO-9005", 105, ["CNC-02"], ["milling"], [], "C", mat("AL-7075")),
-                    _op("WO-9005-20", "WO-9005", 35, ["PACK-01"], ["packing"], ["WO-9005-10"], "C", mat("PACK-C")),
+                    _op(
+                        "WO-9005-10",
+                        "WO-9005",
+                        105,
+                        ["CNC-02"],
+                        ["milling"],
+                        [],
+                        "C",
+                        mat("AL-7075"),
+                    ),
+                    _op(
+                        "WO-9005-20",
+                        "WO-9005",
+                        35,
+                        ["PACK-01"],
+                        ["packing"],
+                        ["WO-9005-10"],
+                        "C",
+                        mat("PACK-C"),
+                    ),
                 ],
             ),
         ]
@@ -467,7 +600,9 @@ def _resource_with_future_load(snapshot: ScheduleSnapshot, incident_time: dateti
         for op in wo.operations:
             if op.end_time <= incident_time:
                 continue
-            minutes = max(0.0, (op.end_time - max(op.start_time, incident_time)).total_seconds() / 60)
+            minutes = max(
+                0.0, (op.end_time - max(op.start_time, incident_time)).total_seconds() / 60
+            )
             load[op.resource_id] = load.get(op.resource_id, 0.0) + minutes
     cnc_load = {rid: minutes for rid, minutes in load.items() if rid.startswith("CNC-")}
     if cnc_load:

@@ -74,6 +74,7 @@ def resolve_goal_weights(
     value = goal_mode if isinstance(goal_mode, str) else goal_mode.value
     return dict(_GOAL_WEIGHTS.get(value, _GOAL_WEIGHTS[GoalMode.BALANCED.value]))
 
+
 # Score unit descriptions (Req 5.7)
 _SCORE_UNIT_DESCRIPTIONS: dict[str, str] = {
     "delayed_order_count": "Number of work orders whose completion exceeds due date (lower is better)",
@@ -158,15 +159,16 @@ class EvaluationCenter:
 
 # ── Baseline metrics ────────────────────────────────────────────────
 
+
 class _BaselineMetrics:
     """Pre-computed metrics from the ScheduleSnapshot."""
 
     __slots__ = (
+        "changeover_count",
+        "critical_otd",
         "delayed_order_count",
         "max_delay_minutes",
         "resource_utilization",
-        "changeover_count",
-        "critical_otd",
         "total_ops",
     )
 
@@ -195,6 +197,7 @@ def _compute_baseline_metrics(snapshot: ScheduleSnapshot) -> _BaselineMetrics:
 
 # ── KPI computation ─────────────────────────────────────────────────
 
+
 def _compute_kpi_vector(
     plan: CandidatePlan,
     snapshot: ScheduleSnapshot,
@@ -215,9 +218,7 @@ def _compute_kpi_vector(
     crit_otd = _critical_otd(work_orders)
 
     # Normalized score (Req 5.7) — weighted sum of per-dimension scores
-    norm = _normalized_score(
-        delayed, max_del, spi, res_delta, chg_delta, crit_otd, weights
-    )
+    norm = _normalized_score(delayed, max_del, spi, res_delta, chg_delta, crit_otd, weights)
 
     return KPIVector(
         delayed_order_count=delayed,
@@ -276,6 +277,7 @@ def _normalized_score(
 
 # ── Delta computation ───────────────────────────────────────────────
 
+
 def _compute_delta(kpi: KPIVector, baseline: _BaselineMetrics) -> dict[str, float]:
     """Compute per-dimension delta vs baseline (Req 5.3).
 
@@ -294,6 +296,7 @@ def _compute_delta(kpi: KPIVector, baseline: _BaselineMetrics) -> dict[str, floa
 
 
 # ── Metric helpers ──────────────────────────────────────────────────
+
 
 def _count_delayed_orders(work_orders: list[WorkOrder]) -> int:
     """Count work orders whose last operation ends after due_date."""

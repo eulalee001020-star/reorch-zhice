@@ -7,10 +7,9 @@ into a stricter gate for historical replay and shadow mode.
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
-from app.core.paths import REPO_ROOT
 from app.adapters.mapping_schema import (
     build_schedule_snapshot,
     map_incident,
@@ -24,6 +23,7 @@ from app.adapters.mapping_validator import (
     MappingValidationReport,
     validate_customer_payloads,
 )
+from app.core.paths import REPO_ROOT
 from app.models.planning import DataReadinessReport, ReadinessIssue
 from app.models.reality_harness import (
     P0RealityHarnessRequest,
@@ -177,7 +177,9 @@ def _derive_permission(
 
     if mapping_report.blocking_errors > 0 or readiness_report.blockers:
         reasons.append("Blocking mapping or snapshot-readiness errors exist.")
-        next_actions.append("Fix required fields, reference integrity, and machine crosswalk before replay.")
+        next_actions.append(
+            "Fix required fields, reference integrity, and machine crosswalk before replay."
+        )
         return RealityHarnessPermission(
             level="stop",
             reasons=reasons,
@@ -186,7 +188,9 @@ def _derive_permission(
 
     if readiness_report.readiness_score < 0.70:
         reasons.append("Readiness score is below 0.70.")
-        next_actions.append("Run data repair and customer field confirmation; do not generate candidates.")
+        next_actions.append(
+            "Run data repair and customer field confirmation; do not generate candidates."
+        )
         return RealityHarnessPermission(
             level="repair_only",
             reasons=reasons,
@@ -196,7 +200,9 @@ def _derive_permission(
     if readiness_report.readiness_score < 0.85 or "timezone_missing" in warning_codes:
         if "timezone_missing" in warning_codes:
             reasons.append("Timestamp timezone coverage is incomplete.")
-            next_actions.append("Ask customer to provide ISO8601 timestamps with timezone before shadow mode.")
+            next_actions.append(
+                "Ask customer to provide ISO8601 timestamps with timezone before shadow mode."
+            )
         else:
             reasons.append("Readiness score supports replay, but not shadow mode.")
             next_actions.append("Resolve warnings that reduce explainability and ROI confidence.")
@@ -209,7 +215,9 @@ def _derive_permission(
         )
 
     reasons.append("Readiness score >= 0.85 and no blocking errors.")
-    next_actions.append("Proceed to historical replay or read-only shadow mode; keep writeback disabled.")
+    next_actions.append(
+        "Proceed to historical replay or read-only shadow mode; keep writeback disabled."
+    )
     return RealityHarnessPermission(
         level="shadow_ready",
         allow_candidate_generation=True,
@@ -231,9 +239,13 @@ def _recommendations(
         codes = sorted({issue.code for issue in blockers})
         recommendations.append(f"Resolve blockers before replay or solving: {', '.join(codes)}.")
     if warnings:
-        recommendations.append("Warnings are allowed for replay only when evidence and customer context remain auditable.")
+        recommendations.append(
+            "Warnings are allowed for replay only when evidence and customer context remain auditable."
+        )
     if readiness_score >= 0.85 and not blockers:
-        recommendations.append("Data may enter historical replay or shadow mode; production writeback remains disabled.")
+        recommendations.append(
+            "Data may enter historical replay or shadow mode; production writeback remains disabled."
+        )
     elif readiness_score >= 0.70 and not blockers:
         recommendations.append("Data may enter historical replay, but not shadow mode.")
     else:

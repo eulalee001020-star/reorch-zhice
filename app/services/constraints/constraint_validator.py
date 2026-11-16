@@ -19,7 +19,6 @@ from __future__ import annotations
 from app.models.enums import StrategyType
 from app.models.schedule import (
     Operation,
-    Resource,
     ScheduleDetail,
     ScheduleSnapshot,
 )
@@ -84,9 +83,7 @@ class ConstraintValidator:
         if strategy == StrategyType.LOCAL_REPAIR:
             checked.append("local_repair_invariance")
             violations.extend(
-                self._check_local_repair_invariance(
-                    op_map, snapshot, affected_op_ids
-                )
+                self._check_local_repair_invariance(op_map, snapshot, affected_op_ids)
             )
 
         return ConstraintValidationReport(

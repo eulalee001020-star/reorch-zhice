@@ -15,7 +15,6 @@ import pandas as pd
 from app.models.synthetic_replay_evidence import SyntheticScenarioPack
 from app.services.evidence.synthetic_replay_evidence import SyntheticReplayEvidenceEvaluator
 
-
 SCENARIO_PREFIXES = {
     "CNC_AUTO_FJSP": "CNC_AU",
     "SEMI_LED_FAB": "SEMI_L",

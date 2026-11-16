@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import DateTime, create_engine, func, select
@@ -23,17 +23,17 @@ from app.models.db.operational_runtime import (
     ShadowCaseRecordORM,
     SolveJobRecordORM,
 )
+from app.models.integration_control import (
+    IntegrationAuditEvent,
+    QuarantineRecord,
+    VersionedAssetRecord,
+)
 from app.models.production_runtime import (
     CdcEvent,
     ExecutionReceipt,
     ShadowExecutionStatus,
     SolveJobRecord,
     TenantSolveQuota,
-)
-from app.models.integration_control import (
-    IntegrationAuditEvent,
-    QuarantineRecord,
-    VersionedAssetRecord,
 )
 
 
@@ -94,7 +94,7 @@ class RelationalOperationalStore:
         checksum: str,
         checkpoint_token_factory,
     ) -> tuple[str, CdcCheckpointRecord, list[int], str | None]:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             existing = session.get(CdcEventRecord, event.event_id)
             checkpoint = session.scalar(
@@ -291,7 +291,7 @@ class RelationalOperationalStore:
         lease_seconds: int,
         quota_by_tenant: dict[str, TenantSolveQuota],
     ) -> SolveJobRecord | None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         self.recover_expired_leases(now)
         with self._lock, self.session() as session, session.begin():
             candidates = list(
@@ -326,7 +326,7 @@ class RelationalOperationalStore:
         return None
 
     def heartbeat_job(self, job_id: str, worker_id: str, lease_seconds: int) -> bool:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             row = session.get(SolveJobRecordORM, job_id)
             if row is None or row.lease_owner != worker_id or row.status != "running":
@@ -339,7 +339,7 @@ class RelationalOperationalStore:
     def save_job_checkpoint(
         self, job_id: str, worker_id: str, subproblem_id: str, payload: dict[str, Any]
     ) -> bool:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             row = session.get(SolveJobRecordORM, job_id)
             if row is None or row.lease_owner != worker_id or row.status != "running":
@@ -354,7 +354,7 @@ class RelationalOperationalStore:
             return True
 
     def request_job_cancel(self, job_id: str) -> SolveJobRecord | None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             row = session.get(SolveJobRecordORM, job_id)
             if row is None:
@@ -381,7 +381,7 @@ class RelationalOperationalStore:
         result: dict[str, Any] | None,
         error: str | None = None,
     ) -> SolveJobRecord | None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             row = session.get(SolveJobRecordORM, job_id)
             if row is None or row.lease_owner != worker_id:
@@ -396,7 +396,7 @@ class RelationalOperationalStore:
             return _job_model(row)
 
     def recover_expired_leases(self, now: datetime | None = None) -> int:
-        now = now or datetime.now(tz=timezone.utc)
+        now = now or datetime.now(tz=UTC)
         recovered = 0
         with self._lock, self.session() as session, session.begin():
             rows = list(
@@ -426,7 +426,7 @@ class RelationalOperationalStore:
         tenant_id: str,
         evidence_scope: str,
     ) -> None:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         payload = status.model_dump(mode="json")
         with self._lock, self.session() as session, session.begin():
             row = session.get(ShadowCaseRecordORM, status.shadow_case_id)
@@ -510,7 +510,7 @@ class RelationalOperationalStore:
                         evidence_scope=evidence_scope,
                         payload=payload,
                         fingerprint=fingerprint,
-                        created_at=datetime.now(tz=timezone.utc),
+                        created_at=datetime.now(tz=UTC),
                     )
                 )
             elif row.fingerprint != fingerprint:
@@ -545,7 +545,7 @@ class RelationalOperationalStore:
     ) -> tuple[VersionedAssetRecord, bool]:
         """Register one immutable asset version without activating it."""
         asset_key = _integration_asset_key(tenant_id, asset_type, asset_id, version)
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             existing = session.get(IntegrationAssetRecordORM, asset_key)
             if existing is not None:
@@ -581,7 +581,7 @@ class RelationalOperationalStore:
     ) -> VersionedAssetRecord | None:
         """Activate a version and retire the previous version in the same scope."""
         asset_key = _integration_asset_key(tenant_id, asset_type, asset_id, version)
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         with self._lock, self.session() as session, session.begin():
             row = session.scalar(
                 select(IntegrationAssetRecordORM)
@@ -704,9 +704,7 @@ class RelationalOperationalStore:
             if status:
                 query = query.where(IntegrationQuarantineRecordORM.status == status)
             rows = list(
-                session.scalars(
-                    query.order_by(IntegrationQuarantineRecordORM.observed_at.desc())
-                )
+                session.scalars(query.order_by(IntegrationQuarantineRecordORM.observed_at.desc()))
             )
             return [_quarantine_model(row) for row in rows]
 
@@ -738,7 +736,7 @@ class RelationalOperationalStore:
             row.status = status
             row.resolved_by = resolved_by
             row.resolution_note = resolution_note
-            row.resolved_at = datetime.now(tz=timezone.utc)
+            row.resolved_at = datetime.now(tz=UTC)
             session.flush()
             return _quarantine_model(row)
 
@@ -752,9 +750,9 @@ class RelationalOperationalStore:
         asset_id: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> IntegrationAuditEvent:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         event_id = hashlib.sha256(
-            f"{tenant_id}|{action}|{actor_id}|{now.isoformat()}".encode("utf-8")
+            f"{tenant_id}|{action}|{actor_id}|{now.isoformat()}".encode()
         ).hexdigest()
         event = IntegrationAuditEvent(
             event_id=event_id,
@@ -824,7 +822,10 @@ class RelationalOperationalStore:
             for name, model in models.items():
                 rows = list(session.scalars(select(model)))
                 result[name] = [
-                    {column.name: _json_value(getattr(row, column.name)) for column in model.__table__.columns}
+                    {
+                        column.name: _json_value(getattr(row, column.name))
+                        for column in model.__table__.columns
+                    }
                     for row in rows
                 ]
         return result
@@ -909,12 +910,8 @@ def _job_orm(record: SolveJobRecord) -> SolveJobRecordORM:
     )
 
 
-def _integration_asset_key(
-    tenant_id: str, asset_type: str, asset_id: str, version: str
-) -> str:
-    return hashlib.sha256(
-        f"{tenant_id}|{asset_type}|{asset_id}|{version}".encode("utf-8")
-    ).hexdigest()
+def _integration_asset_key(tenant_id: str, asset_type: str, asset_id: str, version: str) -> str:
+    return hashlib.sha256(f"{tenant_id}|{asset_type}|{asset_id}|{version}".encode()).hexdigest()
 
 
 def _integration_asset_model(row: IntegrationAssetRecordORM) -> VersionedAssetRecord:
@@ -985,7 +982,7 @@ def _missing_sequences(committed: int, pending: list[int]) -> list[int]:
 
 
 def _aware(value: datetime) -> datetime:
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def _json_value(value: Any) -> Any:

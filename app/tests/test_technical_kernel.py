@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -47,7 +47,7 @@ from app.services.solver.technical_kernel import (
 
 
 def test_decision_graph_builds_affected_subgraph_and_frontier() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     snapshot = _snapshot(start)
     incident = _incident(start + timedelta(minutes=30))
 
@@ -67,7 +67,7 @@ def test_decision_graph_builds_affected_subgraph_and_frontier() -> None:
 
 
 def test_recovery_operator_portfolio_selects_equipment_repair_paths() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     graph = DecisionGraphService().build(
         DecisionGraphBuildRequest(
             snapshot=_snapshot(start),
@@ -89,15 +89,11 @@ def test_recovery_operator_portfolio_selects_equipment_repair_paths() -> None:
     assert "alternative_machine_repair" in operator_types
     assert "local_insertion" in operator_types
     assert response.recommendations[0].rank == 1
-    assert all(
-        "Gate" in gate
-        for item in response.recommendations
-        for gate in item.required_gates
-    )
+    assert all("Gate" in gate for item in response.recommendations for gate in item.required_gates)
 
 
 def test_evidence_gate_blocks_writeback_without_confirmation_and_source_refs() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     plan = _candidate_plan(_schedule(start))
     quality = PlanQualityGate().evaluate(plan)
     request = EvidenceGateRequest(
@@ -129,7 +125,7 @@ def test_evidence_gate_blocks_writeback_without_confirmation_and_source_refs() -
 
 
 def test_evidence_gate_stops_solve_when_data_has_blockers() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     response = EvidenceGateService().evaluate(
         EvidenceGateRequest(
             data_readiness=DataReadinessReport(
@@ -156,7 +152,7 @@ def test_evidence_gate_stops_solve_when_data_has_blockers() -> None:
 
 
 def test_evidence_gate_fails_closed_when_required_gate_evidence_is_missing() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     response = EvidenceGateService().evaluate(
         EvidenceGateRequest(
             candidate_plans=[_candidate_plan(_schedule(start))],
@@ -175,10 +171,8 @@ def test_evidence_gate_fails_closed_when_required_gate_evidence_is_missing() -> 
     assert by_gate["ReplayGate"].status == "fail"
 
 
-def test_evidence_gate_requires_sandbox_dual_approval_and_authorization_for_writeback() -> (
-    None
-):
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+def test_evidence_gate_requires_sandbox_dual_approval_and_authorization_for_writeback() -> None:
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     plan = _candidate_plan(_schedule(start))
     quality = PlanQualityGate().evaluate(plan)
     response = EvidenceGateService().evaluate(
@@ -207,7 +201,7 @@ def test_evidence_gate_requires_sandbox_dual_approval_and_authorization_for_writ
 
 @pytest.mark.asyncio
 async def test_technical_kernel_api() -> None:
-    start = datetime(2026, 7, 4, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 7, 4, 8, tzinfo=UTC)
     snapshot = _snapshot(start)
     incident = _incident(start + timedelta(minutes=30))
     test_app = FastAPI()
@@ -232,10 +226,7 @@ async def test_technical_kernel_api() -> None:
 
     assert graph_response.status_code == 200
     assert recovery_response.status_code == 200
-    assert (
-        recovery_response.json()["recommendations"][0]["operator_type"]
-        == "wait_and_shift"
-    )
+    assert recovery_response.json()["recommendations"][0]["operator_type"] == "wait_and_shift"
 
 
 def _snapshot(start: datetime) -> ScheduleSnapshot:
@@ -305,9 +296,7 @@ def _incident(occurred_at: datetime) -> Incident:
 
 def _schedule(start: datetime) -> ScheduleDetail:
     return ScheduleDetail(
-        resources=[
-            Resource(resource_id="CNC-01", name="CNC-01", capabilities=["milling"])
-        ],
+        resources=[Resource(resource_id="CNC-01", name="CNC-01", capabilities=["milling"])],
         work_orders=[
             WorkOrder(
                 work_order_id="WO-1",

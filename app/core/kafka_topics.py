@@ -13,7 +13,7 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from app.core.config import settings
 
 if TYPE_CHECKING:
-    from confluent_kafka.admin import TopicMetadata
+    pass
 
 logger = logging.getLogger(__name__)
 

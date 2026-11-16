@@ -6,7 +6,7 @@ import json
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.adapters.mapping_schema import AdapterMappingProfile
@@ -14,7 +14,7 @@ from app.adapters.mapping_schema import AdapterMappingProfile
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SAMPLE_PACK = _REPO_ROOT / "datasets" / "p0_reality_pack"
 _CLI = _REPO_ROOT / "tools" / "run_design_partner_preflight.py"
-_NOW = datetime(2026, 7, 10, 9, 0, tzinfo=timezone.utc)
+_NOW = datetime(2026, 7, 10, 9, 0, tzinfo=UTC)
 
 
 def _prepare_pack(pack_dir: Path, *, include_mapping: bool) -> None:
@@ -105,13 +105,9 @@ def test_cli_generates_redacted_report_and_input_manifest(tmp_path: Path) -> Non
     assert result.returncode == 0, result.stderr
     assert "stage=replay_ready" in result.stdout
     output_dir = pack_dir / "preflight_output"
-    report_text = (output_dir / "design_partner_preflight.json").read_text(
-        encoding="utf-8"
-    )
+    report_text = (output_dir / "design_partner_preflight.json").read_text(encoding="utf-8")
     report = json.loads(report_text)
-    manifest = json.loads(
-        (output_dir / "input_manifest.json").read_text(encoding="utf-8")
-    )
+    manifest = json.loads((output_dir / "input_manifest.json").read_text(encoding="utf-8"))
     assert report["reality_harness"]["data_summary"]["raw_rows_embedded"] is False
     assert "raw_payload" not in report_text
     assert len(manifest["files"]) == 6

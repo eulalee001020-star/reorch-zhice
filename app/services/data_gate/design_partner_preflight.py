@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.models.design_partner import (
     ApprovalType,
@@ -102,9 +102,7 @@ class DesignPartnerPreflightService:
             auditable_cases=auditable_cases,
         )
 
-        data_fingerprint = _fingerprint(
-            request.reality_request.model_dump(mode="json")
-        )
+        data_fingerprint = _fingerprint(request.reality_request.model_dump(mode="json"))
         evidence_fingerprint = _fingerprint(request.model_dump(mode="json"))
         claim_boundary = (
             "Synthetic sample only: it proves the workflow can run, not customer demand, "
@@ -140,7 +138,7 @@ class DesignPartnerPreflightService:
 
     def build_synthetic_sample_request(self) -> DesignPartnerPreflightRequest:
         """Build a deterministic demonstration request with no customer evidence."""
-        reference_time = datetime(2026, 5, 14, 5, 0, tzinfo=timezone.utc)
+        reference_time = datetime(2026, 5, 14, 5, 0, tzinfo=UTC)
         approval_types = sorted(_CORE_APPROVAL_TYPES)
         return DesignPartnerPreflightRequest(
             evidence_scope="synthetic_sample",
@@ -196,9 +194,7 @@ def _mapping_check(reality: P0RealityHarnessResponse) -> EvidenceCheck:
             f"{report.warnings} warnings."
         ),
         required_action=(
-            "Review mapping warnings with the customer data owner."
-            if report.warnings
-            else None
+            "Review mapping warnings with the customer data owner." if report.warnings else None
         ),
     )
 
@@ -233,9 +229,7 @@ def _workshop_identity_check(request: DesignPartnerPreflightRequest) -> Evidence
             else "site_id and Reality Harness workshop_id do not match."
         ),
         required_action=(
-            None
-            if matches
-            else "Use one stable pseudonymous workshop identifier across the pack."
+            None if matches else "Use one stable pseudonymous workshop identifier across the pack."
         ),
     )
 
@@ -334,9 +328,7 @@ def _constraint_check(
         if item.enforcement == "hard" and item not in confirmed
     ]
     ratio = len(confirmed) / len(submitted)
-    status: CheckStatus = (
-        "passed" if ratio >= 0.80 and not hard_drafts else "warning"
-    )
+    status: CheckStatus = "passed" if ratio >= 0.80 and not hard_drafts else "warning"
     return EvidenceCheck(
         check_id="constraint_attestation",
         category="constraint_translation",
@@ -376,13 +368,7 @@ def _validation_asset_check(
             f"{len(auditable)}/{len(submitted)} cases are auditable; "
             f"excluded={len(excluded_case_ids)}."
         ),
-        evidence_refs=sorted(
-            {
-                ref
-                for case in auditable
-                for ref in _case_refs(case)
-            }
-        ),
+        evidence_refs=sorted({ref for case in auditable for ref in _case_refs(case)}),
         required_action=(
             None
             if status == "passed"
@@ -472,21 +458,14 @@ def _derive_stage(
         "data_provenance",
         "core_governance_approvals",
     }
-    if any(
-        check.status == "blocked" and check.check_id in core_check_ids
-        for check in checks
-    ):
+    if any(check.status == "blocked" and check.check_id in core_check_ids for check in checks):
         return "data_repair"
 
     constraint_ratio = (
-        len(confirmed_constraints) / len(request.constraints)
-        if request.constraints
-        else 0.0
+        len(confirmed_constraints) / len(request.constraints) if request.constraints else 0.0
     )
     hard_constraints_ready = all(
-        item in confirmed_constraints
-        for item in request.constraints
-        if item.enforcement == "hard"
+        item in confirmed_constraints for item in request.constraints if item.enforcement == "hard"
     )
     shadow_ready = all(
         (
@@ -559,9 +538,7 @@ def _next_actions(
         )
     ratio = len(confirmed_constraints) / len(request.constraints) if request.constraints else 0.0
     if ratio < 0.80:
-        actions.append(
-            f"Raise source-backed constraint attestation to 80%; current={ratio:.0%}."
-        )
+        actions.append(f"Raise source-backed constraint attestation to 80%; current={ratio:.0%}.")
     if "read_only_shadow" not in approvals:
         actions.append("Obtain a referenced read-only shadow-mode approval.")
     if "sandbox_writeback" not in approvals:
@@ -595,20 +572,14 @@ def _build_roi_summary(
             deltas[key] += value
         case_breakdown = {
             "planner_time_savings": (
-                case_deltas["saved_decision_minutes"]
-                / 60.0
-                * cost_model.planner_hourly_cost
+                case_deltas["saved_decision_minutes"] / 60.0 * cost_model.planner_hourly_cost
             ),
             "tardiness_savings": (
-                case_deltas["reduced_tardiness_minutes"]
-                * cost_model.tardiness_cost_per_minute
+                case_deltas["reduced_tardiness_minutes"] * cost_model.tardiness_cost_per_minute
             ),
-            "changeover_savings": (
-                case_deltas["reduced_changeovers"] * cost_model.changeover_cost
-            ),
+            "changeover_savings": (case_deltas["reduced_changeovers"] * cost_model.changeover_cost),
             "overtime_savings": (
-                case_deltas["reduced_overtime_hours"]
-                * cost_model.overtime_hourly_cost
+                case_deltas["reduced_overtime_hours"] * cost_model.overtime_hourly_cost
             ),
         }
         for key, value in case_breakdown.items():
@@ -616,9 +587,7 @@ def _build_roi_summary(
         if case.evaluation_mode == "controlled_execution" and case.execution_result_ref:
             realized += sum(case_breakdown.values())
 
-    finance_validated = bool(
-        cost_model.cost_source_ref and cost_model.finance_confirmed_by
-    )
+    finance_validated = bool(cost_model.cost_source_ref and cost_model.finance_confirmed_by)
     has_execution = any(
         case.evaluation_mode == "controlled_execution" and case.execution_result_ref
         for case in eligible
@@ -650,11 +619,7 @@ def _build_roi_summary(
         "finance_validated_execution": "Finance-validated case-level ROI may be reported without unobserved extrapolation.",
     }
     refs = sorted(
-        {
-            ref
-            for case in eligible
-            for ref in _case_refs(case)
-        }
+        {ref for case in eligible for ref in _case_refs(case)}
         | ({cost_model.cost_source_ref} if cost_model.cost_source_ref else set())
     )
     return RoiEvidenceSummary(
@@ -724,16 +689,10 @@ def _assess_moat_layers(
     )
 
     total_constraints = len(request.constraints)
-    confirmed_ratio = (
-        len(confirmed_constraints) / total_constraints if total_constraints else 0.0
-    )
-    replay_validated = [
-        item for item in confirmed_constraints if item.status == "replay_validated"
-    ]
+    confirmed_ratio = len(confirmed_constraints) / total_constraints if total_constraints else 0.0
+    replay_validated = [item for item in confirmed_constraints if item.status == "replay_validated"]
     replay_ratio = len(replay_validated) / total_constraints if total_constraints else 0.0
-    implicit_count = sum(
-        item.category == "planner_policy" for item in confirmed_constraints
-    )
+    implicit_count = sum(item.category == "planner_policy" for item in confirmed_constraints)
     reusable_constraints = sum(
         bool(item.reusable_template_ref)
         and not item.reusable_template_contains_customer_identifiers
@@ -759,11 +718,7 @@ def _assess_moat_layers(
         ),
         gaps=_dedupe(
             [
-                *(
-                    ["Constraint attestation is below 80%."]
-                    if confirmed_ratio < 0.80
-                    else []
-                ),
+                *(["Constraint attestation is below 80%."] if confirmed_ratio < 0.80 else []),
                 *(
                     ["No replay-validated deidentified constraint template is available."]
                     if not reusable_constraints
@@ -807,12 +762,14 @@ def _assess_moat_layers(
         status=_coverage_status(validation_score),
         customer_private_asset_count=case_count,
         reusable_deidentified_asset_count=reusable_cases,
-        strengths=(
-            [f"{case_count} auditable recovery cases are retained."] if case_count else []
-        ),
+        strengths=([f"{case_count} auditable recovery cases are retained."] if case_count else []),
         gaps=_dedupe(
             [
-                *(["Fewer than five auditable replay cases are available."] if case_count < 5 else []),
+                *(
+                    ["Fewer than five auditable replay cases are available."]
+                    if case_count < 5
+                    else []
+                ),
                 *(["No execution-result closure is available."] if execution_ratio == 0 else []),
                 *(
                     ["No deidentified anomaly/operator case pattern is available."]
@@ -887,13 +844,11 @@ def _assess_moat_layers(
 def _valid_approval_map(
     approvals: list[GovernanceApproval],
 ) -> dict[ApprovalType, GovernanceApproval]:
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     valid: dict[ApprovalType, GovernanceApproval] = {}
     for approval in approvals:
         expires_at = approval.expires_at
-        in_force = expires_at is None or (
-            expires_at.tzinfo is not None and expires_at > now
-        )
+        in_force = expires_at is None or (expires_at.tzinfo is not None and expires_at > now)
         if (
             approval.approved
             and approval.approver_role
@@ -921,7 +876,9 @@ def _confirmed_constraints(
 def _partition_cases(
     cases: list[RecoveryCaseEvidence],
 ) -> tuple[list[RecoveryCaseEvidence], list[str]]:
-    duplicates = {case_id for case_id, count in Counter(case.case_id for case in cases).items() if count > 1}
+    duplicates = {
+        case_id for case_id, count in Counter(case.case_id for case in cases).items() if count > 1
+    }
     eligible: list[RecoveryCaseEvidence] = []
     excluded: list[str] = []
     for case in cases:

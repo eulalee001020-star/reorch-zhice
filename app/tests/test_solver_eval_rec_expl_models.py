@@ -4,7 +4,7 @@ Covers creation, field defaults, JSON round-trip consistency,
 nested structure integrity, and validation errors.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -26,7 +26,7 @@ from app.models.solver import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
 
 
 def _make_solver_chain(**overrides) -> SolverChain:

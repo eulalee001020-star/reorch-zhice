@@ -38,9 +38,7 @@ def main() -> int:
         tenant_id=args.tenant_id,
         evidence_scope=args.evidence_scope,
     )
-    artifact: dict[str, object] = {
-        "connector_conformance": conformance.model_dump(mode="json")
-    }
+    artifact: dict[str, object] = {"connector_conformance": conformance.model_dump(mode="json")}
     all_passed = conformance.passed
     if args.writeback_adapter_id:
         if args.evidence_scope == "customer_production":
@@ -55,9 +53,7 @@ def main() -> int:
         all_passed = all_passed and certification.passed
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(artifact, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    args.output.write_text(json.dumps(artifact, indent=2, ensure_ascii=False), encoding="utf-8")
     print(
         json.dumps(
             {

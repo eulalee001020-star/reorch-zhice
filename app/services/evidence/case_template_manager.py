@@ -16,7 +16,7 @@ Provides:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from app.models.case import CaseTemplate
@@ -60,7 +60,7 @@ class CaseTemplateManager:
             reference_count=0,
             adoption_rate=0.0,
             created_by=created_by,
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
         self._template_store[str(template.template_id)] = template
 
@@ -124,9 +124,7 @@ class CaseTemplateManager:
 
     def get_published_templates(self) -> list[CaseTemplate]:
         """Get all published templates (available to Strategy_Selector)."""
-        return [
-            t for t in self._template_store.values() if t.status == "published"
-        ]
+        return [t for t in self._template_store.values() if t.status == "published"]
 
     def increment_reference(self, template_id: UUID) -> CaseTemplate:
         """Increment reference_count when a template is used (Req 9.9)."""
@@ -135,9 +133,7 @@ class CaseTemplateManager:
         self._template_store[str(template_id)] = template
         return template
 
-    def record_adoption(
-        self, template_id: UUID, was_adopted: bool
-    ) -> CaseTemplate:
+    def record_adoption(self, template_id: UUID, was_adopted: bool) -> CaseTemplate:
         """Update adoption_rate based on usage outcome (Req 9.9).
 
         adoption_rate = adopted_count / reference_count
@@ -162,7 +158,5 @@ class CaseTemplateManager:
         """Get template or raise TemplateNotFoundError."""
         template = self._template_store.get(str(template_id))
         if template is None:
-            raise TemplateNotFoundError(
-                f"Template {template_id} not found."
-            )
+            raise TemplateNotFoundError(f"Template {template_id} not found.")
         return template

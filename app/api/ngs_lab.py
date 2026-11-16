@@ -93,7 +93,9 @@ async def record_ngs_planner_decision(
         audit_refs=[
             f"ngs_package:{body.package_id}",
             f"replay_case:{body.case_id}",
-            f"candidate:{body.selected_candidate_id}" if body.selected_candidate_id else "candidate:none",
+            f"candidate:{body.selected_candidate_id}"
+            if body.selected_candidate_id
+            else "candidate:none",
         ],
     )
     _ngs_planner_decisions.append(record)

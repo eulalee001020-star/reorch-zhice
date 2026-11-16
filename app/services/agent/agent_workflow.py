@@ -13,7 +13,7 @@ import json
 import re
 from collections.abc import Awaitable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal, TypeVar
 from uuid import UUID, uuid4
 
@@ -48,12 +48,17 @@ from app.models.recommendation import PlanSelectionOutput
 from app.models.schedule import ScheduleSnapshot
 from app.models.solver import CandidatePlan
 from app.models.strategy import StrategyRecommendation
-from app.services.recommendation.evaluation_center import EvaluationCenter
-from app.services.data_gate.data_readiness import DataReadinessService
-from app.services.recommendation.explainability_layer import ExplainabilityLayer
-from app.services.solver.hybrid_solver import HybridSolver
-from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
 from app.services.agent.llm_agent_client import LLMAgentClient, LLMJsonResult
+from app.services.data_gate.data_readiness import DataReadinessService
+from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.recommendation.evaluation_center import EvaluationCenter
+from app.services.recommendation.explainability_layer import ExplainabilityLayer
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
+from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
+from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
+from app.services.solver.hybrid_solver import HybridSolver
+from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
+from app.services.solver.strategy_selector import StrategySelector
 from app.services.storage.persistence import (
     fetch_any_snapshot,
     fetch_incident,
@@ -62,12 +67,6 @@ from app.services.storage.persistence import (
     persist_plan_recommendation,
     persist_strategy_recommendation,
 )
-from app.services.recommendation.plan_quality_gate import PlanQualityGate
-from app.services.recommendation.plan_recommendation_engine import PlanRecommendationEngine
-from app.services.recommendation.plan_selection_input_builder import PlanSelectionInputBuilder
-from app.services.solver.solver_policy_orchestrator import SolverPolicyOrchestrator
-from app.services.solver.strategy_selector import StrategySelector
-
 
 _MACHINE_RESOURCE_RE = re.compile(
     r"\b((?:CNC|MC|M|EQ|LINE)[-_ ]?\d{1,4})\b",
@@ -119,9 +118,7 @@ def _trace(
     freedom_level: str,
     llm_allowed: bool,
     llm_result: LLMJsonResult | None = None,
-    stage_status: Literal[
-        "completed", "degraded", "blocked", "timed_out"
-    ] = "completed",
+    stage_status: Literal["completed", "degraded", "blocked", "timed_out"] = "completed",
     input_fingerprint: str | None = None,
     evidence_refs: list[str] | None = None,
     fallback_reason: str | None = None,
@@ -156,7 +153,7 @@ def _default_preference_profile(planner_id: str) -> PreferenceProfile:
         strategy_preferences={},
         adjustment_patterns=[],
         override_history=[],
-        updated_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -251,7 +248,7 @@ class IncidentAgent:
         ):
             create_request = IncidentCreateRequest(
                 incident_type=IncidentType.EQUIPMENT_FAILURE,
-                occurred_at=request.occurred_at or datetime.now(tz=timezone.utc),
+                occurred_at=request.occurred_at or datetime.now(tz=UTC),
                 workshop_id=request.workshop_id,
                 resource_id=parsed.resource_id,
                 report_source=_parse_report_source(request.report_source),
@@ -285,8 +282,7 @@ class IncidentAgent:
                 "duration_parser",
             ],
             guardrail=(
-                "字段补全必须带置信度；低置信度或非求解支持类型进入人工确认，"
-                "不会自动进入求解流程。"
+                "字段补全必须带置信度；低置信度或非求解支持类型进入人工确认，不会自动进入求解流程。"
             ),
         )
 
@@ -510,9 +506,7 @@ class EvaluationAgent:
             manual_weights=manual_weights,
         )
         recommendation = await PlanRecommendationEngine().recommend(selection_input)
-        await persist_plan_recommendation(
-            incident.incident_id, recommendation, user_id=user_id
-        )
+        await persist_plan_recommendation(incident.incident_id, recommendation, user_id=user_id)
 
         from app.api.solver import _recommendation_store
 
@@ -601,13 +595,9 @@ class RuleCandidateAgent:
                     "rule_text": text,
                     "context": request.context,
                     "source": request.source,
-                    "incident_id": str(request.incident_id)
-                    if request.incident_id
-                    else None,
+                    "incident_id": str(request.incident_id) if request.incident_id else None,
                     "decision_record_id": (
-                        str(request.decision_record_id)
-                        if request.decision_record_id
-                        else None
+                        str(request.decision_record_id) if request.decision_record_id else None
                     ),
                 },
             )
@@ -684,13 +674,9 @@ class FeedbackAgent:
                 user_payload={
                     "override_text": text,
                     "planner_id": request.planner_id,
-                    "incident_id": str(request.incident_id)
-                    if request.incident_id
-                    else None,
+                    "incident_id": str(request.incident_id) if request.incident_id else None,
                     "decision_record_id": (
-                        str(request.decision_record_id)
-                        if request.decision_record_id
-                        else None
+                        str(request.decision_record_id) if request.decision_record_id else None
                     ),
                 },
             )
@@ -783,8 +769,7 @@ class CaseMemoryAgent:
             llm_allowed=True,
             deterministic_tools=["CaseLibrary.create_case", "case_signature_builder"],
             guardrail=(
-                "沉淀案例和归因，不把单次案例自动发布为规则，"
-                "没有执行反馈的案例只能作为待验证资产。"
+                "沉淀案例和归因，不把单次案例自动发布为规则，没有执行反馈的案例只能作为待验证资产。"
             ),
         )
         return CaseMemoryOutput(
@@ -803,9 +788,7 @@ class PreferenceLearningAgent:
     def __init__(self, case_library=None) -> None:
         self._case_library = case_library
 
-    async def learn(
-        self, request: PreferenceLearningRequest
-    ) -> PreferenceLearningOutput:
+    async def learn(self, request: PreferenceLearningRequest) -> PreferenceLearningOutput:
         case_records = list(request.case_records)
         if not case_records and self._case_library is not None:
             case_records = self._case_library.list_cases()
@@ -836,9 +819,7 @@ class PreferenceLearningAgent:
                 "strategy_type": case.strategy_type,
                 "signal": "override" if case.is_override else "confirmed",
                 "effect": (
-                    "negative ranking signal"
-                    if case.is_override
-                    else "positive ranking signal"
+                    "negative ranking signal" if case.is_override else "positive ranking signal"
                 ),
                 "created_at": case.created_at.isoformat(),
             }
@@ -855,9 +836,7 @@ class PreferenceLearningAgent:
             strategy_counts: dict[str, int] = {}
             override_counts: dict[str, int] = {}
             for case in case_records:
-                strategy_counts[case.strategy_type] = (
-                    strategy_counts.get(case.strategy_type, 0) + 1
-                )
+                strategy_counts[case.strategy_type] = strategy_counts.get(case.strategy_type, 0) + 1
                 if case.is_override:
                     override_counts[case.strategy_type] = (
                         override_counts.get(case.strategy_type, 0) + 1
@@ -869,10 +848,9 @@ class PreferenceLearningAgent:
             }
             score_sum = sum(raw_scores.values()) or 1.0
             profile.strategy_preferences = {
-                strategy: round(score / score_sum, 4)
-                for strategy, score in raw_scores.items()
+                strategy: round(score / score_sum, 4) for strategy, score in raw_scores.items()
             }
-            profile.updated_at = datetime.now(tz=timezone.utc)
+            profile.updated_at = datetime.now(tz=UTC)
 
             dominant_strategy = max(
                 profile.strategy_preferences,
@@ -900,9 +878,7 @@ class PreferenceLearningAgent:
                 f"planner={request.planner_id}, sample_count={sample_count}, "
                 f"min_samples={request.min_samples}"
             ),
-            output_summary=(
-                f"recommended_use={recommended_use}, confidence={confidence:.2f}"
-            ),
+            output_summary=(f"recommended_use={recommended_use}, confidence={confidence:.2f}"),
             freedom_level="medium",
             llm_allowed=True,
             deterministic_tools=["case_aggregation", "preference_weight_normalizer"],
@@ -928,24 +904,18 @@ class PostDecisionLearningAgent:
     def __init__(self, case_library=None) -> None:
         self._case_library = case_library
 
-    async def run(
-        self, request: PostDecisionLearningRequest
-    ) -> PostDecisionLearningOutput:
-        decision_record = (
-            request.decision_record
-            or await _load_decision_record_for_learning(
-                decision_record_id=request.decision_record_id,
-                incident_id=request.incident_id,
-            )
+    async def run(self, request: PostDecisionLearningRequest) -> PostDecisionLearningOutput:
+        decision_record = request.decision_record or await _load_decision_record_for_learning(
+            decision_record_id=request.decision_record_id,
+            incident_id=request.incident_id,
         )
         if decision_record is None:
             raise AgentWorkflowNotFoundError(
                 "DecisionRecord not found. Confirm a plan before running learning."
             )
 
-        execution_result = (
-            request.execution_result
-            or await _load_execution_result_for_learning(decision_record.incident_id)
+        execution_result = request.execution_result or await _load_execution_result_for_learning(
+            decision_record.incident_id
         )
         if execution_result is None:
             raise AgentWorkflowNotFoundError(
@@ -955,8 +925,7 @@ class PostDecisionLearningAgent:
 
         rule_output = await RuleCandidateAgent().compile_rules(
             RuleCandidateRequest(
-                rule_text=request.rule_text
-                or _post_decision_rule_text(decision_record),
+                rule_text=request.rule_text or _post_decision_rule_text(decision_record),
                 context={
                     "strategy_type": decision_record.strategy_type,
                     "confirmed_plan_id": str(decision_record.confirmed_plan_id),
@@ -1126,9 +1095,7 @@ class AgentOrchestrator:
                         freedom_level="none",
                         llm_allowed=False,
                         stage_status=(
-                            "timed_out"
-                            if exc.reason.startswith("timeout_after")
-                            else "blocked"
+                            "timed_out" if exc.reason.startswith("timeout_after") else "blocked"
                         ),
                         input_fingerprint=input_fingerprint,
                         evidence_refs=[snapshot_ref],
@@ -1155,16 +1122,10 @@ class AgentOrchestrator:
             ]
             admissible_ids = {plan.plan_id for plan in admissible_candidates}
             blocked_plan_ids = [
-                plan.plan_id
-                for plan in candidates
-                if plan.plan_id not in admissible_ids
+                plan.plan_id for plan in candidates if plan.plan_id not in admissible_ids
             ]
             warning_count = sum(1 for report in quality_gates if report.warnings)
-            if (
-                blocked_plan_ids
-                and admissible_candidates
-                and workflow_status != "blocked"
-            ):
+            if blocked_plan_ids and admissible_candidates and workflow_status != "blocked":
                 workflow_status = "degraded"
             if candidates and not admissible_candidates:
                 workflow_status = "blocked"
@@ -1249,14 +1210,10 @@ class AgentOrchestrator:
                         freedom_level="none",
                         llm_allowed=False,
                         stage_status=(
-                            "timed_out"
-                            if exc.reason.startswith("timeout_after")
-                            else "blocked"
+                            "timed_out" if exc.reason.startswith("timeout_after") else "blocked"
                         ),
                         input_fingerprint=input_fingerprint,
-                        evidence_refs=[
-                            *(f"plan:{plan.plan_id}" for plan in admissible_candidates)
-                        ],
+                        evidence_refs=[*(f"plan:{plan.plan_id}" for plan in admissible_candidates)],
                         fallback_reason=exc.reason,
                         deterministic_tools=[
                             "EvaluationCenter",
@@ -1276,9 +1233,7 @@ class AgentOrchestrator:
             )
             if recommended is not None and comparison_matrix is not None:
                 alternatives = [
-                    plan
-                    for plan in admissible_candidates
-                    if plan.plan_id != recommended.plan_id
+                    plan for plan in admissible_candidates if plan.plan_id != recommended.plan_id
                 ]
                 try:
                     (
@@ -1462,9 +1417,7 @@ def _post_decision_rule_text(decision_record: DecisionRecord) -> str:
     )
 
 
-def _find_candidate(
-    candidates: list[CandidatePlan], plan_id: UUID
-) -> CandidatePlan | None:
+def _find_candidate(candidates: list[CandidatePlan], plan_id: UUID) -> CandidatePlan | None:
     for candidate in candidates:
         if str(candidate.plan_id) == str(plan_id):
             return candidate
@@ -1508,9 +1461,7 @@ def _comparison_strategy(
 
 
 def _strategy_value(strategy_type: str | StrategyType) -> str:
-    return (
-        strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type)
-    )
+    return strategy_type.value if hasattr(strategy_type, "value") else str(strategy_type)
 
 
 def _compile_constraint_candidate(
@@ -1528,9 +1479,7 @@ def _compile_constraint_candidate(
         "machine_ids": [resource_id] if resource_id else [],
         "operation_ids": context.get("operation_ids", []),
         "product_family": context.get("product_family"),
-        "time_window": f"after {time_hint}"
-        if time_hint
-        else context.get("time_window"),
+        "time_window": f"after {time_hint}" if time_hint else context.get("time_window"),
     }
     confidence = _constraint_confidence(
         constraint_type=constraint_type,
@@ -1608,9 +1557,7 @@ def _constraint_candidate_from_llm(
 
     risk_note = data.get("risk_note")
     if not isinstance(risk_note, str) or not risk_note.strip():
-        risk_note = (
-            "LLM 候选规则必须人工审核，并通过 replay 或 shadow mode 后才能发布。"
-        )
+        risk_note = "LLM 候选规则必须人工审核，并通过 replay 或 shadow mode 后才能发布。"
 
     return ConstraintCandidate(
         candidate_id=f"constraint_candidate_{uuid4().hex[:8]}",
@@ -1684,9 +1631,7 @@ def _compiled_constraint_rule(
     if constraint_type == "material":
         return "check material readiness before releasing or recommending this plan"
     if constraint_type == "quality":
-        return (
-            "require quality/rework confirmation before treating operation as available"
-        )
+        return "require quality/rework confirmation before treating operation as available"
     if constraint_type == "changeover":
         return "include changeover risk before recommending resource reassignment"
     if constraint_type == "forbidden_assignment" and resource_id:
@@ -1737,9 +1682,7 @@ def _build_case_title(decision_record) -> str:
 
 def _build_incident_signature(decision_record) -> str:
     override_flag = "override" if decision_record.is_override else "accepted"
-    return (
-        f"{decision_record.strategy_type}:{override_flag}:{decision_record.incident_id}"
-    )
+    return f"{decision_record.strategy_type}:{override_flag}:{decision_record.incident_id}"
 
 
 def _case_reusability(case) -> str:
@@ -1795,9 +1738,7 @@ def _deterministic_feedback_structure(text: str) -> dict:
         reason = "operator_preference"
         confidence = 0.86 if resource_id and time_hint else 0.76
         if resource_id and time_hint:
-            future_rule = (
-                f"avoid assigning urgent jobs to {resource_id} after {time_hint}"
-            )
+            future_rule = f"avoid assigning urgent jobs to {resource_id} after {time_hint}"
         elif resource_id:
             future_rule = f"review assignment constraints for {resource_id}"
         else:
@@ -1948,16 +1889,10 @@ def _detect_incident_type(text: str, resource_id: str | None) -> str:
         or "material" in lowered
     ):
         return "material_shortage"
-    if (
-        any(token in text for token in ("客户加急", "急单", "加急", "插单"))
-        or "urgent" in lowered
-    ):
+    if any(token in text for token in ("客户加急", "急单", "加急", "插单")) or "urgent" in lowered:
         return "urgent_order_insert"
     if (
-        any(
-            token in text
-            for token in ("产能下降", "产能降低", "降速", "效率下降", "设备产能")
-        )
+        any(token in text for token in ("产能下降", "产能降低", "降速", "效率下降", "设备产能"))
         or "capacity" in lowered
     ):
         return "capacity_degradation"
@@ -1986,10 +1921,7 @@ def _is_machine_down(text: str, lowered: str, resource_id: str | None) -> bool:
 
 def _has_urgent_risk(text: str) -> bool:
     lowered = text.lower()
-    return (
-        any(token in text for token in ("急单", "加急", "客户急"))
-        or "urgent" in lowered
-    )
+    return any(token in text for token in ("急单", "加急", "客户急")) or "urgent" in lowered
 
 
 def _confidence(
@@ -2039,15 +1971,11 @@ def _extract_time_hint(text: str) -> str | None:
 def _extract_duration_minutes(text: str) -> int | None:
     patterns = [
         (
-            re.compile(
-                r"(\d+(?:\.\d+)?)\s*(?:个)?\s*(小时|钟头|h|hour|hours)", re.IGNORECASE
-            ),
+            re.compile(r"(\d+(?:\.\d+)?)\s*(?:个)?\s*(小时|钟头|h|hour|hours)", re.IGNORECASE),
             60,
         ),
         (
-            re.compile(
-                r"(\d+(?:\.\d+)?)\s*(?:分钟|分|min|mins|minute|minutes)", re.IGNORECASE
-            ),
+            re.compile(r"(\d+(?:\.\d+)?)\s*(?:分钟|分|min|mins|minute|minutes)", re.IGNORECASE),
             1,
         ),
     ]
@@ -2056,9 +1984,7 @@ def _extract_duration_minutes(text: str) -> int | None:
         if match:
             return int(round(float(match.group(1)) * multiplier))
 
-    cn_hour = re.search(
-        r"([一二两俩三四五六七八九十半]+)\s*(?:个)?\s*(小时|钟头)", text
-    )
+    cn_hour = re.search(r"([一二两俩三四五六七八九十半]+)\s*(?:个)?\s*(小时|钟头)", text)
     if cn_hour:
         return int(round(_parse_chinese_number(cn_hour.group(1)) * 60))
 

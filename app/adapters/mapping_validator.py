@@ -643,17 +643,15 @@ def _build_report(
 ) -> MappingValidationReport:
     blocking_errors = sum(1 for issue in issues if issue.severity == "error")
     warning_count = sum(1 for issue in issues if issue.severity == "warning")
-    invalid_entities = {
-        _issue_entity_key(issue)
-        for issue in issues
-        if issue.severity == "error"
-    }
+    invalid_entities = {_issue_entity_key(issue) for issue in issues if issue.severity == "error"}
     invalid_records = min(total_records, len(invalid_entities))
     return MappingValidationReport(
         total_records=total_records,
         valid_records=max(0, total_records - invalid_records),
         invalid_records=invalid_records,
-        missing_required_fields=sum(1 for issue in issues if issue.code == "missing_required_field"),
+        missing_required_fields=sum(
+            1 for issue in issues if issue.code == "missing_required_field"
+        ),
         enum_errors=sum(1 for issue in issues if issue.code == "enum_error"),
         time_parse_errors=sum(1 for issue in issues if issue.code == "time_parse_error"),
         reference_integrity_errors=sum(

@@ -10,31 +10,30 @@ Validates task 6.4 requirements:
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 
-from app.models.case import CaseRecord, PreferenceProfile
+from app.models.case import PreferenceProfile
 from app.models.enums import (
     DeliveryRiskLevel,
     IncidentSeverity,
     IncidentStatus,
     IncidentType,
-    ReportSource,
     RepairMode,
+    ReportSource,
     StrategyType,
 )
 from app.models.impact import AffectedOperation, ImpactReport
 from app.models.incident import Incident
+from app.models.schedule import ScheduleDetail
 from app.models.solver import (
     CandidatePlan,
     ConstraintValidationReport,
     SolverChain,
     SolverMetadata,
 )
-from app.models.schedule import ScheduleDetail
 from app.models.strategy import (
     NeighborhoodConfig,
     RepairPolicyConfig,
@@ -44,22 +43,23 @@ from app.models.strategy import (
 )
 from app.services.solver.solver_policy_orchestrator import (
     MODULE_VERSION as ORCH_VERSION,
+)
+from app.services.solver.solver_policy_orchestrator import (
     SolverPolicyBundle,
     SolverPolicyOrchestrator,
 )
 from app.services.solver.solver_portfolio import (
-    MODULE_VERSION as SP_VERSION,
     SolverPortfolio,
 )
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
+
 
 def _make_incident(severity: IncidentSeverity = IncidentSeverity.P2_HIGH) -> Incident:
     return Incident(
         incident_id=uuid4(),
         incident_type=IncidentType.EQUIPMENT_FAILURE,
-        occurred_at=datetime.now(tz=timezone.utc),
+        occurred_at=datetime.now(tz=UTC),
         resource_id="machine-01",
         report_source=ReportSource.MES,
         severity=severity,
@@ -72,7 +72,7 @@ def _make_impact_report(incident_id=None) -> ImpactReport:
     return ImpactReport(
         incident_id=iid,
         schedule_snapshot_id=uuid4(),
-        analysis_reference_time=datetime.now(tz=timezone.utc),
+        analysis_reference_time=datetime.now(tz=UTC),
         affected_operations=[
             AffectedOperation(
                 operation_id="op-1",
@@ -110,7 +110,7 @@ def _make_preference_profile() -> PreferenceProfile:
     return PreferenceProfile(
         planner_id="planner-01",
         strategy_preferences={},
-        updated_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -119,7 +119,9 @@ def _make_candidate_plan() -> CandidatePlan:
         plan_id=uuid4(),
         strategy_type="local_repair",
         schedule_detail=ScheduleDetail(
-            work_orders=[], operations=[], resources=[],
+            work_orders=[],
+            operations=[],
+            resources=[],
         ),
         gantt_version="v1",
         solver_chain=SolverChain(
@@ -139,7 +141,9 @@ def _make_candidate_plan() -> CandidatePlan:
             objective_trajectory=[100.0, 90.0, 85.0],
         ),
         constraint_report=ConstraintValidationReport(
-            is_feasible=True, violations=[], checked_constraints=[],
+            is_feasible=True,
+            violations=[],
+            checked_constraints=[],
         ),
     )
 

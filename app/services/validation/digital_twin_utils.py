@@ -21,11 +21,7 @@ def schedule_snapshot_from_initial_option(
         for wo in request.work_orders
         for op in wo.operations
     }
-    input_op_by_id = {
-        op.operation_id: op
-        for wo in request.work_orders
-        for op in wo.operations
-    }
+    input_op_by_id = {op.operation_id: op for wo in request.work_orders for op in wo.operations}
     raw_work_orders = []
     for wo in option.candidate_plan.schedule_detail.work_orders:
         raw_ops = []
@@ -87,9 +83,7 @@ def schedule_snapshot_from_initial_option(
             "resource_calendar": [
                 window.model_dump(mode="json") for window in request.resource_calendar
             ],
-            "changeover_rules": [
-                rule.model_dump(mode="json") for rule in request.changeover_rules
-            ],
+            "changeover_rules": [rule.model_dump(mode="json") for rule in request.changeover_rules],
             "work_orders": raw_work_orders,
         },
     )

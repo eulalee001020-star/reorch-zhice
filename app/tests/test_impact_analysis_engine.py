@@ -7,14 +7,14 @@ Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7
 
 from __future__ import annotations
 
-import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
+
+import pytest
 
 from app.models.enums import (
     DeliveryRiskLevel,
     IncidentSeverity,
-    IncidentStatus,
     IncidentType,
     ReportSource,
 )
@@ -22,8 +22,8 @@ from app.models.incident import Incident
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
 from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
 
-
 # ── helpers ──────────────────────────────────────────────────────────
+
 
 def _make_incident(
     resource_id: str = "machine-A",
@@ -33,7 +33,7 @@ def _make_incident(
     return Incident(
         incident_id=uuid4(),
         incident_type=IncidentType.EQUIPMENT_FAILURE,
-        occurred_at=datetime(2025, 1, 10, 8, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2025, 1, 10, 8, 0, tzinfo=UTC),
         resource_id=resource_id,
         report_source=ReportSource.MES,
         severity=severity,
@@ -55,11 +55,12 @@ def _make_snapshot(
 
 def _ts(hours: float = 0, minutes: float = 0) -> datetime:
     """Shortcut: offset from a base time of 2025-01-10 08:00 UTC."""
-    base = datetime(2025, 1, 10, 8, 0, tzinfo=timezone.utc)
+    base = datetime(2025, 1, 10, 8, 0, tzinfo=UTC)
     return base + timedelta(hours=hours, minutes=minutes)
 
 
 # ── fixtures ─────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def engine() -> ImpactAnalysisEngine:
@@ -107,6 +108,7 @@ def simple_snapshot() -> ScheduleSnapshot:
 
 # ── Tests: direct impact identification (Req 2.3) ───────────────────
 
+
 @pytest.mark.asyncio
 async def test_direct_impact_identification(engine, simple_snapshot):
     """Operations on the faulty resource are flagged as directly affected."""
@@ -121,6 +123,7 @@ async def test_direct_impact_identification(engine, simple_snapshot):
 
 # ── Tests: downstream propagation (Req 2.4) ─────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_downstream_propagation(engine, simple_snapshot):
     """Successors of directly affected ops are flagged as indirect."""
@@ -134,6 +137,7 @@ async def test_downstream_propagation(engine, simple_snapshot):
 
 
 # ── Tests: delivery risk calculation (Req 2.5) ──────────────────────
+
 
 @pytest.mark.asyncio
 async def test_delivery_risk_safe(engine):
@@ -217,6 +221,7 @@ async def test_delivery_risk_warning(engine):
 
 
 # ── Tests: severity upgrade (Req 2.5 design) ────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_severity_upgrade_on_breach(engine):
@@ -354,6 +359,7 @@ async def test_severity_explanation_uses_intake_evidence(engine):
 
 # ── Tests: degraded mode (Req 2.7) ──────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_degraded_mode_none_snapshot(engine):
     """None snapshot → degraded mode."""
@@ -376,6 +382,7 @@ async def test_degraded_mode_empty_work_orders(engine):
 
 
 # ── Tests: structured output (Req 2.6) ──────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_impact_report_structure(engine, simple_snapshot):

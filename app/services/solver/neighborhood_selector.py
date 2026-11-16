@@ -54,22 +54,28 @@ _NEIGHBORHOOD_COST: dict[NeighborhoodType, float] = {
 }
 
 # ── Neighborhoods classified as local vs global ─────────────────────
-_LOCAL_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset({
-    NeighborhoodType.CRITICAL_PATH,
-    NeighborhoodType.SAME_DEVICE_SWAP,
-    NeighborhoodType.DELAYED_ORDER,
-})
+_LOCAL_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset(
+    {
+        NeighborhoodType.CRITICAL_PATH,
+        NeighborhoodType.SAME_DEVICE_SWAP,
+        NeighborhoodType.DELAYED_ORDER,
+    }
+)
 
-_GLOBAL_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset({
-    NeighborhoodType.BOTTLENECK_DEVICE,
-    NeighborhoodType.OPERATION_INSERT,
-    NeighborhoodType.DEVICE_REASSIGNMENT,
-})
+_GLOBAL_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset(
+    {
+        NeighborhoodType.BOTTLENECK_DEVICE,
+        NeighborhoodType.OPERATION_INSERT,
+        NeighborhoodType.DEVICE_REASSIGNMENT,
+    }
+)
 
-_LOW_COST_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset({
-    NeighborhoodType.SAME_DEVICE_SWAP,
-    NeighborhoodType.OPERATION_INSERT,
-})
+_LOW_COST_NEIGHBORHOODS: frozenset[NeighborhoodType] = frozenset(
+    {
+        NeighborhoodType.SAME_DEVICE_SWAP,
+        NeighborhoodType.OPERATION_INSERT,
+    }
+)
 
 
 @dataclass
@@ -96,7 +102,6 @@ class NeighborhoodSelectorProtocol(Protocol):
         strategy: StrategyRecommendation,
         perturbation_constraint: float,
     ) -> list[NeighborhoodConfig]: ...
-
 
 
 class NeighborhoodSelector:
@@ -140,7 +145,9 @@ class NeighborhoodSelector:
 
         # 2. Apply invariance protection (Req 24.10)
         scored = self._apply_invariance_protection(
-            scored, affected_set, strategy_type,
+            scored,
+            affected_set,
+            strategy_type,
         )
 
         # 3. Block global neighborhoods for Local-Repair (Req 24.5)
@@ -275,9 +282,7 @@ class NeighborhoodSelector:
                 score += boost
                 factors.append(f"high_affected_ops_boost (+{boost:.2f})")
 
-            estimated_scope = (
-                affected_count if target_ops else affected_count * 3
-            )
+            estimated_scope = affected_count if target_ops else affected_count * 3
 
             entries.append(
                 NeighborhoodScoringEntry(
@@ -310,8 +315,7 @@ class NeighborhoodSelector:
             if entry.target_operation_ids:
                 # Filter to only affected operations
                 entry.target_operation_ids = [
-                    op_id for op_id in entry.target_operation_ids
-                    if op_id in affected_set
+                    op_id for op_id in entry.target_operation_ids if op_id in affected_set
                 ]
                 entry.estimated_impact_scope = len(entry.target_operation_ids)
             if not entry.target_operation_ids and entry.score > 0:
@@ -367,9 +371,7 @@ class NeighborhoodSelector:
         if stagnation_count <= _STAGNATION_ESCALATION_THRESHOLD:
             return entries
 
-        escalation_factor = min(
-            0.2, 0.05 * (stagnation_count - _STAGNATION_ESCALATION_THRESHOLD)
-        )
+        escalation_factor = min(0.2, 0.05 * (stagnation_count - _STAGNATION_ESCALATION_THRESHOLD))
 
         for entry in entries:
             if entry.score > 0:
@@ -379,8 +381,7 @@ class NeighborhoodSelector:
                     entry.score += boost
                     entry.intensity = min(1.0, entry.intensity + 0.2)
                     entry.factors.append(
-                        f"stagnation_escalation_boost (+{boost:.3f}, "
-                        f"stagnation={stagnation_count})"
+                        f"stagnation_escalation_boost (+{boost:.3f}, stagnation={stagnation_count})"
                     )
                 else:
                     # Increase intensity for local neighborhoods too
@@ -408,8 +409,7 @@ class NeighborhoodSelector:
                 boost = 0.15 * (1.0 - budget_ratio)
                 entry.score += boost
                 entry.factors.append(
-                    f"low_budget_boost (+{boost:.3f}, "
-                    f"remaining={remaining_budget_seconds:.1f}s)"
+                    f"low_budget_boost (+{boost:.3f}, remaining={remaining_budget_seconds:.1f}s)"
                 )
             elif cost > 0.4:
                 penalty = 0.2 * (1.0 - budget_ratio)

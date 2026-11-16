@@ -12,7 +12,7 @@ Validates:
 Requirements: 21.3, 21.4, 21.5, 30.9
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -20,18 +20,18 @@ from pydantic import ValidationError
 
 from app.models.case import CaseTemplate
 from app.models.decision import DecisionRecord
-from app.models.evaluation import (
-    ComparisonMatrix,
-    ComparisonMatrixRow,
-    KPIVector,
-)
-from app.models.incident import Incident
 from app.models.enums import (
     IncidentSeverity,
     IncidentStatus,
     IncidentType,
     ReportSource,
 )
+from app.models.evaluation import (
+    ComparisonMatrix,
+    ComparisonMatrixRow,
+    KPIVector,
+)
+from app.models.incident import Incident
 from app.models.recommendation import PlanSelectionInput, PlanSelectionOutput
 from app.models.schedule import (
     GanttDiffPayload,
@@ -52,8 +52,8 @@ from app.models.solver import (
 # Shared fixtures
 # ---------------------------------------------------------------------------
 
-_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
-_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
+_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=UTC)
 _PLAN_ID = uuid4()
 _INCIDENT_ID = uuid4()
 _SNAPSHOT_ID = uuid4()
@@ -111,7 +111,7 @@ def _make_operation(op_id: str = "OP-001") -> Operation:
         resource_id="CNC-001",
         required_capabilities=["milling", "drilling"],
         start_time=_NOW,
-        end_time=datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
+        end_time=datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC),
         predecessor_ids=["OP-000"] if op_id != "OP-001" else [],
         successor_ids=["OP-002"],
         is_affected=True,
@@ -132,7 +132,7 @@ def _make_schedule_detail() -> ScheduleDetail:
             WorkOrder(
                 work_order_id="WO-002",
                 product_name="Widget-B",
-                due_date=datetime(2025, 1, 22, 12, 0, 0, tzinfo=timezone.utc),
+                due_date=datetime(2025, 1, 22, 12, 0, 0, tzinfo=UTC),
                 operations=[_make_operation("OP-003")],
                 priority=2,
             ),
@@ -336,9 +336,7 @@ def test_json_roundtrip_consistency(name: str, factory):
     json_str = original.model_dump_json()
     model_cls = type(original)
     restored = model_cls.model_validate_json(json_str)
-    assert restored.model_dump() == original.model_dump(), (
-        f"{name} round-trip mismatch"
-    )
+    assert restored.model_dump() == original.model_dump(), f"{name} round-trip mismatch"
 
 
 # ---------------------------------------------------------------------------
@@ -397,8 +395,14 @@ class TestDeeplyNestedRoundTrip:
 
         assert restored.solver_chain.stages == plan.solver_chain.stages
         assert restored.solver_chain.key_parameters == plan.solver_chain.key_parameters
-        assert restored.solver_metadata.objective_trajectory == plan.solver_metadata.objective_trajectory
-        assert restored.constraint_report.violations[0].detail == plan.constraint_report.violations[0].detail
+        assert (
+            restored.solver_metadata.objective_trajectory
+            == plan.solver_metadata.objective_trajectory
+        )
+        assert (
+            restored.constraint_report.violations[0].detail
+            == plan.constraint_report.violations[0].detail
+        )
         assert len(restored.schedule_detail.work_orders) == 2
         assert len(restored.schedule_detail.resources) == 2
         assert restored.model_dump() == plan.model_dump()
@@ -410,7 +414,10 @@ class TestDeeplyNestedRoundTrip:
         restored = ScheduleDetail.model_validate_json(json_str)
 
         assert len(restored.work_orders) == 2
-        assert restored.work_orders[0].operations[0].required_capabilities == ["milling", "drilling"]
+        assert restored.work_orders[0].operations[0].required_capabilities == [
+            "milling",
+            "drilling",
+        ]
         assert restored.resources[0].is_bottleneck is True
         assert restored.model_dump() == sd.model_dump()
 
@@ -423,7 +430,10 @@ class TestDeeplyNestedRoundTrip:
         # ComparisonMatrix nested checks
         assert len(restored.comparison_matrix.rows) == 1
         row = restored.comparison_matrix.rows[0]
-        assert row.kpi_vector.normalized_score == output.comparison_matrix.rows[0].kpi_vector.normalized_score
+        assert (
+            row.kpi_vector.normalized_score
+            == output.comparison_matrix.rows[0].kpi_vector.normalized_score
+        )
         assert row.delta_vs_baseline == output.comparison_matrix.rows[0].delta_vs_baseline
 
         # GanttDiffPayload nested checks

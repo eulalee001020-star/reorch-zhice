@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime
-from typing import Any
 from unittest.mock import MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
+from app.core.kafka_consumer import KafkaConsumer, _deserialize_value
+from app.core.kafka_producer import KafkaProducer, _serialize_value
 from app.core.kafka_topics import (
     ALL_TOPICS,
     TOPIC_IMPACT_COMPLETED,
@@ -21,9 +22,6 @@ from app.core.kafka_topics import (
     TOPIC_WRITEBACK_STATUS,
     ensure_topics,
 )
-from app.core.kafka_producer import KafkaProducer, _JSONEncoder, _serialize_value
-from app.core.kafka_consumer import KafkaConsumer, _deserialize_value
-
 
 # ── Topic constants ─────────────────────────────────────────────────
 

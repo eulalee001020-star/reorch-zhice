@@ -12,14 +12,14 @@ Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
 
-from app.models.decision import DecisionRecord
 from app.core.auth import CurrentUser, Role
 from app.core.config import settings
+from app.models.decision import DecisionRecord
 from app.models.enums import WritebackStatus
 from app.models.schedule import (
     Operation,
@@ -39,10 +39,9 @@ from app.services.governance.writeback_module import (
 )
 from app.services.governance.writeback_policy import WritebackPolicy, WritebackPolicyError
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
-_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 _LATER = _NOW + timedelta(hours=2)
 
 
@@ -266,9 +265,7 @@ async def test_writeback_partial_failure():
         gantt_version="1.0",
         solver_chain=_make_solver_chain(),
         feasibility_status="feasible",
-        solver_metadata=SolverMetadata(
-            solve_time_seconds=5.0, iteration_count=100
-        ),
+        solver_metadata=SolverMetadata(solve_time_seconds=5.0, iteration_count=100),
         constraint_report=ConstraintValidationReport(
             is_feasible=True, violations=[], checked_constraints=[]
         ),
@@ -328,9 +325,7 @@ async def test_writeback_empty_plan():
         gantt_version="1.0",
         solver_chain=_make_solver_chain(),
         feasibility_status="feasible",
-        solver_metadata=SolverMetadata(
-            solve_time_seconds=1.0, iteration_count=10
-        ),
+        solver_metadata=SolverMetadata(solve_time_seconds=1.0, iteration_count=10),
         constraint_report=ConstraintValidationReport(
             is_feasible=True, violations=[], checked_constraints=[]
         ),
@@ -350,9 +345,7 @@ async def test_track_execution_generates_result():
     module = WritebackModule()
     plan = _make_candidate_plan()
     incident_id = uuid4()
-    record = _make_decision_record(
-        incident_id=incident_id, plan_id=plan.plan_id
-    )
+    record = _make_decision_record(incident_id=incident_id, plan_id=plan.plan_id)
 
     # First writeback
     await module.writeback_to_mes(plan, record)

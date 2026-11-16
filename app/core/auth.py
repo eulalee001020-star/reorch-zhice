@@ -20,8 +20,8 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.services.governance.oidc_auth import (
-    OIDCVerificationError,
     OIDCTokenVerifier,
+    OIDCVerificationError,
     parse_role_mapping,
 )
 
@@ -40,6 +40,7 @@ class Role(str, Enum):
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 _bearer = HTTPBearer(auto_error=False)
 
+
 class APIKeyRecord(BaseModel):
     user_id: str
     role: Role
@@ -55,7 +56,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     api_key: str
-    user: "CurrentUser"
+    user: CurrentUser
 
 
 def _parse_auth_users() -> tuple[dict[str, APIKeyRecord], dict[str, tuple[str, APIKeyRecord]]]:
@@ -109,9 +110,7 @@ def _oidc_verifier() -> OIDCTokenVerifier:
             issuer=settings.auth.oidc_issuer,
             audience=settings.auth.oidc_audience,
             algorithms=[
-                item.strip()
-                for item in settings.auth.oidc_algorithms.split(",")
-                if item.strip()
+                item.strip() for item in settings.auth.oidc_algorithms.split(",") if item.strip()
             ],
             role_claim=settings.auth.oidc_role_claim,
             tenant_claim=settings.auth.oidc_tenant_claim,
@@ -123,9 +122,7 @@ def _oidc_verifier() -> OIDCTokenVerifier:
 
 async def get_current_user(
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
-    bearer: Annotated[
-        HTTPAuthorizationCredentials | None, Security(_bearer)
-    ] = None,
+    bearer: Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)] = None,
 ) -> CurrentUser:
     """Resolve the current user from the X-API-Key header."""
     if bearer is not None and settings.auth.mode in {"oidc", "hybrid"}:
@@ -165,9 +162,7 @@ async def get_current_user(
 
 async def get_optional_current_user(
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
-    bearer: Annotated[
-        HTTPAuthorizationCredentials | None, Security(_bearer)
-    ] = None,
+    bearer: Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)] = None,
 ) -> CurrentUser:
     """Resolve current user when available, otherwise return a system user.
 

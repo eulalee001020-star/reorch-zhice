@@ -12,9 +12,10 @@ Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10
 
 from __future__ import annotations
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
+
+import pytest
 
 from app.models.case import CaseRecord, PreferenceProfile
 from app.models.enums import DeliveryRiskLevel, StrategyType
@@ -22,8 +23,8 @@ from app.models.impact import AffectedWorkOrder, ImpactReport
 from app.models.solver import SolverChain
 from app.services.solver.strategy_selector import StrategySelector
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
+
 
 def _make_impact_report(
     affected_count: int = 2,
@@ -47,7 +48,7 @@ def _make_impact_report(
             AffectedWorkOrder(
                 work_order_id=f"WO-{i:03d}",
                 product_name=f"Product-{i}",
-                due_date=datetime(2025, 6, 15, tzinfo=timezone.utc),
+                due_date=datetime(2025, 6, 15, tzinfo=UTC),
                 delivery_risk_level=risk,
                 remaining_buffer_minutes=buffer_per_wo,
                 affected_operations=[],
@@ -63,7 +64,7 @@ def _make_impact_report(
     return ImpactReport(
         incident_id=uuid4(),
         schedule_snapshot_id=uuid4(),
-        analysis_reference_time=datetime(2025, 6, 10, 8, 0, tzinfo=timezone.utc),
+        analysis_reference_time=datetime(2025, 6, 10, 8, 0, tzinfo=UTC),
         affected_work_orders=work_orders,
         affected_operations=[],
         affected_resource_ids=["R-001"],
@@ -80,7 +81,7 @@ def _make_preference_profile(
         strategy_preferences=strategy_prefs or {},
         adjustment_patterns=[],
         override_history=[],
-        updated_at=datetime(2025, 6, 1, tzinfo=timezone.utc),
+        updated_at=datetime(2025, 6, 1, tzinfo=UTC),
     )
 
 
@@ -109,11 +110,12 @@ def _make_case_record(
             constraint_validation_result="pass",
             stages=["rule_selection", "initial_solution"],
         ),
-        created_at=datetime(2025, 5, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 5, 1, tzinfo=UTC),
     )
 
 
 # ── Tests ───────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def selector() -> StrategySelector:
@@ -168,9 +170,7 @@ class TestLocalRepairStrategy:
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
         # 5 affected out of 100 = 5%, no breach, repair time > buffer so wait doesn't qualify
-        report = _make_impact_report(
-            affected_count=5, breach_count=0, buffer_per_wo=5.0
-        )
+        report = _make_impact_report(affected_count=5, breach_count=0, buffer_per_wo=5.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -185,9 +185,7 @@ class TestLocalRepairStrategy:
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
         # 5% affected but has breach → should be Global-Reschedule
-        report = _make_impact_report(
-            affected_count=5, breach_count=1, buffer_per_wo=5.0
-        )
+        report = _make_impact_report(affected_count=5, breach_count=1, buffer_per_wo=5.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -206,9 +204,7 @@ class TestGlobalRescheduleStrategy:
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
         # 25 affected out of 100 = 25% > 20%, no breach, repair > buffer
-        report = _make_impact_report(
-            affected_count=25, breach_count=0, buffer_per_wo=1.0
-        )
+        report = _make_impact_report(affected_count=25, breach_count=0, buffer_per_wo=1.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -223,9 +219,7 @@ class TestGlobalRescheduleStrategy:
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
         # Low ratio but breach exists
-        report = _make_impact_report(
-            affected_count=3, breach_count=1, buffer_per_wo=1.0
-        )
+        report = _make_impact_report(affected_count=3, breach_count=1, buffer_per_wo=1.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -239,9 +233,7 @@ class TestGlobalRescheduleStrategy:
     async def test_global_factors_mention_breach(
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
-        report = _make_impact_report(
-            affected_count=3, breach_count=1, buffer_per_wo=1.0
-        )
+        report = _make_impact_report(affected_count=3, breach_count=1, buffer_per_wo=1.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -260,9 +252,7 @@ class TestHistoricalCaseReference:
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
         # Scenario where local repair qualifies
-        report = _make_impact_report(
-            affected_count=5, breach_count=0, buffer_per_wo=5.0
-        )
+        report = _make_impact_report(affected_count=5, breach_count=0, buffer_per_wo=5.0)
         cases = [
             _make_case_record(strategy_type="local_repair", similarity=0.9),
             _make_case_record(strategy_type="local_repair", similarity=0.85),
@@ -281,9 +271,7 @@ class TestHistoricalCaseReference:
     async def test_low_similarity_cases_filtered_out(
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
-        report = _make_impact_report(
-            affected_count=5, breach_count=0, buffer_per_wo=5.0
-        )
+        report = _make_impact_report(affected_count=5, breach_count=0, buffer_per_wo=5.0)
         cases = [
             _make_case_record(strategy_type="local_repair", similarity=0.5),
         ]
@@ -302,9 +290,7 @@ class TestHistoricalCaseReference:
     async def test_case_ids_included_in_output(
         self, selector: StrategySelector, empty_profile: PreferenceProfile
     ):
-        report = _make_impact_report(
-            affected_count=5, breach_count=0, buffer_per_wo=5.0
-        )
+        report = _make_impact_report(affected_count=5, breach_count=0, buffer_per_wo=5.0)
         cases = [
             _make_case_record(strategy_type="local_repair", similarity=0.9),
         ]
@@ -328,9 +314,7 @@ class TestLowConfidenceAlternative:
     ):
         # No strategy condition is met: repair time >= buffer, ratio ≤ 20%, no breach
         # but also wait doesn't qualify → all scores are 0 → confidence = 0
-        report = _make_impact_report(
-            affected_count=2, breach_count=0, buffer_per_wo=10.0
-        )
+        report = _make_impact_report(affected_count=2, breach_count=0, buffer_per_wo=10.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -362,9 +346,7 @@ class TestLowConfidenceAlternative:
         # So local always qualifies when ratio ≤ 20% and no breach
         # The only way all are 0 is impossible given the logic
         # Let's just verify the alternative_strategy field behavior
-        report = _make_impact_report(
-            affected_count=2, breach_count=0, buffer_per_wo=10.0
-        )
+        report = _make_impact_report(affected_count=2, breach_count=0, buffer_per_wo=10.0)
         result = await selector.select_strategy(
             impact_report=report,
             similar_cases=[],
@@ -408,13 +390,12 @@ class TestStructuredOutput:
 
     @pytest.mark.asyncio
     async def test_confidence_clamped_to_unit_range(
-        self, selector: StrategySelector,
+        self,
+        selector: StrategySelector,
     ):
         """Confidence should always be in [0, 1]."""
         report = _make_impact_report(affected_count=2, buffer_per_wo=100.0)
-        profile = _make_preference_profile(
-            strategy_prefs={"wait_and_repair": 1.0}
-        )
+        profile = _make_preference_profile(strategy_prefs={"wait_and_repair": 1.0})
         cases = [
             _make_case_record(strategy_type="wait_and_repair", similarity=0.99),
             _make_case_record(strategy_type="wait_and_repair", similarity=0.95),
@@ -492,14 +473,13 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_preference_boost_applied(
-        self, selector: StrategySelector,
+        self,
+        selector: StrategySelector,
     ):
         """Preference profile should boost the matching strategy's confidence."""
         report = _make_impact_report(affected_count=5, buffer_per_wo=60.0)
         profile_no_pref = _make_preference_profile()
-        profile_with_pref = _make_preference_profile(
-            strategy_prefs={"wait_and_repair": 0.8}
-        )
+        profile_with_pref = _make_preference_profile(strategy_prefs={"wait_and_repair": 0.8})
 
         result_no = await selector.select_strategy(
             impact_report=report,

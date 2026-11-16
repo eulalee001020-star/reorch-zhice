@@ -11,7 +11,7 @@ Covers:
 - MODULE_VERSION constant (Req 22.3)
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -29,7 +29,6 @@ from app.services.solver.repair_policy_advisor import (
     RepairPolicyAdvisor,
     RepairPolicyTemplate,
 )
-
 
 # ── Fixtures ────────────────────────────────────────────────────────
 
@@ -65,7 +64,7 @@ def _make_impact_report(
         AffectedWorkOrder(
             work_order_id=f"wo-{i}",
             product_name=f"Product-{i}",
-            due_date=datetime(2025, 7, 20, tzinfo=timezone.utc),
+            due_date=datetime(2025, 7, 20, tzinfo=UTC),
             delivery_risk_level=DeliveryRiskLevel.WARNING,
             remaining_buffer_minutes=60.0,
             affected_operations=[o for o in ops if o.work_order_id == f"wo-{i}"],
@@ -75,7 +74,7 @@ def _make_impact_report(
     return ImpactReport(
         incident_id=uuid4(),
         schedule_snapshot_id=uuid4(),
-        analysis_reference_time=datetime.now(tz=timezone.utc),
+        analysis_reference_time=datetime.now(tz=UTC),
         affected_work_orders=wos,
         affected_operations=ops,
         affected_resource_ids=["machine-01"],

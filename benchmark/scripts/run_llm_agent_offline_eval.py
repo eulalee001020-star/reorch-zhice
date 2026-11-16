@@ -21,7 +21,6 @@ from app.models.agent import (
 )
 from app.services.agent.agent_workflow import FeedbackAgent, IncidentAgent, RuleCandidateAgent
 
-
 INCIDENT_CASES = [
     {
         "text": "CNC-02 停了，预计三小时，急单有延期风险。",

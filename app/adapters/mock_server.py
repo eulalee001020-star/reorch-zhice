@@ -82,7 +82,9 @@ def _coerce_writeback_plan(
         data = dict(payload)
         data.setdefault("idempotency_key", idempotency_key or payload.get("plan_id", "mock-plan"))
         return RescheduleWritebackPlan.model_validate(data)
-    instruction_id = str(payload.get("id") or payload.get("InstructionRef") or payload.get("ref") or "instruction")
+    instruction_id = str(
+        payload.get("id") or payload.get("InstructionRef") or payload.get("ref") or "instruction"
+    )
     return RescheduleWritebackPlan(
         plan_id=str(payload.get("plan_id") or instruction_id),
         decision_record_id=None,

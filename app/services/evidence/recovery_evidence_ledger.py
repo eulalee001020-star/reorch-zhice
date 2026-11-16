@@ -18,7 +18,6 @@ from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.storage.operational_store import RelationalOperationalStore
 from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
-
 _INCIDENT_TYPES = [
     "equipment_failure",
     "rush_order",
@@ -77,7 +76,9 @@ class RecoveryEvidenceLedgerService:
             )
             solve = self._executor.execute(solve_request)
             baseline_delay = incident.delay_minutes * 4
-            system_delay = _system_delay_minutes(snapshot, solve.final_schedule, operation.work_order_id)
+            system_delay = _system_delay_minutes(
+                snapshot, solve.final_schedule, operation.work_order_id
+            )
             planner_minutes_before = 18 + index % 8
             planner_minutes_after = 5 + index % 3
             planner_baseline = {
@@ -100,9 +101,7 @@ class RecoveryEvidenceLedgerService:
             planner_decision = {
                 "decision_status": "accepted" if solve.status == "feasible" else "rejected",
                 "planner_id": "digital-twin-planner",
-                "decided_at": (
-                    snapshot.captured_at + timedelta(minutes=index + 1)
-                ).isoformat(),
+                "decided_at": (snapshot.captured_at + timedelta(minutes=index + 1)).isoformat(),
                 "override_reason": None,
                 "provenance": "simulated",
             }
@@ -163,9 +162,11 @@ class RecoveryEvidenceLedgerService:
             baseline = values.get("planner_baseline", {})
             outcome = values.get("execution_outcome", {})
             roi = dict(values.get("roi", {}) or {})
-            if not roi and baseline.get("baseline_loss_amount") is not None and outcome.get(
-                "actual_loss_amount"
-            ) is not None:
+            if (
+                not roi
+                and baseline.get("baseline_loss_amount") is not None
+                and outcome.get("actual_loss_amount") is not None
+            ):
                 baseline_loss = float(baseline["baseline_loss_amount"])
                 actual_loss = float(outcome["actual_loss_amount"])
                 roi = {
@@ -215,8 +216,7 @@ class RecoveryEvidenceLedgerService:
                 sum(float(case.roi.get("gross_benefit", 0)) for case in cases), 2
             ),
             "average_benefit_per_case": round(
-                sum(float(case.roi.get("gross_benefit", 0)) for case in cases)
-                / max(1, len(cases)),
+                sum(float(case.roi.get("gross_benefit", 0)) for case in cases) / max(1, len(cases)),
                 2,
             ),
             "currency": "CNY",
@@ -307,8 +307,8 @@ def _proxy_roi(
     planner_saving = max(0.0, planner_minutes_before - planner_minutes_after) * (
         assumptions.planner_cost_per_minute
     )
-    overtime_saving = max(0.0, baseline_delay - actual_delay) * 0.25 * (
-        assumptions.overtime_cost_per_minute
+    overtime_saving = (
+        max(0.0, baseline_delay - actual_delay) * 0.25 * (assumptions.overtime_cost_per_minute)
     )
     avoided_scrap = (
         assumptions.scrap_cost_per_case * 0.2
@@ -345,9 +345,7 @@ def _customer_evidence_blockers(cases: list[RecoveryEvidenceCase]) -> list[str]:
         if any(ref.startswith("digital-twin:") for ref in case.source_refs):
             blockers.append(f"synthetic_source_ref:{case.case_id}")
         baseline = case.planner_baseline
-        if not baseline.get("baseline_decision_ref") or not baseline.get(
-            "provenance_confirmed"
-        ):
+        if not baseline.get("baseline_decision_ref") or not baseline.get("provenance_confirmed"):
             blockers.append(f"planner_baseline_provenance_missing:{case.case_id}")
         if baseline.get("baseline_loss_amount") is None:
             blockers.append(f"baseline_loss_missing:{case.case_id}")

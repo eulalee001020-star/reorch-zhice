@@ -54,7 +54,11 @@ class EnterpriseIntegrationService:
             operations: list[PlanningOperationInput] = []
             for raw_op in _get(raw_wo, mapping.operations, []):
                 duration = _get(raw_op, mapping.duration_minutes, None)
-                if duration is None and _get(raw_op, "start_time", None) and _get(raw_op, "end_time", None):
+                if (
+                    duration is None
+                    and _get(raw_op, "start_time", None)
+                    and _get(raw_op, "end_time", None)
+                ):
                     duration = _minutes_between(
                         _parse_dt(_get(raw_op, "start_time")),
                         _parse_dt(_get(raw_op, "end_time")),
@@ -72,10 +76,10 @@ class EnterpriseIntegrationService:
                         required_capabilities=[
                             str(c) for c in _get(raw_op, mapping.required_capabilities, [])
                         ],
-                        predecessor_ids=[
-                            str(p) for p in _get(raw_op, mapping.predecessor_ids, [])
-                        ],
-                        product_family=str(_get(raw_op, mapping.product_family, family or "unknown")),
+                        predecessor_ids=[str(p) for p in _get(raw_op, mapping.predecessor_ids, [])],
+                        product_family=str(
+                            _get(raw_op, mapping.product_family, family or "unknown")
+                        ),
                     )
                 )
 

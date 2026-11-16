@@ -5,14 +5,13 @@ import zipfile
 from pathlib import Path
 
 from docx import Document
-from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
@@ -29,7 +28,6 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
@@ -68,38 +66,102 @@ WORKFLOW_NEW = (
 )
 
 AI_ROWS = [
-    ["异常理解", "结构化自然语言与事件上下文，标记缺失信息", "schema、来源、时效与权限决定数据能否进入求解"],
+    [
+        "异常理解",
+        "结构化自然语言与事件上下文，标记缺失信息",
+        "schema、来源、时效与权限决定数据能否进入求解",
+    ],
     ["方案生成", "不直接生成生产排程", "SSGS、CP-SAT、分解和 anytime hybrid 生成并验证候选"],
-    ["方案解释", "基于证据解释差异、风险和需要确认的事项", "KPI、硬约束与 feasibility certificate 不由 LLM 判断"],
-    ["规则演进", "从 override 与失败样本提出规则候选", "review、replay、publish 状态机决定规则是否生效"],
+    [
+        "方案解释",
+        "基于证据解释差异、风险和需要确认的事项",
+        "KPI、硬约束与 feasibility certificate 不由 LLM 判断",
+    ],
+    [
+        "规则演进",
+        "从 override 与失败样本提出规则候选",
+        "review、replay、publish 状态机决定规则是否生效",
+    ],
     ["执行控制", "不连接生产写回", "双审批、短时 permit、幂等、sandbox certification 与审计控制"],
     ["异常降级", "说明不确定性与缺失证据", "超时、冲突、漂移或权限不足时 fail closed"],
 ]
 
 EVIDENCE_ROWS = [
     ["自动化测试", "872 项", "领域模型、API、Agent、求解、质量门、审批、回写策略与运行时"],
-    ["生产运行时数字孪生", "10 / 10 gates passed", "shadow、schema drift、OIDC/RBAC、备份恢复与观测路径"],
+    [
+        "生产运行时数字孪生",
+        "10 / 10 gates passed",
+        "shadow、schema drift、OIDC/RBAC、备份恢复与观测路径",
+    ],
     ["集成控制面", "8 / 8 checks passed", "Connector 注册、版本、认证、隔离和失败关闭"],
-    ["回写认证演练", "15 / 15 checks passed", "双审批、幂等、dry-run、回滚与审计；客户认证仍为 false"],
+    [
+        "回写认证演练",
+        "15 / 15 checks passed",
+        "双审批、幂等、dry-run、回滚与审计；客户认证仍为 false",
+    ],
     ["三行业合成回放", "CNC / LED Fab / PCBA", "证据结构、ROI proxy、PoC 前检和 replay 方法"],
-    ["可行性恢复", "writeback_authorized=false", "冲突诊断、受控约束放宽、Recovery Operator 与证书"],
+    [
+        "可行性恢复",
+        "writeback_authorized=false",
+        "冲突诊断、受控约束放宽、Recovery Operator 与证书",
+    ],
 ]
 
 FAILURE_ROWS = [
-    ["数据缺失仍输出强建议", "Prompt 只约束格式，没有独立准入门", "增加 Data Health Gate、字段合同、source refs 与停止规则"],
-    ["Proxy 被表述为生产事实", "事实、推断与建议未分层", "schema 增加 evidence type、confidence 与 uncertainty"],
-    ["召回过期公告或案例", "检索命中与证据有效性混在同一步", "增加时效、版本和 source authority 校验"],
-    ["规则候选被误认为已生效", "生成与发布状态未隔离", "建立 draft、review、replay、publish 生命周期"],
-    ["不可行排程只返回失败", "缺少业务可执行的恢复路径", "增加冲突诊断、Recovery Operator、审批与 certificate"],
+    [
+        "数据缺失仍输出强建议",
+        "Prompt 只约束格式，没有独立准入门",
+        "增加 Data Health Gate、字段合同、source refs 与停止规则",
+    ],
+    [
+        "Proxy 被表述为生产事实",
+        "事实、推断与建议未分层",
+        "schema 增加 evidence type、confidence 与 uncertainty",
+    ],
+    [
+        "召回过期公告或案例",
+        "检索命中与证据有效性混在同一步",
+        "增加时效、版本和 source authority 校验",
+    ],
+    [
+        "规则候选被误认为已生效",
+        "生成与发布状态未隔离",
+        "建立 draft、review、replay、publish 生命周期",
+    ],
+    [
+        "不可行排程只返回失败",
+        "缺少业务可执行的恢复路径",
+        "增加冲突诊断、Recovery Operator、审批与 certificate",
+    ],
 ]
 
 DELIVERY_ROWS = [
     ["行业调研", "市场/先进标准对标、金蝶定位、服务 AI 竞品迁移", "确定异常响应层切口与竞合边界"],
-    ["用户需求", "计划员、生产、质检、设备、IT 角色与原/新流程", "把隐性经验转化为对象、状态、权限和决策节点"],
-    ["PRD / 原型", "用户故事、页面流、异常态、权限、埋点、验收、互动 Demo", "形成研发可执行与可感知的产品定义"],
-    ["项目推进", "需求、评审、研发、联调、灰度、风险、责任人与阶段门", "用 MVP delivery plan 管理交付节奏"],
-    ["上线指标", "时效、Top-K 可行覆盖、采纳、业务代理、稳定性与风险", "区分模型、方案、产品、业务和治理指标"],
-    ["创新输入", "Agent + solver + guardrail + human-in-the-loop Harness", "让概率型 AI 与确定性系统共同承担可审计闭环"],
+    [
+        "用户需求",
+        "计划员、生产、质检、设备、IT 角色与原/新流程",
+        "把隐性经验转化为对象、状态、权限和决策节点",
+    ],
+    [
+        "PRD / 原型",
+        "用户故事、页面流、异常态、权限、埋点、验收、互动 Demo",
+        "形成研发可执行与可感知的产品定义",
+    ],
+    [
+        "项目推进",
+        "需求、评审、研发、联调、灰度、风险、责任人与阶段门",
+        "用 MVP delivery plan 管理交付节奏",
+    ],
+    [
+        "上线指标",
+        "时效、Top-K 可行覆盖、采纳、业务代理、稳定性与风险",
+        "区分模型、方案、产品、业务和治理指标",
+    ],
+    [
+        "创新输入",
+        "Agent + solver + guardrail + human-in-the-loop Harness",
+        "让概率型 AI 与确定性系统共同承担可审计闭环",
+    ],
 ]
 
 BOUNDARIES = [
@@ -369,10 +431,26 @@ def build_docx() -> None:
         doc,
         ["问题", "业务影响", "产品判断"],
         [
-            ["信息分散且时效不一致", "错误输入会放大后续排程风险", "先验证数据健康，再进入 AI 与求解"],
-            ["方案只有结论，没有证据链", "计划员不敢采纳，事后难复盘", "Top-K 方案必须带来源、约束、差异与不确定性"],
-            ["临场协调缺少明确责任边界", "越权修改、并发覆盖和回滚困难", "人工确认、双审批、幂等与审计进入主流程"],
-            ["失败样本没有形成资产", "同类异常反复依赖个人经验", "沉淀 case、override、failure 与 rule candidate"],
+            [
+                "信息分散且时效不一致",
+                "错误输入会放大后续排程风险",
+                "先验证数据健康，再进入 AI 与求解",
+            ],
+            [
+                "方案只有结论，没有证据链",
+                "计划员不敢采纳，事后难复盘",
+                "Top-K 方案必须带来源、约束、差异与不确定性",
+            ],
+            [
+                "临场协调缺少明确责任边界",
+                "越权修改、并发覆盖和回滚困难",
+                "人工确认、双审批、幂等与审计进入主流程",
+            ],
+            [
+                "失败样本没有形成资产",
+                "同类异常反复依赖个人经验",
+                "沉淀 case、override、failure 与 rule candidate",
+            ],
         ],
         [2300, 2850, 4210],
     )
@@ -396,9 +474,21 @@ def build_docx() -> None:
         doc,
         ["维度", "主系统", "ReOrch"],
         [
-            ["核心职责", "主数据、业务流程、生产执行与基准计划", "异常后的影响收敛、恢复候选、风险解释与责任闭环"],
-            ["输入", "订单、BOM、工艺、库存、设备、基准计划", "异常事件、最新快照、现场约束、证据来源、审批策略"],
-            ["方案", "规则、人工调整或单一优化结果", "约束求解 Top-K，显式比较延期、扰动、成本与执行复杂度"],
+            [
+                "核心职责",
+                "主数据、业务流程、生产执行与基准计划",
+                "异常后的影响收敛、恢复候选、风险解释与责任闭环",
+            ],
+            [
+                "输入",
+                "订单、BOM、工艺、库存、设备、基准计划",
+                "异常事件、最新快照、现场约束、证据来源、审批策略",
+            ],
+            [
+                "方案",
+                "规则、人工调整或单一优化结果",
+                "约束求解 Top-K，显式比较延期、扰动、成本与执行复杂度",
+            ],
             ["AI", "通用问答、报表或流程助手", "受控 Agent 嵌入数据、求解、证据、确认和复盘工作流"],
             ["边界", "承担生产主系统职责", "不替代主系统，不在证据不足时给强结论，不自动越权写回"],
         ],
@@ -424,8 +514,16 @@ def build_docx() -> None:
         doc,
         ["产品对象", "关键状态 / 机制", "可验证产出"],
         [
-            ["Incident", "新增 / 已校验 / 阻断 / 评估中", "来源、时效、严重度、受影响对象与缺失字段"],
-            ["Schedule Snapshot", "版本化 / 已锁定 / 过期", "基准计划、约束版本、source refs 与并发保护"],
+            [
+                "Incident",
+                "新增 / 已校验 / 阻断 / 评估中",
+                "来源、时效、严重度、受影响对象与缺失字段",
+            ],
+            [
+                "Schedule Snapshot",
+                "版本化 / 已锁定 / 过期",
+                "基准计划、约束版本、source refs 与并发保护",
+            ],
             ["Candidate Plan", "可行 / 仅参考 / 阻断", "KPI、硬约束报告、Gantt diff、风险与解释"],
             ["Quality Gate", "通过 / 警告 / 失败关闭", "数据、约束、权限、置信度与证据检查"],
             ["Decision Record", "采纳 / 调整 / 驳回", "确认人、理由、版本、审批与执行草案"],
@@ -484,10 +582,26 @@ def build_docx() -> None:
         doc,
         ["阶段", "进入条件", "主要验证"],
         [
-            ["Replay-ready（当前）", "公开/合成数据、完整 schema、无生产写回", "工程行为、证据结构与失败关闭"],
-            ["Shadow-ready", "10-30 个客户历史案例、来源签署、只读 Connector", "计划员基线、Top-K 覆盖、阈值校准"],
-            ["Controlled-pilot-ready", "客户 Sandbox、双审批、回滚、安全与审计验收", "小范围受控执行与结果复盘"],
-            ["Production acceptance", "客户 IdP、HA/DR、运维、数据授权、现场签字", "稳定性、组织流程、真实价值与责任边界"],
+            [
+                "Replay-ready（当前）",
+                "公开/合成数据、完整 schema、无生产写回",
+                "工程行为、证据结构与失败关闭",
+            ],
+            [
+                "Shadow-ready",
+                "10-30 个客户历史案例、来源签署、只读 Connector",
+                "计划员基线、Top-K 覆盖、阈值校准",
+            ],
+            [
+                "Controlled-pilot-ready",
+                "客户 Sandbox、双审批、回滚、安全与审计验收",
+                "小范围受控执行与结果复盘",
+            ],
+            [
+                "Production acceptance",
+                "客户 IdP、HA/DR、运维、数据授权、现场签字",
+                "稳定性、组织流程、真实价值与责任边界",
+            ],
         ],
         [2050, 3820, 3490],
     )
@@ -699,7 +813,9 @@ def build_pdf() -> None:
         Spacer(1, 8),
         Paragraph("ReOrch 智策", styles["title"]),
         Paragraph("工业异常恢复决策 Copilot", styles["subtitle"]),
-        Paragraph("<b>项目类型：</b> AI Native 产品 / Agent Workflow / 工业决策辅助", styles["meta"]),
+        Paragraph(
+            "<b>项目类型：</b> AI Native 产品 / Agent Workflow / 工业决策辅助", styles["meta"]
+        ),
         Paragraph("<b>产品状态：</b> MVP 已完成；replay-ready；生产写回默认关闭", styles["meta"]),
         Paragraph("<b>公开证据：</b> 872 项自动化测试 + 合成回放 + 数字孪生 gates", styles["meta"]),
         Paragraph("<b>更新日期：</b> 2026-07-27", styles["meta"]),
@@ -736,10 +852,26 @@ def build_pdf() -> None:
         styles,
         ["问题", "业务影响", "产品判断"],
         [
-            ["信息分散且时效不一致", "错误输入会放大后续排程风险", "先验证数据健康，再进入 AI 与求解"],
-            ["方案只有结论，没有证据链", "计划员不敢采纳，事后难复盘", "Top-K 必须带来源、约束、差异与不确定性"],
-            ["临场协调缺少责任边界", "越权、并发覆盖和回滚困难", "人工确认、双审批、幂等与审计进入主流程"],
-            ["失败样本没有形成资产", "同类异常反复依赖个人经验", "沉淀 case、override、failure 与 rule candidate"],
+            [
+                "信息分散且时效不一致",
+                "错误输入会放大后续排程风险",
+                "先验证数据健康，再进入 AI 与求解",
+            ],
+            [
+                "方案只有结论，没有证据链",
+                "计划员不敢采纳，事后难复盘",
+                "Top-K 必须带来源、约束、差异与不确定性",
+            ],
+            [
+                "临场协调缺少责任边界",
+                "越权、并发覆盖和回滚困难",
+                "人工确认、双审批、幂等与审计进入主流程",
+            ],
+            [
+                "失败样本没有形成资产",
+                "同类异常反复依赖个人经验",
+                "沉淀 case、override、failure 与 rule candidate",
+            ],
         ],
         [1.55 * inch, 1.8 * inch, 3.15 * inch],
     )
@@ -781,9 +913,21 @@ def build_pdf() -> None:
         styles,
         ["维度", "主系统", "ReOrch"],
         [
-            ["核心职责", "主数据、流程、生产执行与基准计划", "异常后的影响收敛、恢复候选、风险解释与责任闭环"],
-            ["输入", "订单、BOM、工艺、库存、设备、基准计划", "异常、最新快照、现场约束、证据来源与审批策略"],
-            ["方案", "规则、人工调整或单一优化结果", "约束求解 Top-K，比较延期、扰动、成本与执行复杂度"],
+            [
+                "核心职责",
+                "主数据、流程、生产执行与基准计划",
+                "异常后的影响收敛、恢复候选、风险解释与责任闭环",
+            ],
+            [
+                "输入",
+                "订单、BOM、工艺、库存、设备、基准计划",
+                "异常、最新快照、现场约束、证据来源与审批策略",
+            ],
+            [
+                "方案",
+                "规则、人工调整或单一优化结果",
+                "约束求解 Top-K，比较延期、扰动、成本与执行复杂度",
+            ],
             ["AI", "通用问答、报表或流程助手", "受控 Agent 嵌入数据、求解、证据、确认和复盘"],
             ["边界", "承担生产主系统职责", "不替代主系统，不在证据不足时给强结论，不越权写回"],
         ],
@@ -823,7 +967,11 @@ def build_pdf() -> None:
         styles,
         ["产品对象", "关键状态 / 机制", "可验证产出"],
         [
-            ["Incident", "新增 / 已校验 / 阻断 / 评估中", "来源、时效、严重度、受影响对象与缺失字段"],
+            [
+                "Incident",
+                "新增 / 已校验 / 阻断 / 评估中",
+                "来源、时效、严重度、受影响对象与缺失字段",
+            ],
             ["Snapshot", "版本化 / 已锁定 / 过期", "基准计划、约束版本、source refs 与并发保护"],
             ["Candidate", "可行 / 仅参考 / 阻断", "KPI、硬约束报告、Gantt diff、风险与解释"],
             ["Quality Gate", "通过 / 警告 / 失败关闭", "数据、约束、权限、置信度与证据检查"],
@@ -912,10 +1060,26 @@ def build_pdf() -> None:
         styles,
         ["阶段", "进入条件", "主要验证"],
         [
-            ["Replay-ready（当前）", "公开/合成数据、完整 schema、无生产写回", "工程行为、证据结构与失败关闭"],
-            ["Shadow-ready", "10-30 个客户历史案例、来源签署、只读 Connector", "计划员基线、Top-K 覆盖、阈值校准"],
-            ["Controlled-pilot-ready", "客户 Sandbox、双审批、回滚、安全与审计验收", "小范围受控执行与结果复盘"],
-            ["Production acceptance", "客户 IdP、HA/DR、运维、数据授权、现场签字", "稳定性、真实价值与责任边界"],
+            [
+                "Replay-ready（当前）",
+                "公开/合成数据、完整 schema、无生产写回",
+                "工程行为、证据结构与失败关闭",
+            ],
+            [
+                "Shadow-ready",
+                "10-30 个客户历史案例、来源签署、只读 Connector",
+                "计划员基线、Top-K 覆盖、阈值校准",
+            ],
+            [
+                "Controlled-pilot-ready",
+                "客户 Sandbox、双审批、回滚、安全与审计验收",
+                "小范围受控执行与结果复盘",
+            ],
+            [
+                "Production acceptance",
+                "客户 IdP、HA/DR、运维、数据授权、现场签字",
+                "稳定性、真实价值与责任边界",
+            ],
         ],
         [1.45 * inch, 2.85 * inch, 2.2 * inch],
     )

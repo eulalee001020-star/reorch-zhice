@@ -85,9 +85,7 @@ class ExplainabilityLayer:
         )
 
         # --- Key advantages (Req 6.2) ---
-        key_advantages = _build_key_advantages(
-            recommended_plan, comparison_matrix
-        )
+        key_advantages = _build_key_advantages(recommended_plan, comparison_matrix)
 
         # --- Main risks (Req 6.2) ---
         main_risks = _build_main_risks(recommended_plan)
@@ -101,9 +99,7 @@ class ExplainabilityLayer:
         summary = _build_summary(recommended_plan, comparison_matrix)
 
         # --- Referenced case IDs (Req 6.4) ---
-        referenced_case_ids = [
-            str(case.case_id) for case in matched_cases
-        ]
+        referenced_case_ids = [str(case.case_id) for case in matched_cases]
 
         return RecommendationExplanation(
             core_reasons=core_reasons,
@@ -135,22 +131,14 @@ class ExplainabilityLayer:
         algorithm_category = _ALGORITHM_CATEGORIES.get(
             strategy, f"{chain.solver_name} ({strategy})"
         )
-        applicable_scenario = _APPLICABLE_SCENARIOS.get(
-            strategy, f"策略类型: {strategy}"
-        )
-        chain_reason = _CHAIN_REASON_TEMPLATES.get(
-            strategy, f"基于 {strategy} 策略选择的求解链路"
-        )
+        applicable_scenario = _APPLICABLE_SCENARIOS.get(strategy, f"策略类型: {strategy}")
+        chain_reason = _CHAIN_REASON_TEMPLATES.get(strategy, f"基于 {strategy} 策略选择的求解链路")
 
         # Optimization objectives from solver chain context
         optimization_objectives = _infer_objectives(strategy)
 
         # Computation time from solver metadata
-        computation_time = (
-            plan.solver_metadata.solve_time_seconds
-            if plan.solver_metadata
-            else 0.0
-        )
+        computation_time = plan.solver_metadata.solve_time_seconds if plan.solver_metadata else 0.0
 
         # Stages from solver chain (Req 28.8)
         stages = list(chain.stages) if chain.stages else []
@@ -202,9 +190,7 @@ def _build_core_reasons(
     if matched_cases:
         case = matched_cases[0]
         case_result = "成功" if case.execution_result else "已归档"
-        reasons.append(
-            f"参考历史案例 {case.case_id}（执行结果: {case_result}）"
-        )
+        reasons.append(f"参考历史案例 {case.case_id}（执行结果: {case_result}）")
 
     # Ensure ≤3
     return reasons[:_MAX_CORE_REASONS]

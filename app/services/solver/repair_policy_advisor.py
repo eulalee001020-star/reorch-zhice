@@ -107,16 +107,12 @@ class RepairPolicyAdvisor:
         strategy_type = self._resolve_strategy_type(strategy.strategy_type)
 
         # Collect affected operation IDs from impact report
-        affected_op_ids = [
-            op.operation_id for op in impact_report.affected_operations
-        ]
+        affected_op_ids = [op.operation_id for op in impact_report.affected_operations]
         affected_set = set(affected_op_ids)
 
         # Derive downstream (indirect) operation IDs
         downstream_op_ids = [
-            op.operation_id
-            for op in impact_report.affected_operations
-            if not op.is_direct
+            op.operation_id for op in impact_report.affected_operations if not op.is_direct
         ]
 
         # --- Base configuration per strategy (Req 25.3, 25.4, 25.5, 25.6) ---
@@ -193,9 +189,7 @@ class RepairPolicyAdvisor:
                 "allowed_perturbation_scope": list(affected_set),
                 "search_time_budget_seconds": _WAIT_BUDGET_SECONDS,
                 "candidate_count_target": _WAIT_CANDIDATE_TARGET,
-                "fallback_condition": (
-                    "No improvement after 80% of time budget consumed"
-                ),
+                "fallback_condition": ("No improvement after 80% of time budget consumed"),
                 "fallback_mode": "return_current_best",
             }
 
@@ -212,9 +206,7 @@ class RepairPolicyAdvisor:
                     "No improvement after 80% of time budget consumed "
                     "or 10 consecutive stagnation iterations"
                 ),
-                "fallback_mode": (
-                    "return_current_best_and_switch_to_fallback_solver"
-                ),
+                "fallback_mode": ("return_current_best_and_switch_to_fallback_solver"),
             }
 
         # Global-Reschedule: aggressive, broader scope (Req 25.6)
@@ -225,8 +217,7 @@ class RepairPolicyAdvisor:
             "search_time_budget_seconds": _GLOBAL_BUDGET_SECONDS,
             "candidate_count_target": _GLOBAL_CANDIDATE_TARGET,
             "fallback_condition": (
-                "No improvement after 80% of time budget consumed "
-                "or solver reports infeasibility"
+                "No improvement after 80% of time budget consumed or solver reports infeasibility"
             ),
             "fallback_mode": "degrade_to_local_repair_then_fallback_rule",
         }
@@ -242,9 +233,7 @@ class RepairPolicyAdvisor:
             if template.repair_mode is not None:
                 config["repair_mode"] = template.repair_mode
             if template.search_time_budget_seconds is not None:
-                config["search_time_budget_seconds"] = (
-                    template.search_time_budget_seconds
-                )
+                config["search_time_budget_seconds"] = template.search_time_budget_seconds
             if template.candidate_count_target is not None:
                 config["candidate_count_target"] = template.candidate_count_target
             if template.fallback_condition is not None:

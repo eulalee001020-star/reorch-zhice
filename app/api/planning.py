@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from starlette.concurrency import run_in_threadpool
 
 from app.core.auth import CurrentUser, get_optional_current_user
-
 from app.models.agent_observability import (
     AgentTraceCostSummary,
     AgentTraceObserveRequest,
@@ -96,9 +95,11 @@ from app.services.agent.agent_observability import AgentObservabilityService
 from app.services.constraints.constraint_calibration import ConstraintCalibrationService
 from app.services.data_gate.data_readiness import DataReadinessService
 from app.services.data_gate.design_partner_preflight import DesignPartnerPreflightService
-from app.services.validation.digital_twin_runner import DigitalTwinRunner
 from app.services.data_gate.enterprise_integration import EnterpriseIntegrationService
 from app.services.data_gate.field_mapping_compiler import FieldMappingCompiler
+from app.services.data_gate.reality_harness import P0RealityHarnessService
+from app.services.evidence.value_tracking import ValueTrackingService
+from app.services.recommendation.plan_quality_gate import PlanQualityGate
 from app.services.solver.flexible_shop_capability import (
     CounterfactualReplayMatrixService,
     CounterfactualReplayRunner,
@@ -114,19 +115,17 @@ from app.services.solver.flexible_shop_capability import (
 )
 from app.services.solver.initial_scheduler import InitialScheduler
 from app.services.solver.large_fjsp_replay import LargeFjspReplayService
-from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
-from app.services.recommendation.plan_quality_gate import PlanQualityGate
-from app.services.storage.persistence import persist_audit_log
-from app.services.validation.production_readiness import ProductionReadinessGate
-from app.services.data_gate.reality_harness import P0RealityHarnessService
-from app.services.validation.replay_validation import ReplayValidationService
-from app.services.validation.shadow_mode import ShadowModeService
 from app.services.solver.technical_kernel import (
     DecisionGraphService,
     EvidenceGateService,
     RecoveryOperatorPortfolioService,
 )
-from app.services.evidence.value_tracking import ValueTrackingService
+from app.services.storage.persistence import persist_audit_log
+from app.services.validation.digital_twin_runner import DigitalTwinRunner
+from app.services.validation.level23_digital_twin import Level23DigitalTwinReplayEvaluator
+from app.services.validation.production_readiness import ProductionReadinessGate
+from app.services.validation.replay_validation import ReplayValidationService
+from app.services.validation.shadow_mode import ShadowModeService
 
 router = APIRouter(prefix="/api/v1/planning", tags=["planning"])
 
@@ -299,9 +298,7 @@ async def run_quality_gate(
     body: PlanQualityGateRequest,
 ) -> PlanQualityGateResponse:
     gate = PlanQualityGate()
-    return PlanQualityGateResponse(
-        reports=[gate.evaluate(plan) for plan in body.candidate_plans]
-    )
+    return PlanQualityGateResponse(reports=[gate.evaluate(plan) for plan in body.candidate_plans])
 
 
 @router.post(

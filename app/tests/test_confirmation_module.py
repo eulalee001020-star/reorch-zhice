@@ -13,8 +13,7 @@ Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -42,10 +41,9 @@ from app.services.governance.confirmation_module import (
     PermissionDeniedError,
 )
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
-_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 _LATER = _NOW + timedelta(hours=2)
 
 
@@ -347,20 +345,14 @@ async def test_decision_record_contains_all_fields():
 def test_rbac_planner_allowed():
     """Planner can perform all confirmation actions."""
     ConfirmationModule.check_permission(Role.PLANNER, ConfirmAction.ACCEPT)
-    ConfirmationModule.check_permission(
-        Role.PLANNER, ConfirmAction.ACCEPT_WITH_ADJUSTMENT
-    )
-    ConfirmationModule.check_permission(
-        Role.PLANNER, ConfirmAction.REJECT_AND_RESELECT
-    )
+    ConfirmationModule.check_permission(Role.PLANNER, ConfirmAction.ACCEPT_WITH_ADJUSTMENT)
+    ConfirmationModule.check_permission(Role.PLANNER, ConfirmAction.REJECT_AND_RESELECT)
 
 
 def test_rbac_shop_floor_executor_denied():
     """Shop_Floor_Executor cannot perform any confirmation action."""
     with pytest.raises(PermissionDeniedError):
-        ConfirmationModule.check_permission(
-            Role.SHOP_FLOOR_EXECUTOR, ConfirmAction.ACCEPT
-        )
+        ConfirmationModule.check_permission(Role.SHOP_FLOOR_EXECUTOR, ConfirmAction.ACCEPT)
 
 
 def test_rbac_management_p1_allowed():
@@ -428,9 +420,7 @@ async def test_check_timeout_over_threshold():
     incident_id = uuid4()
 
     # Simulate registration 20 minutes ago
-    module._pending_incidents[incident_id] = datetime.now(
-        tz=timezone.utc
-    ) - timedelta(minutes=20)
+    module._pending_incidents[incident_id] = datetime.now(tz=UTC) - timedelta(minutes=20)
 
     result = await module.check_timeout(incident_id)
     assert result is True
@@ -479,9 +469,7 @@ async def test_pending_cleared_after_confirm():
     incident_id = uuid4()
     module.register_pending(incident_id)
 
-    request = _make_confirm_request(
-        incident_id=incident_id, plan_id=plan.plan_id
-    )
+    request = _make_confirm_request(incident_id=incident_id, plan_id=plan.plan_id)
 
     await module.confirm(
         request=request,

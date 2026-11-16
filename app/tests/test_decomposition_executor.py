@@ -20,9 +20,7 @@ def test_joint_incidents_are_solved_together_and_independent_groups_run_parallel
     for result in response.subproblem_results:
         assert result.solver_metadata["validated_incumbent"] is True
         assert result.solver_metadata["algorithm_path"][0] == "constraint_aware_ssgs"
-        assert "independent_constraint_validation" in result.solver_metadata[
-            "algorithm_path"
-        ]
+        assert "independent_constraint_validation" in result.solver_metadata["algorithm_path"]
         assert result.solver_metadata["time_to_first_feasible_ms"] >= 0
         assert result.solver_metadata["pareto_front_size"] >= 1
         assert result.solver_metadata["pareto_front"]
@@ -61,9 +59,7 @@ def test_1k_5k_10k_operation_digital_twin_scale_gate() -> None:
     executor = DecompositionExecutor()
 
     for operation_count in (1000, 5000, 10000):
-        response = executor.execute(
-            factory.build_solve_request(operation_count, incident_count=5)
-        )
+        response = executor.execute(factory.build_solve_request(operation_count, incident_count=5))
         assert response.operation_count == operation_count
         assert response.status == "feasible"
         assert response.observed_parallelism == 2

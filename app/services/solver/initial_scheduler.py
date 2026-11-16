@@ -36,7 +36,6 @@ from app.models.solver import (
 from app.services.constraints.constraint_validator import ConstraintValidator
 from app.services.data_gate.data_readiness import DataReadinessService
 
-
 _SUPPORTED_GOALS = {
     "delivery_priority",
     "throughput_priority",
@@ -114,8 +113,7 @@ class InitialScheduler:
 
         resource_ids = [r.resource_id for r in request.resources]
         resource_cost = {
-            r.resource_id: max(1, int(round(r.cost_per_minute)))
-            for r in request.resources
+            r.resource_id: max(1, int(round(r.cost_per_minute))) for r in request.resources
         }
         bottleneck_ids = {r.resource_id for r in request.resources if r.is_bottleneck}
         horizon = _horizon_minutes(request, op_runtimes)
@@ -188,11 +186,7 @@ class InitialScheduler:
 
         tardiness_terms: list[cp_model.LinearExpr] = []
         for wo in request.work_orders:
-            wo_ends = [
-                ends[op.operation_id]
-                for op in wo.operations
-                if op.operation_id in ends
-            ]
+            wo_ends = [ends[op.operation_id] for op in wo.operations if op.operation_id in ends]
             if not wo_ends:
                 continue
             completion = model.NewIntVar(0, horizon, f"completion_{wo.work_order_id}")
@@ -339,8 +333,7 @@ def _horizon_minutes(
 ) -> int:
     total_duration = sum(runtime.op.duration_minutes for runtime in op_runtimes.values())
     latest_due = max(
-        [_minutes_between(request.planning_start, wo.due_date) for wo in request.work_orders]
-        or [0]
+        [_minutes_between(request.planning_start, wo.due_date) for wo in request.work_orders] or [0]
     )
     latest_release = max(
         [
@@ -365,9 +358,7 @@ def _build_objective(
 ) -> cp_model.LinearExpr:
     tardiness = sum(tardiness_terms) if tardiness_terms else 0
     cost = sum(cost_terms) if cost_terms else 0
-    bottleneck_load = sum(
-        load for rid, load in load_by_resource.items() if rid in bottleneck_ids
-    )
+    bottleneck_load = sum(load for rid, load in load_by_resource.items() if rid in bottleneck_ids)
 
     if goal_mode == "delivery_priority":
         return tardiness * 120 + makespan * 2 + load_span
@@ -593,9 +584,10 @@ def _compute_initial_kpis(
         if tardiness == 0:
             on_time += 1
         for op in wo.operations:
-            busy_by_resource[op.resource_id] = busy_by_resource.get(op.resource_id, 0.0) + (
-                op.end_time - op.start_time
-            ).total_seconds() / 60
+            busy_by_resource[op.resource_id] = (
+                busy_by_resource.get(op.resource_id, 0.0)
+                + (op.end_time - op.start_time).total_seconds() / 60
+            )
 
     makespan = 0.0
     if latest_end is not None:
@@ -622,8 +614,7 @@ def _compute_initial_kpis(
 
     cost_by_resource = {r.resource_id: r.cost_per_minute for r in request.resources}
     total_cost = sum(
-        minutes * cost_by_resource.get(rid, 0.0)
-        for rid, minutes in busy_by_resource.items()
+        minutes * cost_by_resource.get(rid, 0.0) for rid, minutes in busy_by_resource.items()
     )
 
     order_count = len(detail.work_orders)

@@ -16,12 +16,13 @@ from app.models.large_fjsp_replay import (
 )
 from app.models.reality_harness import P0RealityHarnessRequest
 from app.models.schedule import Operation, ScheduleDetail, ScheduleSnapshot, WorkOrder
+from app.services.constraints.customer_constraint_ingestion import (
+    CustomerConstraintIngestionService,
+)
+from app.services.data_gate.reality_harness import P0RealityHarnessService
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
-from app.services.constraints.customer_constraint_ingestion import CustomerConstraintIngestionService
 from app.services.solver.machine_rank_service import MachineRankService
 from app.services.solver.metaheuristic_backend import MetaheuristicBackend
-from app.services.data_gate.reality_harness import P0RealityHarnessService
-
 
 _INCIDENT_TYPE_TO_REORCH: dict[str, str] = {
     "machine_down": "machine_down",
@@ -66,9 +67,7 @@ class LargeFjspReplayService:
 
     def run(self, request: LargeFjspReplayRequest) -> LargeFjspReplayResponse:
         normalized = _normalize_request(request)
-        harness_response = self._reality_harness.assess(
-            _to_reality_request(normalized)
-        )
+        harness_response = self._reality_harness.assess(_to_reality_request(normalized))
         snapshot = harness_response.snapshot
         if snapshot is None:
             return LargeFjspReplayResponse(
@@ -107,9 +106,7 @@ class LargeFjspReplayService:
             self._solve_incident(
                 incident=incident,
                 snapshot=snapshot,
-                frozen_operation_ids=frozen_ids
-                if request.freeze_snapshot_operations
-                else [],
+                frozen_operation_ids=frozen_ids if request.freeze_snapshot_operations else [],
                 timeout_seconds=request.cp_sat_timeout_seconds,
                 include_global_reschedule=request.include_global_reschedule,
             )
@@ -121,9 +118,7 @@ class LargeFjspReplayService:
             for option in result.options
             if option.feasibility_status == "feasible"
         )
-        solved_incident_count = sum(
-            1 for result in results if result.can_generate_executable_plan
-        )
+        solved_incident_count = sum(1 for result in results if result.can_generate_executable_plan)
         global_gaps = _global_gaps(harness_response.readiness_report.warnings)
         return LargeFjspReplayResponse(
             source_system=request.source_system,
@@ -204,17 +199,14 @@ class LargeFjspReplayService:
                     solver_frozen_operation_ids=[
                         operation_id
                         for operation_id in frozen_operation_ids
-                        if operation_id not in _work_order_operation_ids(
-                            snapshot, affected_work_order_id
-                        )
+                        if operation_id
+                        not in _work_order_operation_ids(snapshot, affected_work_order_id)
                     ],
                     kpi_frozen_operation_ids=frozen_operation_ids,
                     timeout_seconds=timeout_seconds,
                 )
             )
-        feasible_options = [
-            option for option in options if option.feasibility_status == "feasible"
-        ]
+        feasible_options = [option for option in options if option.feasibility_status == "feasible"]
         recommended = min(feasible_options, key=_option_rank) if feasible_options else None
         return LargeFjspIncidentReplayResult(
             case_id=case_id,
@@ -222,9 +214,7 @@ class LargeFjspReplayService:
             normalized_incident_type=normalized_incident_type,
             affected_operation_id=affected_operation_id,
             affected_work_order_id=affected_work_order_id,
-            estimated_service_loss_minutes=float(
-                incident.get("estimated_service_loss_min") or 0
-            ),
+            estimated_service_loss_minutes=float(incident.get("estimated_service_loss_min") or 0),
             options=options,
             recommended_policy=recommended.policy_type if recommended else None,
             recommendation_reason=_recommendation_reason(recommended)
@@ -393,28 +383,20 @@ def _normalize_request(request: LargeFjspReplayRequest) -> LargeFjspReplayReques
     tooling_calendar = [dict(row) for row in request.tooling_calendar]
     labor_skill_capacity = [dict(row) for row in request.labor_skill_capacity]
     urgent_order_constraints = [dict(row) for row in request.urgent_order_constraints]
-    schedule_by_operation = {
-        str(row.get("operation_id")): row for row in request.schedule_rows
-    }
+    schedule_by_operation = {str(row.get("operation_id")): row for row in request.schedule_rows}
     for row in work_orders:
         row["due_time"] = _with_timezone(row.get("due_time"), request.timezone_suffix)
     for row in operations:
         row.update(schedule_by_operation.get(str(row.get("operation_id")), {}))
-        row["planned_start"] = _with_timezone(
-            row.get("planned_start"), request.timezone_suffix
-        )
-        row["planned_end"] = _with_timezone(
-            row.get("planned_end"), request.timezone_suffix
-        )
+        row["planned_start"] = _with_timezone(row.get("planned_start"), request.timezone_suffix)
+        row["planned_end"] = _with_timezone(row.get("planned_end"), request.timezone_suffix)
     for row in incidents:
         row["source_incident_type"] = row.get("incident_type")
         row["incident_type"] = _INCIDENT_TYPE_TO_REORCH.get(
             str(row.get("incident_type", "")),
             "equipment_failure",
         )
-        row["occurred_at"] = _with_timezone(
-            row.get("occurred_at"), request.timezone_suffix
-        )
+        row["occurred_at"] = _with_timezone(row.get("occurred_at"), request.timezone_suffix)
     return LargeFjspReplayRequest(
         source_system=request.source_system,
         workshop_id=request.workshop_id,
@@ -633,15 +615,11 @@ def _total_tardiness(work_orders: list[WorkOrder]) -> float:
 
 
 def _operation_index(snapshot: ScheduleSnapshot) -> dict[str, Operation]:
-    return {
-        op.operation_id: op for wo in snapshot.work_orders for op in wo.operations
-    }
+    return {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
 
 
 def _detail_operation_index(schedule: ScheduleDetail) -> dict[str, Operation]:
-    return {
-        op.operation_id: op for wo in schedule.work_orders for op in wo.operations
-    }
+    return {op.operation_id: op for wo in schedule.work_orders for op in wo.operations}
 
 
 def _operation_by_id(snapshot: ScheduleSnapshot, operation_id: str | None) -> Operation | None:
@@ -657,9 +635,7 @@ def _work_order_by_id(snapshot: ScheduleSnapshot, work_order_id: str) -> WorkOrd
     return None
 
 
-def _work_order_operation_ids(
-    snapshot: ScheduleSnapshot, work_order_id: str | None
-) -> set[str]:
+def _work_order_operation_ids(snapshot: ScheduleSnapshot, work_order_id: str | None) -> set[str]:
     if work_order_id is None:
         return set()
     work_order = _work_order_by_id(snapshot, work_order_id)
@@ -699,13 +675,25 @@ def _pros(policy: str, kpi: LargeFjspStrategyKpi | None = None) -> list[str]:
     base = {
         "wait_and_shift": ["lowest conceptual change", "simple for planners to audit"],
         "keep_plan_warning": ["avoids unnecessary full reschedule", "low operational disruption"],
-        "alternative_machine_repair": ["uses flexible-machine redundancy", "protects affected resource calendar"],
-        "partial_reassignment": ["limits scope to affected neighborhood", "can relieve degraded capacity"],
+        "alternative_machine_repair": [
+            "uses flexible-machine redundancy",
+            "protects affected resource calendar",
+        ],
+        "partial_reassignment": [
+            "limits scope to affected neighborhood",
+            "can relieve degraded capacity",
+        ],
         "local_repair": ["bounded blast radius", "usually fast enough for shadow-mode review"],
         "local_resequence": ["targets setup/local sequence issue", "keeps global plan stable"],
-        "tooling_reallocation": ["explicitly handles tooling conflict", "keeps work order flow visible"],
+        "tooling_reallocation": [
+            "explicitly handles tooling conflict",
+            "keeps work order flow visible",
+        ],
         "priority_swap": ["directly expresses rush-order tradeoff", "auditable displacement"],
-        "controlled_global_reschedule": ["broadest feasibility search", "best fallback when local repair fails"],
+        "controlled_global_reschedule": [
+            "broadest feasibility search",
+            "best fallback when local repair fails",
+        ],
         "controlled_frozen_zone_release": [
             "recovers cases blocked by frozen downstream operations",
             "makes approval need explicit",

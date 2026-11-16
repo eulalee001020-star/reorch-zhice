@@ -136,9 +136,7 @@ class CustomerConstraintPack(ReOrchModel):
     transport_lanes: list[TransportLaneRow] = Field(default_factory=list)
     buffer_flows: list[BufferFlowRow] = Field(default_factory=list)
     outsourcing_approvals: list[OutsourcingApprovalRow] = Field(default_factory=list)
-    substitute_material_approvals: list[SubstituteMaterialApprovalRow] = Field(
-        default_factory=list
-    )
+    substitute_material_approvals: list[SubstituteMaterialApprovalRow] = Field(default_factory=list)
     batch_genealogy: list[BatchGenealogyRow] = Field(default_factory=list)
     qms_release_gates: list[QmsReleaseGateRow] = Field(default_factory=list)
 

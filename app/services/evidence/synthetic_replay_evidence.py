@@ -74,9 +74,7 @@ def _scenario_metrics(scenario: SyntheticScenarioPack) -> SyntheticScenarioEvide
         if str(row.get("planner_action")) in {"accepted", "accepted_with_tweak"}
     )
     reference_or_reject = sum(
-        1
-        for row in decisions
-        if str(row.get("planner_action")) in {"reference_only", "rejected"}
+        1 for row in decisions if str(row.get("planner_action")) in {"reference_only", "rejected"}
     )
     decision_time_saved = [
         _float(row.get("manual_baseline_decision_time_min"))
@@ -84,18 +82,14 @@ def _scenario_metrics(scenario: SyntheticScenarioPack) -> SyntheticScenarioEvide
         for row in feedback
     ]
     delay_reduction = [
-        _float(row.get("delay_before_min")) - _float(row.get("delay_after_min"))
-        for row in feedback
+        _float(row.get("delay_before_min")) - _float(row.get("delay_after_min")) for row in feedback
     ]
     trial_reduction = [
-        _float(row.get("planner_trial_count_before"))
-        - _float(row.get("planner_trial_count_after"))
+        _float(row.get("planner_trial_count_before")) - _float(row.get("planner_trial_count_after"))
         for row in feedback
     ]
     medium_or_high = sum(
-        1
-        for row in policy
-        if str(row.get("confidence_level")).lower() in {"medium", "high"}
+        1 for row in policy if str(row.get("confidence_level")).lower() in {"medium", "high"}
     )
 
     evidence_level = "blocked"

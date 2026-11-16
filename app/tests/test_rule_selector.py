@@ -10,8 +10,8 @@ Covers:
 - Structured output format (Req 23.4, 23.9)
 """
 
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 
@@ -22,7 +22,6 @@ from app.models.enums import (
     IncidentStatus,
     IncidentType,
     ReportSource,
-    RuleApplicableStage,
     RuleCategory,
     StrategyType,
 )
@@ -36,14 +35,14 @@ from app.services.solver.rule_selector import (
     RuleSelector,
 )
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
+
 
 def _make_incident(**overrides) -> Incident:
     defaults = dict(
         incident_id=uuid4(),
         incident_type=IncidentType.EQUIPMENT_FAILURE,
-        occurred_at=datetime.now(tz=timezone.utc),
+        occurred_at=datetime.now(tz=UTC),
         resource_id="machine-01",
         report_source=ReportSource.MES,
         severity=IncidentSeverity.P2_HIGH,
@@ -74,7 +73,7 @@ def _make_impact_report(
         AffectedWorkOrder(
             work_order_id=f"wo-{i}",
             product_name=f"Product-{i}",
-            due_date=datetime(2025, 7, 20, tzinfo=timezone.utc),
+            due_date=datetime(2025, 7, 20, tzinfo=UTC),
             delivery_risk_level=risk if i == 0 else DeliveryRiskLevel.SAFE,
             remaining_buffer_minutes=120.0,
             affected_operations=[o for o in ops if o.work_order_id == f"wo-{i}"],
@@ -89,7 +88,7 @@ def _make_impact_report(
     return ImpactReport(
         incident_id=uuid4(),
         schedule_snapshot_id=uuid4(),
-        analysis_reference_time=datetime.now(tz=timezone.utc),
+        analysis_reference_time=datetime.now(tz=UTC),
         affected_work_orders=wos,
         affected_operations=ops,
         affected_resource_ids=["machine-01"],
@@ -116,7 +115,7 @@ def _make_preference(
     return PreferenceProfile(
         planner_id="planner-01",
         strategy_preferences=prefs or {},
-        updated_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -145,7 +144,7 @@ def _make_case_record(
             constraint_validation_result="pass",
             stages=["rule_selection", "initial_solution"],
         ),
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
     )
 
 
@@ -403,9 +402,7 @@ class TestStructuredOutput:
             incident=_make_incident(),
             impact_report=_make_impact_report(has_breach=True),
             strategy=_make_strategy(StrategyType.GLOBAL_RESCHEDULE),
-            preference_profile=_make_preference(
-                prefs={"due_date_priority": 1.0}
-            ),
+            preference_profile=_make_preference(prefs={"due_date_priority": 1.0}),
             similar_cases=[
                 _make_case_record("due_date_priority", 0.95),
                 _make_case_record("due_date_priority", 0.9),

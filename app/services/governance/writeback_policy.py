@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.core.auth import CurrentUser, Role
 from app.core.config import settings
@@ -42,29 +42,19 @@ class WritebackPolicy:
         certification_id: str = "",
     ) -> WritebackExecutionPermit:
         if not settings.auth.require_api_key:
-            raise WritebackPolicyError(
-                "sandbox_writeback_requires_AUTH_REQUIRE_API_KEY_true"
-            )
+            raise WritebackPolicyError("sandbox_writeback_requires_AUTH_REQUIRE_API_KEY_true")
         if approver.user_id == "system":
             raise WritebackPolicyError("sandbox_writeback_requires_authenticated_approver")
         if approver.role not in {Role.MANAGEMENT, Role.IT_ADMIN}:
-            raise WritebackPolicyError(
-                "sandbox_writeback_requires_management_or_it_admin_approval"
-            )
+            raise WritebackPolicyError("sandbox_writeback_requires_management_or_it_admin_approval")
         if approver.user_id == decision_record.confirmed_by:
-            raise WritebackPolicyError(
-                "sandbox_writeback_requires_second_person_approval"
-            )
+            raise WritebackPolicyError("sandbox_writeback_requires_second_person_approval")
         if len(approval_note.strip()) < 8:
             raise WritebackPolicyError("sandbox_writeback_requires_approval_note")
         if settings.integration.writeback_mode != "sandbox":
-            raise WritebackPolicyError(
-                "sandbox_writeback_disabled_by_INTEGRATION_WRITEBACK_MODE"
-            )
+            raise WritebackPolicyError("sandbox_writeback_disabled_by_INTEGRATION_WRITEBACK_MODE")
         if settings.integration.mes_target_environment != "sandbox":
-            raise WritebackPolicyError(
-                "sandbox_writeback_requires_MES_TARGET_ENVIRONMENT_sandbox"
-            )
+            raise WritebackPolicyError("sandbox_writeback_requires_MES_TARGET_ENVIRONMENT_sandbox")
         if not settings.integration.mes_base_url:
             raise WritebackPolicyError("sandbox_writeback_requires_MES_BASE_URL")
         if len(settings.auth.writeback_permit_secret) < 32:
@@ -72,7 +62,7 @@ class WritebackPolicy:
                 "sandbox_writeback_requires_32_char_AUTH_WRITEBACK_PERMIT_SECRET"
             )
 
-        expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        expires_at = datetime.now(tz=UTC) + timedelta(
             seconds=settings.auth.writeback_permit_ttl_seconds
         )
         unsigned = WritebackExecutionPermit(
@@ -121,7 +111,7 @@ class WritebackPolicy:
             expires_at = datetime.fromisoformat(execution_permit.expires_at)
         except ValueError as exc:
             raise WritebackPolicyError("writeback_permit_expiry_is_invalid") from exc
-        if expires_at.tzinfo is None or expires_at <= datetime.now(tz=timezone.utc):
+        if expires_at.tzinfo is None or expires_at <= datetime.now(tz=UTC):
             raise WritebackPolicyError("writeback_permit_has_expired")
 
         expected = WritebackPolicy._sign(execution_permit)

@@ -220,9 +220,7 @@ class CpSatFjspScheduler:
         skill_by_op = self._skill_requirements(snapshot)
         urgent_by_work_order = self._urgent_constraint_by_work_order(snapshot, origin)
         urgent_work_order_ids = set(urgent_by_work_order)
-        objective_weights = _OBJECTIVE_WEIGHTS.get(
-            goal_mode, _OBJECTIVE_WEIGHTS["balanced"]
-        )
+        objective_weights = _OBJECTIVE_WEIGHTS.get(goal_mode, _OBJECTIVE_WEIGHTS["balanced"])
 
         horizon = self._horizon_minutes(snapshot, origin, delay_by_op)
         model = cp_model.CpModel()
@@ -250,11 +248,7 @@ class CpSatFjspScheduler:
             starts[op_id] = start
             ends[op_id] = end
             if is_variable:
-                lower_bound = (
-                    0
-                    if op.work_order_id in urgent_work_order_ids
-                    else ref.original_start
-                )
+                lower_bound = 0 if op.work_order_id in urgent_work_order_ids else ref.original_start
                 if op_id in affected_set:
                     lower_bound += delay_by_op.get(op_id, 0)
                 lower_bound = max(lower_bound, material_available_by_op.get(op_id, 0))
@@ -356,9 +350,7 @@ class CpSatFjspScheduler:
         objective_terms.append(makespan * objective_weights["makespan"])
 
         for wo in snapshot.work_orders:
-            wo_end_vars = [
-                ends[op.operation_id] for op in wo.operations if op.operation_id in ends
-            ]
+            wo_end_vars = [ends[op.operation_id] for op in wo.operations if op.operation_id in ends]
             if not wo_end_vars:
                 continue
             completion = model.NewIntVar(0, horizon, f"completion_{wo.work_order_id}")
@@ -368,9 +360,7 @@ class CpSatFjspScheduler:
             model.Add(tardiness >= completion - due_offset)
             model.Add(tardiness >= 0)
             priority_weight = max(1, wo.priority + 1)
-            objective_terms.append(
-                tardiness * priority_weight * objective_weights["tardiness"]
-            )
+            objective_terms.append(tardiness * priority_weight * objective_weights["tardiness"])
             urgent = urgent_by_work_order.get(wo.work_order_id)
             if urgent:
                 urgent_due, priority_boost, displacement_cost = urgent
@@ -394,8 +384,7 @@ class CpSatFjspScheduler:
                             f"urgent_displacement_{op.operation_id}",
                         )
                         model.Add(
-                            displacement
-                            >= starts[op.operation_id] - start_offsets[op.operation_id]
+                            displacement >= starts[op.operation_id] - start_offsets[op.operation_id]
                         )
                         model.Add(displacement >= 0)
                         objective_terms.append(
@@ -425,9 +414,7 @@ class CpSatFjspScheduler:
         status_name = solver.StatusName(status)
         is_feasible = status in (cp_model.OPTIMAL, cp_model.FEASIBLE)
         if not is_feasible:
-            logger.info(
-                "CP-SAT returned %s for snapshot %s", status_name, snapshot.snapshot_id
-            )
+            logger.info("CP-SAT returned %s for snapshot %s", status_name, snapshot.snapshot_id)
             return CpSatScheduleResult(
                 schedule_detail=None,
                 status_name=status_name,
@@ -456,9 +443,7 @@ class CpSatFjspScheduler:
 
         objective_value = solver.ObjectiveValue()
         best_objective_bound = solver.BestObjectiveBound()
-        relative_gap = abs(objective_value - best_objective_bound) / max(
-            1.0, abs(objective_value)
-        )
+        relative_gap = abs(objective_value - best_objective_bound) / max(1.0, abs(objective_value))
         return CpSatScheduleResult(
             schedule_detail=schedule_detail,
             status_name=status_name,
@@ -552,9 +537,7 @@ class CpSatFjspScheduler:
         for wo in snapshot.work_orders:
             for op in wo.operations:
                 start = int((op.start_time - origin).total_seconds() // 60)
-                duration = max(
-                    1, int((op.end_time - op.start_time).total_seconds() // 60)
-                )
+                duration = max(1, int((op.end_time - op.start_time).total_seconds() // 60))
                 eligible = eligible_by_op.get(op.operation_id)
                 if not eligible:
                     eligible = self._eligible_by_capability(snapshot, op)
@@ -681,9 +664,7 @@ class CpSatFjspScheduler:
                 blockers.append(f"missing_rework_operation:{batch_id or 'unknown'}")
 
         for row in raw.get("qms_release_gates", []) or []:
-            operation_ids = {
-                str(item) for item in row.get("operation_ids", []) or []
-            }
+            operation_ids = {str(item) for item in row.get("operation_ids", []) or []}
             for batch_id in row.get("batch_ids", []) or []:
                 operation_ids.update(batch_ops.get(str(batch_id), set()))
             if not (operation_ids & relevant_ids):
@@ -744,9 +725,7 @@ class CpSatFjspScheduler:
                         if isinstance(available_at, datetime):
                             dt = available_at
                         else:
-                            dt = datetime.fromisoformat(
-                                str(available_at).replace("Z", "+00:00")
-                            )
+                            dt = datetime.fromisoformat(str(available_at).replace("Z", "+00:00"))
                         latest = max(latest, int((dt - origin).total_seconds() // 60))
                     except Exception:
                         continue
@@ -788,9 +767,7 @@ class CpSatFjspScheduler:
             status = str(row.get("status", "held")).lower()
             if status in {"released", "cleared", "closed"}:
                 continue
-            frozen.update(
-                str(item) for item in row.get("blocked_operation_ids", []) or []
-            )
+            frozen.update(str(item) for item in row.get("blocked_operation_ids", []) or [])
         return frozen
 
     @staticmethod
@@ -839,11 +816,7 @@ class CpSatFjspScheduler:
                 if not op_id:
                     continue
                 payload = op.get("raw_payload", {}) or {}
-                tooling = (
-                    payload.get("required_tooling_ids")
-                    or payload.get("tooling_ids")
-                    or []
-                )
+                tooling = payload.get("required_tooling_ids") or payload.get("tooling_ids") or []
                 values = _as_list(tooling)
                 if values:
                     result[str(op_id)] = values
@@ -867,11 +840,7 @@ class CpSatFjspScheduler:
                 if not op_id:
                     continue
                 payload = op.get("raw_payload", {}) or {}
-                skills = (
-                    payload.get("required_skill_codes")
-                    or payload.get("skill_codes")
-                    or []
-                )
+                skills = payload.get("required_skill_codes") or payload.get("skill_codes") or []
                 values = _as_list(skills)
                 if values:
                     result[str(op_id)] = values
@@ -889,9 +858,7 @@ class CpSatFjspScheduler:
     def _horizon_minutes(
         snapshot: ScheduleSnapshot, origin: datetime, delay_by_op: dict[str, int]
     ) -> int:
-        max_end = max(
-            op.end_time for wo in snapshot.work_orders for op in wo.operations
-        )
+        max_end = max(op.end_time for wo in snapshot.work_orders for op in wo.operations)
         baseline = int((max_end - origin).total_seconds() // 60)
         total_duration = sum(
             max(1, int((op.end_time - op.start_time).total_seconds() // 60))
@@ -907,8 +874,7 @@ class CpSatFjspScheduler:
             or [0]
         )
         transport_lag = sum(
-            int(row.get("eta_minutes", 0) or 0)
-            for row in raw.get("transport_lanes", []) or []
+            int(row.get("eta_minutes", 0) or 0) for row in raw.get("transport_lanes", []) or []
         )
         return max(
             baseline + sum(delay_by_op.values()) + outsource_lead + transport_lag + 240,
@@ -922,9 +888,7 @@ class CpSatFjspScheduler:
         affected_set: set[str],
     ) -> set[str]:
         if strategy_type == StrategyType.GLOBAL_RESCHEDULE:
-            return {
-                op.operation_id for wo in snapshot.work_orders for op in wo.operations
-            }
+            return {op.operation_id for wo in snapshot.work_orders for op in wo.operations}
 
         if strategy_type == StrategyType.WAIT_AND_REPAIR:
             scope = set(affected_set)
@@ -967,9 +931,7 @@ class CpSatFjspScheduler:
                 str(item) for item in row.get("operation_ids", []) or [] if str(item) in starts
             ]
             parent_ids = [
-                str(item)
-                for item in row.get("parent_operation_ids", []) or []
-                if str(item) in ends
+                str(item) for item in row.get("parent_operation_ids", []) or [] if str(item) in ends
             ]
             rework_id = row.get("rework_operation_id")
             if row.get("rework_required") and rework_id and str(rework_id) in ends:
@@ -990,10 +952,7 @@ class CpSatFjspScheduler:
         for row in raw.get("operation_release_constraints", []) or []:
             op_id = str(row.get("operation_id", ""))
             if op_id in starts:
-                model.Add(
-                    starts[op_id]
-                    >= _datetime_offset_minutes(row.get("release_at"), origin)
-                )
+                model.Add(starts[op_id] >= _datetime_offset_minutes(row.get("release_at"), origin))
 
     @staticmethod
     def _add_operation_deadline_constraints(
@@ -1006,10 +965,7 @@ class CpSatFjspScheduler:
         for row in raw.get("operation_deadline_constraints", []) or []:
             op_id = str(row.get("operation_id", ""))
             if op_id in ends:
-                model.Add(
-                    ends[op_id]
-                    <= _datetime_offset_minutes(row.get("deadline_at"), origin)
-                )
+                model.Add(ends[op_id] <= _datetime_offset_minutes(row.get("deadline_at"), origin))
 
     @staticmethod
     def _add_transport_constraints(
@@ -1120,16 +1076,12 @@ class CpSatFjspScheduler:
                 continue
             if not row.get("approved_by") or not row.get("source_ref"):
                 continue
-            resource_id = str(
-                row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}"
-            )
+            resource_id = str(row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}")
             item = by_resource.setdefault(
                 resource_id,
                 {"capacity": int(row.get("capacity_per_day", 1) or 1), "ops": set()},
             )
-            item["capacity"] = min(
-                int(item["capacity"]), int(row.get("capacity_per_day", 1) or 1)
-            )
+            item["capacity"] = min(int(item["capacity"]), int(row.get("capacity_per_day", 1) or 1))
             item["ops"].update(str(op_id) for op_id in row.get("operation_ids", []) or [])
         for resource_id, item in by_resource.items():
             usage = [
@@ -1179,9 +1131,7 @@ class CpSatFjspScheduler:
                 start_dt = datetime.fromisoformat(
                     str(window["window_start"]).replace("Z", "+00:00")
                 )
-                end_dt = datetime.fromisoformat(
-                    str(window["window_end"]).replace("Z", "+00:00")
-                )
+                end_dt = datetime.fromisoformat(str(window["window_end"]).replace("Z", "+00:00"))
             except Exception:
                 continue
             start = max(0, int((start_dt - origin).total_seconds() // 60))
@@ -1211,9 +1161,7 @@ class CpSatFjspScheduler:
         if not setup_lookup:
             return
         family_by_op = CpSatFjspScheduler._operation_family_from_raw(snapshot)
-        resource_ids = sorted(
-            {rid for resources in resource_choices.values() for rid in resources}
-        )
+        resource_ids = sorted({rid for resources in resource_choices.values() for rid in resources})
 
         for resource_id in resource_ids:
             op_ids = [
@@ -1235,20 +1183,14 @@ class CpSatFjspScheduler:
             for op_id, node in node_by_op.items():
                 presence = presences[(op_id, resource_id)]
                 arcs.append([node, node, presence.Not()])
-                arcs.append(
-                    [0, node, model.NewBoolVar(f"resched_start_{resource_id}_{op_id}")]
-                )
-                arcs.append(
-                    [node, 0, model.NewBoolVar(f"resched_end_{resource_id}_{op_id}")]
-                )
+                arcs.append([0, node, model.NewBoolVar(f"resched_start_{resource_id}_{op_id}")])
+                arcs.append([node, 0, model.NewBoolVar(f"resched_end_{resource_id}_{op_id}")])
 
             for left_id, left_node in node_by_op.items():
                 for right_id, right_node in node_by_op.items():
                     if left_id == right_id:
                         continue
-                    arc = model.NewBoolVar(
-                        f"resched_changeover_{resource_id}_{left_id}_{right_id}"
-                    )
+                    arc = model.NewBoolVar(f"resched_changeover_{resource_id}_{left_id}_{right_id}")
                     arcs.append([left_node, right_node, arc])
                     setup = CpSatFjspScheduler._setup_minutes(
                         setup_lookup,
@@ -1257,9 +1199,7 @@ class CpSatFjspScheduler:
                         family_by_op.get(right_id, "unknown"),
                     )
                     if setup:
-                        model.Add(
-                            starts[right_id] >= ends[left_id] + setup
-                        ).OnlyEnforceIf(arc)
+                        model.Add(starts[right_id] >= ends[left_id] + setup).OnlyEnforceIf(arc)
 
             model.AddCircuit(arcs)
 
@@ -1318,9 +1258,7 @@ class CpSatFjspScheduler:
         if not intervals_by_tooling:
             return
         raw = snapshot.raw_data or {}
-        quantity_by_tooling: dict[str, int] = {
-            tooling_id: 1 for tooling_id in intervals_by_tooling
-        }
+        quantity_by_tooling: dict[str, int] = {tooling_id: 1 for tooling_id in intervals_by_tooling}
         unavailable: dict[str, list[tuple[int, int]]] = {}
         for row in raw.get("tooling_calendar", []) or []:
             tooling_id = str(row.get("tooling_id", ""))
@@ -1333,9 +1271,7 @@ class CpSatFjspScheduler:
             start = _datetime_offset_minutes(row.get("unavailable_start"), origin)
             end = _datetime_offset_minutes(row.get("unavailable_end"), origin)
             if end > start:
-                unavailable.setdefault(tooling_id, []).append(
-                    (start, min(end, horizon))
-                )
+                unavailable.setdefault(tooling_id, []).append((start, min(end, horizon)))
 
         for tooling_id, intervals in intervals_by_tooling.items():
             capacity = max(0, quantity_by_tooling.get(tooling_id, 1))
@@ -1373,9 +1309,7 @@ class CpSatFjspScheduler:
             return
         raw = snapshot.raw_data or {}
         windows_by_skill: dict[str, list[tuple[int, int, int]]] = {}
-        max_capacity_by_skill: dict[str, int] = {
-            skill_code: 1 for skill_code in intervals_by_skill
-        }
+        max_capacity_by_skill: dict[str, int] = {skill_code: 1 for skill_code in intervals_by_skill}
         for row in raw.get("labor_skill_capacity", []) or []:
             skill_code = str(row.get("skill_code", ""))
             if not skill_code:
@@ -1396,9 +1330,7 @@ class CpSatFjspScheduler:
             max_capacity = max(0, max_capacity_by_skill.get(skill_code, 1))
             all_intervals = list(intervals)
             all_demands = [1 for _ in intervals]
-            for idx, (start, end, capacity) in enumerate(
-                windows_by_skill.get(skill_code, [])
-            ):
+            for idx, (start, end, capacity) in enumerate(windows_by_skill.get(skill_code, [])):
                 blocked_capacity = max(0, max_capacity - capacity)
                 if blocked_capacity <= 0:
                     continue
@@ -1478,9 +1410,7 @@ class CpSatFjspScheduler:
                 )
                 # Preserve positive durations even if input had rounding issues.
                 if new_op.end_time <= new_op.start_time:
-                    new_op.end_time = new_op.start_time + timedelta(
-                        minutes=ref.duration
-                    )
+                    new_op.end_time = new_op.start_time + timedelta(minutes=ref.duration)
                 new_ops.append(new_op)
             new_wo = wo.model_copy(deep=True)
             new_wo.operations = new_ops
@@ -1513,9 +1443,7 @@ class CpSatFjspScheduler:
             resource_id = str(row.get("resource_id") or f"OUTSOURCE:{vendor_id}")
             if resource_id in existing:
                 continue
-            capabilities = {
-                str(item) for item in row.get("capability_codes", []) or []
-            }
+            capabilities = {str(item) for item in row.get("capability_codes", []) or []}
             for op_id in row.get("operation_ids", []) or []:
                 capabilities.update(required_by_op.get(str(op_id), []))
             resources.append(

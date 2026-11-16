@@ -13,10 +13,10 @@ from app.core.config import settings
 from app.models.enums import NeighborhoodType, StrategyType
 from app.models.impact import ImpactReport
 from app.models.schedule import ScheduleSnapshot
+from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.solver.constraint_aware_ssgs import ConstraintAwareSsgsScheduler
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler, CpSatScheduleResult
 from app.services.solver.machine_rank_service import MachineRank
-from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 
 
 @dataclass(frozen=True)
@@ -97,9 +97,7 @@ class MetaheuristicBackend:
         )
 
         seen_signatures = {
-            self._signature(result)
-            for result in schedules
-            if result.schedule_detail is not None
+            self._signature(result) for result in schedules if result.schedule_detail is not None
         }
         for idx, neighborhood in enumerate(neighborhoods):
             if len(schedules) >= candidate_count:
@@ -157,9 +155,7 @@ class MetaheuristicBackend:
         )
         result.solver_log = {
             **result.solver_log,
-            "independent_validation": (
-                "feasible" if report.is_feasible else "infeasible"
-            ),
+            "independent_validation": ("feasible" if report.is_feasible else "infeasible"),
         }
         return report.is_feasible
 
@@ -201,11 +197,7 @@ class MetaheuristicBackend:
             if op.resource_id in top_machines
         ]
 
-        all_ops = [
-            op.operation_id
-            for wo in snapshot.work_orders
-            for op in wo.operations
-        ]
+        all_ops = [op.operation_id for wo in snapshot.work_orders for op in wo.operations]
         candidates = [
             NeighborhoodCandidate(
                 NeighborhoodType.DELAYED_ORDER,

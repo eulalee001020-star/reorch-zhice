@@ -10,8 +10,7 @@ Tests:
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -57,12 +56,12 @@ def _seed_incident(**overrides: Any) -> Incident:
     defaults: dict[str, Any] = {
         "incident_id": uuid4(),
         "incident_type": IncidentType.EQUIPMENT_FAILURE.value,
-        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
         "resource_id": "CNC-001",
         "report_source": ReportSource.MES.value,
         "severity": IncidentSeverity.P3_MEDIUM.value,
         "status": IncidentStatus.PENDING_ANALYSIS.value,
-        "created_at": datetime.now(tz=timezone.utc),
+        "created_at": datetime.now(tz=UTC),
     }
     defaults.update(overrides)
     incident = Incident(**defaults)
@@ -84,24 +83,20 @@ async def test_create_incident_success():
     created = Incident(
         incident_id=uuid4(),
         incident_type=IncidentType.EQUIPMENT_FAILURE.value,
-        occurred_at=datetime(2024, 6, 15, 8, 0, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2024, 6, 15, 8, 0, 0, tzinfo=UTC),
         resource_id="CNC-001",
         report_source=ReportSource.MES.value,
         severity=IncidentSeverity.P3_MEDIUM.value,
         status=IncidentStatus.PENDING_ANALYSIS.value,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
     )
 
-    with patch(
-        "app.api.incidents._get_intake_center"
-    ) as mock_get:
+    with patch("app.api.incidents._get_intake_center") as mock_get:
         mock_center = AsyncMock()
         mock_center.receive_event.return_value = created
         mock_get.return_value = mock_center
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.post(
                 "/api/v1/incidents",
                 json={
@@ -125,9 +120,7 @@ async def test_create_incident_uses_local_intake_in_development():
     """Unpatched API intake should work for local frontend/demo mode."""
     app = _make_app()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/incidents",
             json={
@@ -171,9 +164,7 @@ async def test_create_incident_validation_error():
         )
         mock_get.return_value = mock_center
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.post(
                 "/api/v1/incidents",
                 json={
@@ -201,9 +192,7 @@ async def test_create_incident_source_not_allowed():
         mock_center.receive_event.side_effect = SourceNotAllowedError("UNKNOWN")
         mock_get.return_value = mock_center
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.post(
                 "/api/v1/incidents",
                 json={
@@ -227,9 +216,7 @@ async def test_create_incident_source_not_allowed():
 async def test_list_incidents_empty():
     """GET list should return empty list when no incidents exist."""
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/v1/incidents")
 
     assert resp.status_code == 200
@@ -243,9 +230,7 @@ async def test_list_incidents_returns_all():
     _seed_incident(resource_id="CNC-002")
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/v1/incidents")
 
     assert resp.status_code == 200
@@ -259,9 +244,7 @@ async def test_list_incidents_filter_by_severity():
     _seed_incident(severity=IncidentSeverity.P3_MEDIUM.value)
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(
             "/api/v1/incidents",
             params={"severity": IncidentSeverity.P1_CRITICAL.value},
@@ -280,9 +263,7 @@ async def test_list_incidents_filter_by_status():
     _seed_incident(status=IncidentStatus.CONFIRMED.value)
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(
             "/api/v1/incidents",
             params={"status": IncidentStatus.CONFIRMED.value},
@@ -298,18 +279,16 @@ async def test_list_incidents_filter_by_status():
 async def test_list_incidents_filter_by_time_range():
     """GET list should filter by start_time and end_time."""
     _seed_incident(
-        occurred_at=datetime(2024, 6, 10, 8, 0, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2024, 6, 10, 8, 0, 0, tzinfo=UTC),
         resource_id="OLD",
     )
     _seed_incident(
-        occurred_at=datetime(2024, 6, 20, 8, 0, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2024, 6, 20, 8, 0, 0, tzinfo=UTC),
         resource_id="NEW",
     )
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(
             "/api/v1/incidents",
             params={
@@ -329,19 +308,17 @@ async def test_list_incidents_sorted_by_severity_then_time():
     """GET list should sort P1 before P3, and newer before older within same severity."""
     _seed_incident(
         severity=IncidentSeverity.P3_MEDIUM.value,
-        occurred_at=datetime(2024, 6, 20, 8, 0, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2024, 6, 20, 8, 0, 0, tzinfo=UTC),
         resource_id="P3-newer",
     )
     _seed_incident(
         severity=IncidentSeverity.P1_CRITICAL.value,
-        occurred_at=datetime(2024, 6, 10, 8, 0, 0, tzinfo=timezone.utc),
+        occurred_at=datetime(2024, 6, 10, 8, 0, 0, tzinfo=UTC),
         resource_id="P1-older",
     )
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/v1/incidents")
 
     data = resp.json()
@@ -360,9 +337,7 @@ async def test_get_incident_detail():
     incident = _seed_incident()
 
     app = _make_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(f"/api/v1/incidents/{incident.incident_id}")
 
     assert resp.status_code == 200
@@ -374,9 +349,7 @@ async def test_get_incident_not_found():
     """GET detail should return 404 for unknown incident_id."""
     app = _make_app()
     fake_id = uuid4()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(f"/api/v1/incidents/{fake_id}")
 
     assert resp.status_code == 404

@@ -9,7 +9,7 @@ Provides a unified health check for all external system adapters
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter
@@ -65,7 +65,7 @@ async def check_all_integrations() -> dict[str, Any]:
 
     return {
         "status": "healthy" if all_healthy else "degraded",
-        "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+        "timestamp": datetime.now(tz=UTC).isoformat(),
         "integrations": results,
     }
 

@@ -10,7 +10,7 @@ Validates: Requirements 27.7
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -30,7 +30,7 @@ from app.models.solver import (
 )
 from app.services.governance.export_service import ExportService
 
-_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 _LATER = _NOW + timedelta(hours=2)
 
 
@@ -70,9 +70,7 @@ def _make_plan() -> CandidatePlan:
         gantt_version="1.0",
         solver_chain=_make_solver_chain(),
         feasibility_status="feasible",
-        solver_metadata=SolverMetadata(
-            solve_time_seconds=5.0, iteration_count=100
-        ),
+        solver_metadata=SolverMetadata(solve_time_seconds=5.0, iteration_count=100),
         constraint_report=ConstraintValidationReport(
             is_feasible=True, violations=[], checked_constraints=[]
         ),
@@ -177,6 +175,7 @@ def test_export_excel_basic():
     assert "spreadsheetml" in result.content_type
     assert len(result.content) > 0
     import json
+
     data = json.loads(result.content)
     assert "schedule_detail" in data
     assert "solver_chain" in data
@@ -192,6 +191,7 @@ def test_export_excel_without_plan():
     result = service.export_excel(record.decision_record_id)
 
     import json
+
     data = json.loads(result.content)
     assert "schedule_detail" not in data
     assert data["decision_record_id"] == str(record.decision_record_id)

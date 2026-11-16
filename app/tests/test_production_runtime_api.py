@@ -1,6 +1,6 @@
 """Production runtime API integration tests."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -17,7 +17,7 @@ async def test_cdc_asof_and_durable_solve_job_api(monkeypatch) -> None:
 
     monkeypatch.setattr(runtime_api, "_store", RelationalOperationalStore())
     monkeypatch.setattr(runtime_api, "_queue", None)
-    as_of = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+    as_of = datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         for source in ("ERP", "MES", "QMS"):
@@ -57,9 +57,7 @@ async def test_cdc_asof_and_durable_solve_job_api(monkeypatch) -> None:
             json=submit.model_dump(mode="json"),
         )
         job_id = submit_response.json()["job"]["job_id"]
-        worker_response = await client.post(
-            "/api/v1/runtime/solve-workers/test-worker/run-once"
-        )
+        worker_response = await client.post("/api/v1/runtime/solve-workers/test-worker/run-once")
         get_response = await client.get(f"/api/v1/runtime/solve-jobs/{job_id}")
 
     assert asof_response.status_code == 200

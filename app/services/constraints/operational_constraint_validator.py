@@ -29,9 +29,7 @@ class OperationalConstraintValidator:
             affected_op_ids=[],
             resource_capabilities=capability_map,
         )
-        op_map = {
-            op.operation_id: op for wo in schedule.work_orders for op in wo.operations
-        }
+        op_map = {op.operation_id: op for wo in schedule.work_orders for op in wo.operations}
         raw = snapshot.raw_data or {}
         checks = list(base.checked_constraints)
         checks.append("operation_precedence")
@@ -86,16 +84,13 @@ class OperationalConstraintValidator:
         snapshot: ScheduleSnapshot,
     ) -> dict[str, list[str]]:
         result = {
-            resource.resource_id: list(resource.capabilities)
-            for resource in schedule.resources
+            resource.resource_id: list(resource.capabilities) for resource in schedule.resources
         }
         raw_resources = (snapshot.raw_data or {}).get("resources", []) or []
         for row in raw_resources:
             resource_id = str(row.get("resource_id", ""))
             if resource_id:
-                result[resource_id] = [
-                    str(item) for item in row.get("capabilities", []) or []
-                ]
+                result[resource_id] = [str(item) for item in row.get("capabilities", []) or []]
         if raw_resources:
             return result
 
@@ -114,12 +109,8 @@ class OperationalConstraintValidator:
         schedule: ScheduleDetail,
         snapshot: ScheduleSnapshot,
     ) -> list[ConstraintViolation]:
-        expected = {
-            op.operation_id for wo in snapshot.work_orders for op in wo.operations
-        }
-        observed_ids = [
-            op.operation_id for wo in schedule.work_orders for op in wo.operations
-        ]
+        expected = {op.operation_id for wo in snapshot.work_orders for op in wo.operations}
+        observed_ids = [op.operation_id for wo in schedule.work_orders for op in wo.operations]
         observed = set(observed_ids)
         violations: list[ConstraintViolation] = []
         for operation_id in sorted(expected - observed):
@@ -170,17 +161,14 @@ class OperationalConstraintValidator:
                 operation_id = str(operation.get("operation_id", ""))
                 if operation_id and operation.get("eligible_resources") is not None:
                     eligible[operation_id] = {
-                        str(item)
-                        for item in operation.get("eligible_resources", []) or []
+                        str(item) for item in operation.get("eligible_resources", []) or []
                     }
         for row in raw.get("outsourcing_approvals", []) or []:
             if str(row.get("approval_status", "pending")).lower() != "approved":
                 continue
             if not row.get("approved_by") or not row.get("source_ref"):
                 continue
-            resource_id = str(
-                row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}"
-            )
+            resource_id = str(row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}")
             for operation_id in row.get("operation_ids", []) or []:
                 eligible.setdefault(str(operation_id), set()).add(resource_id)
         violations: list[ConstraintViolation] = []
@@ -202,9 +190,7 @@ class OperationalConstraintValidator:
         snapshot: ScheduleSnapshot,
         frozen_operation_ids: set[str],
     ) -> list[ConstraintViolation]:
-        baseline = {
-            op.operation_id: op for wo in snapshot.work_orders for op in wo.operations
-        }
+        baseline = {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
         violations: list[ConstraintViolation] = []
         for operation_id in sorted(frozen_operation_ids):
             operation = op_map.get(operation_id)
@@ -288,9 +274,7 @@ class OperationalConstraintValidator:
         snapshot: ScheduleSnapshot,
         raw: dict[str, Any],
     ) -> list[ConstraintViolation]:
-        baseline = {
-            op.operation_id: op for wo in snapshot.work_orders for op in wo.operations
-        }
+        baseline = {op.operation_id: op for wo in snapshot.work_orders for op in wo.operations}
         violations: list[ConstraintViolation] = []
         for row in raw.get("quality_holds", []) or []:
             status = str(row.get("status", "held")).lower()
@@ -492,9 +476,7 @@ class OperationalConstraintValidator:
                         f"{lane_id} requires {eta} minutes after {pred.operation_id}",
                     )
                 )
-            lanes.setdefault(lane_id, []).append(
-                (pred.end_time, required_at, succ.operation_id, 1)
-            )
+            lanes.setdefault(lane_id, []).append((pred.end_time, required_at, succ.operation_id, 1))
             capacity_by_lane[lane_id] = max(1, int(row.get("capacity", 1) or 1))
         for lane_id, intervals in lanes.items():
             peak = _peak_usage(intervals)
@@ -531,9 +513,7 @@ class OperationalConstraintValidator:
                 },
             )
             item["capacity"] = min(item["capacity"], int(row.get("capacity", 1) or 1))
-            item["current_wip"] = max(
-                item["current_wip"], int(row.get("current_wip", 0) or 0)
-            )
+            item["current_wip"] = max(item["current_wip"], int(row.get("current_wip", 0) or 0))
             item["intervals"].append(
                 (
                     pred.end_time,
@@ -571,9 +551,7 @@ class OperationalConstraintValidator:
             expiry = _datetime(row.get("valid_until"))
             if expiry and expiry < captured_at:
                 continue
-            resource_id = str(
-                row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}"
-            )
+            resource_id = str(row.get("resource_id") or f"OUTSOURCE:{row.get('vendor_id', '')}")
             for op_id in row.get("operation_ids", []) or []:
                 approved[(str(op_id), resource_id)] = row
 
@@ -716,7 +694,10 @@ class OperationalConstraintValidator:
                     parents.append(rework)
             for child in child_ops:
                 for parent in parents:
-                    if parent.operation_id != child.operation_id and parent.end_time > child.start_time:
+                    if (
+                        parent.operation_id != child.operation_id
+                        and parent.end_time > child.start_time
+                    ):
                         violations.append(
                             _violation(
                                 "batch_genealogy_precedence",
@@ -809,16 +790,13 @@ def _secondary_capacity_violations(
     constraint_type: str,
 ) -> list[ConstraintViolation]:
     violations: list[ConstraintViolation] = []
-    resource_ids = {
-        resource_id for values in requirements.values() for resource_id in values
-    }
+    resource_ids = {resource_id for values in requirements.values() for resource_id in values}
     for resource_id in sorted(resource_ids):
         capacity = max(0, capacities.get(resource_id, 1))
         intervals = [
             (operation.start_time, operation.end_time, operation.operation_id, 1)
             for operation_id, required in requirements.items()
-            if resource_id in required
-            and (operation := op_map.get(operation_id)) is not None
+            if resource_id in required and (operation := op_map.get(operation_id)) is not None
         ]
         for start, end in unavailable.get(resource_id, []):
             intervals.append((start, end, f"unavailable:{resource_id}", capacity))
@@ -854,9 +832,7 @@ def _as_list(value: Any) -> list[str]:
     return [str(value)]
 
 
-def _violation(
-    constraint_type: str, operation: Operation, detail: str
-) -> ConstraintViolation:
+def _violation(constraint_type: str, operation: Operation, detail: str) -> ConstraintViolation:
     return ConstraintViolation(
         constraint_type=constraint_type,
         operation_id=operation.operation_id,

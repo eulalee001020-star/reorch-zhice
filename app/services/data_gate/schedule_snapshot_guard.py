@@ -9,11 +9,9 @@ already-created snapshots.
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 import logging
-from typing import Any
 from uuid import UUID
 
 from app.models.schedule import ScheduleSnapshot

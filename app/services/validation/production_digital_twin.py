@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.models.production_runtime import (
     DecompositionExecutionRequest,
@@ -25,7 +25,7 @@ class ProductionDigitalTwinFactory:
             raise ValueError("operation_count must be positive")
         resource_count = max(4, min(resource_count, operation_count))
         operations_per_work_order = max(1, operations_per_work_order)
-        captured_at = datetime(2026, 7, 12, 0, 0, tzinfo=timezone.utc)
+        captured_at = datetime(2026, 7, 12, 0, 0, tzinfo=UTC)
         resource_ids = [f"M-{index + 1:03d}" for index in range(resource_count)]
         available_at = {resource_id: captured_at for resource_id in resource_ids}
         work_orders: list[WorkOrder] = []
@@ -131,7 +131,11 @@ class ProductionDigitalTwinFactory:
         used_resources: set[str] = set()
         used_work_orders: set[str] = set()
 
-        if include_joint_pair and incident_count >= 2 and len(snapshot.work_orders[0].operations) >= 2:
+        if (
+            include_joint_pair
+            and incident_count >= 2
+            and len(snapshot.work_orders[0].operations) >= 2
+        ):
             first, second = snapshot.work_orders[0].operations[:2]
             incidents.extend(
                 [
@@ -169,9 +173,7 @@ class ProductionDigitalTwinFactory:
             incidents.append(
                 RuntimeIncident(
                     incident_id=f"DT-INC-{index:03d}",
-                    incident_type=(
-                        "material_shortage" if index % 2 else "labor_absence"
-                    ),
+                    incident_type=("material_shortage" if index % 2 else "labor_absence"),
                     affected_operation_ids=[op.operation_id],
                     delay_minutes=2,
                     resource_id=op.resource_id,

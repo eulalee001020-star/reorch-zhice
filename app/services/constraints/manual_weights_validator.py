@@ -67,8 +67,7 @@ class ManualWeightsValidator:
 
         # 3. Sum constraint
         known_vals = [
-            v for k, v in weights.items()
-            if k in VALID_WEIGHT_KEYS and isinstance(v, (int, float))
+            v for k, v in weights.items() if k in VALID_WEIGHT_KEYS and isinstance(v, (int, float))
         ]
         total = sum(known_vals)
         _eps = 1e-9

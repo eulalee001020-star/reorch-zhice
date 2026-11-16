@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import Field
 
@@ -119,7 +119,7 @@ class NgsLabSnapshot(ReOrchModel):
     """A complete NGS lab scheduling snapshot."""
 
     snapshot_id: str
-    captured_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    captured_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     lab_id: str
     samples: list[NgsSample] = Field(default_factory=list)
     entities: list[NgsEntity] = Field(default_factory=list)
@@ -240,7 +240,7 @@ class NgsBatchReplayResponse(ReOrchModel):
     package_id: str
     package_version: str
     source_path: str
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     case_results: list[NgsReplayCaseResult] = Field(default_factory=list)
     aggregate_metrics: dict = Field(default_factory=dict)
 
@@ -275,7 +275,7 @@ class NgsPlannerDecisionRecord(ReOrchModel):
     planner_id: str
     reason: str | None = None
     override_reason: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     lims_writeback_executed: bool = False
     audit_refs: list[str] = Field(default_factory=list)
 

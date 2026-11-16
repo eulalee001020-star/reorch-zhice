@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from uuid import UUID
 
 from app.models.case import CaseRecord, PreferenceProfile
 from app.models.enums import (
@@ -44,7 +43,6 @@ _PREFERENCE_BOOST_MAX: float = 0.05
 
 # ── Base confidence scores per strategy→rule mapping ────────────────
 _BASE_CONFIDENCE: float = 0.7
-
 
 
 @dataclass
@@ -200,7 +198,10 @@ class RuleSelector:
 
             # Strategy-based scoring (Req 23.2)
             score, factors = self._strategy_score(
-                category, strategy_type, has_breach, affected_op_count,
+                category,
+                strategy_type,
+                has_breach,
+                affected_op_count,
             )
 
             entries.append(
@@ -324,8 +325,7 @@ class RuleSelector:
                 boost = vote_ratio * _CASE_BOOST_MAX
                 entry.score += boost
                 entry.factors.append(
-                    f"historical_case_boost (+{boost:.3f}, "
-                    f"{vote_count}/{total_cases} cases)"
+                    f"historical_case_boost (+{boost:.3f}, {vote_count}/{total_cases} cases)"
                 )
 
         return entries
@@ -340,9 +340,7 @@ class RuleSelector:
             return entries
 
         for entry in entries:
-            pref_weight = profile.strategy_preferences.get(
-                entry.rule_category.value, 0.0
-            )
+            pref_weight = profile.strategy_preferences.get(entry.rule_category.value, 0.0)
             if pref_weight > 0 and entry.score > 0:
                 boost = min(pref_weight * _PREFERENCE_BOOST_MAX, _PREFERENCE_BOOST_MAX)
                 entry.score += boost

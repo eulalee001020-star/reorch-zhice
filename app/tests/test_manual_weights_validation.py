@@ -15,8 +15,8 @@ from app.services.constraints.manual_weights_validator import (
     ManualWeightsValidator,
 )
 
-
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def _balanced_weights() -> dict[str, float]:
     """Return a valid weight dict that sums to 1.0."""
@@ -35,6 +35,7 @@ def _custom_valid_weights() -> dict[str, float]:
 
 
 # ── Value range tests ────────────────────────────────────────────────
+
 
 class TestValueRange:
     def test_valid_weights_accepted(self):
@@ -75,6 +76,7 @@ class TestValueRange:
 
 # ── Sum constraint tests ─────────────────────────────────────────────
 
+
 class TestSumConstraint:
     def test_exact_sum_one(self):
         v = ManualWeightsValidator()
@@ -114,6 +116,7 @@ class TestSumConstraint:
 
 # ── Default fallback tests ───────────────────────────────────────────
 
+
 class TestDefaultFallback:
     def test_initial_last_valid_is_defaults(self):
         v = ManualWeightsValidator()
@@ -132,6 +135,7 @@ class TestDefaultFallback:
 
 
 # ── Invalid input preserves last valid config ────────────────────────
+
 
 class TestPreservesLastValid:
     def test_invalid_does_not_update_last_valid(self):

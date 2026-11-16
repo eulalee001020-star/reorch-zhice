@@ -12,7 +12,7 @@ return so the infrastructure can be validated end-to-end.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -73,12 +73,12 @@ async def writeback_retry(
     Stub — full implementation in task 9.2.
     """
     from app.models.enums import WritebackStatus
+    from app.services.governance.writeback_module import MESAdapter, MESInstruction
     from app.services.storage.persistence import (
         fetch_decision_record_by_id,
         fetch_writeback_job_by_incident,
         persist_writeback_job,
     )
-    from app.services.governance.writeback_module import MESAdapter, MESInstruction
 
     record = await fetch_decision_record_by_id(UUID(decision_record_id))
     if record is None:
@@ -135,11 +135,11 @@ async def writeback_retry(
             "success_count": success_count,
             "failed_count": len(failed),
             "failed_instructions": failed,
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
         },
         error_message="; ".join(str(item.get("error")) for item in failed) if failed else None,
         retry_count=retry_count,
-        next_retry_at=datetime.now(tz=timezone.utc) + timedelta(minutes=2**retry_count)
+        next_retry_at=datetime.now(tz=UTC) + timedelta(minutes=2**retry_count)
         if failed and retry_count < 3
         else None,
     )
@@ -195,6 +195,6 @@ async def dead_letter_compensation(
     logger.info("dead_letter_compensation: recording message from topic=%s", topic)
     await record_entity_version(
         entity_type="dead_letter_message",
-        entity_id=f"{topic}:{datetime.now(tz=timezone.utc).timestamp()}",
+        entity_id=f"{topic}:{datetime.now(tz=UTC).timestamp()}",
         data={"topic": topic, "payload": payload or {}, "status": "recorded"},
     )

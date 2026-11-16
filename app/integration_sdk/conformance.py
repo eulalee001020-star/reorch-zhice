@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 
 from app.integration_sdk.base import EnterpriseConnector
 from app.models.integration_control import (
@@ -36,9 +36,7 @@ class ConnectorConformanceRunner:
 
         discovered = connector.discover_schema()
         expected = {
-            entity: {
-                field: schema.data_type for field, schema in entity_schema.fields.items()
-            }
+            entity: {field: schema.data_type for field, schema in entity_schema.fields.items()}
             for entity, entity_schema in manifest.entity_schemas.items()
         }
         checks.append(
@@ -84,7 +82,7 @@ class ConnectorConformanceRunner:
             f"{record.entity_type}:{record.entity_id}"
             for record in snapshot_one.records
             if record.occurred_at.tzinfo is None
-            or record.occurred_at.utcoffset() != timezone.utc.utcoffset(record.occurred_at)
+            or record.occurred_at.utcoffset() != UTC.utcoffset(record.occurred_at)
         ]
         checks.append(
             _check(
@@ -98,9 +96,9 @@ class ConnectorConformanceRunner:
         batch_one = connector.read_changes(None, 2)
         batch_one_replayed = connector.read_changes(None, 2)
         batch_two = connector.read_changes(batch_one.next_cursor, 2)
-        replay_equal = fingerprint_payload(batch_one.model_dump(mode="json")) == fingerprint_payload(
-            batch_one_replayed.model_dump(mode="json")
-        )
+        replay_equal = fingerprint_payload(
+            batch_one.model_dump(mode="json")
+        ) == fingerprint_payload(batch_one_replayed.model_dump(mode="json"))
         first_ids = {(item.entity_type, item.entity_id) for item in batch_one.records}
         second_ids = {(item.entity_type, item.entity_id) for item in batch_two.records}
         checks.append(

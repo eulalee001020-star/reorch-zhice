@@ -158,12 +158,8 @@ def _replay_metrics(request: Level23DigitalTwinReplayRequest) -> Level23ReplayMe
     top3_coverage = sum(
         1 for row in replay_rows if _is_yes(row.get("top3_contains_manual_strategy"))
     )
-    hard_feasible = sum(
-        1 for row in replay_rows if _is_yes(row.get("hard_feasible_top1"))
-    )
-    review_needed = sum(
-        1 for row in replay_rows if _is_yes(row.get("planner_review_needed"))
-    )
+    hard_feasible = sum(1 for row in replay_rows if _is_yes(row.get("hard_feasible_top1")))
+    review_needed = sum(1 for row in replay_rows if _is_yes(row.get("planner_review_needed")))
     delay_deltas = [
         _float(row.get("delay_delta_system_minus_manual"))
         for row in replay_rows
@@ -241,7 +237,9 @@ def _policy_summaries(request: Level23DigitalTwinReplayRequest) -> list[Level23P
     return _derive_policy_summaries(request)
 
 
-def _derive_policy_summaries(request: Level23DigitalTwinReplayRequest) -> list[Level23PolicySummary]:
+def _derive_policy_summaries(
+    request: Level23DigitalTwinReplayRequest,
+) -> list[Level23PolicySummary]:
     by_strategy: dict[str, list[TwinRow]] = defaultdict(list)
     for row in request.candidate_plans:
         by_strategy[str(row.get("strategy_type"))].append(row)
@@ -264,9 +262,7 @@ def _derive_policy_summaries(request: Level23DigitalTwinReplayRequest) -> list[L
             if row.get("predicted_delay_min") is not None
         ]
         exec_rows = executed.get(strategy, [])
-        exec_success = sum(
-            1 for row in exec_rows if _is_yes(row.get("execution_success_flag"))
-        )
+        exec_success = sum(1 for row in exec_rows if _is_yes(row.get("execution_success_flag")))
         actual_delays = [
             _float(row.get("actual_delay_min"))
             for row in exec_rows

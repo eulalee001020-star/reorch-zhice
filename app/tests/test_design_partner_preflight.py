@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -21,7 +21,7 @@ from app.models.design_partner import (
 from app.services.data_gate.design_partner_preflight import DesignPartnerPreflightService
 from app.services.data_gate.reality_harness import P0RealityHarnessService
 
-_NOW = datetime(2026, 7, 10, 9, 0, tzinfo=timezone.utc)
+_NOW = datetime(2026, 7, 10, 9, 0, tzinfo=UTC)
 
 
 def _approval(approval_type: str) -> GovernanceApproval:
@@ -31,7 +31,7 @@ def _approval(approval_type: str) -> GovernanceApproval:
         approver_role="Workshop data owner",
         evidence_ref=f"evidence/governance/{approval_type}.pdf",
         approved_at=_NOW,
-        expires_at=datetime(2099, 1, 1, tzinfo=timezone.utc),
+        expires_at=datetime(2099, 1, 1, tzinfo=UTC),
     )
 
 
@@ -133,9 +133,7 @@ def _add_ten_unique_incidents(request: DesignPartnerPreflightRequest) -> None:
 
 
 def test_missing_governance_blocks_replay() -> None:
-    response = DesignPartnerPreflightService().assess(
-        _request(with_core_governance=False)
-    )
+    response = DesignPartnerPreflightService().assess(_request(with_core_governance=False))
 
     assert response.stage == "data_repair"
     assert "historical_replay" not in response.allowed_actions
@@ -274,9 +272,7 @@ async def test_design_partner_preflight_api_contract() -> None:
 async def test_sample_preflight_cannot_be_misread_as_customer_evidence() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(
-            "/api/v1/planning/design-partner/sample-preflight"
-        )
+        response = await client.post("/api/v1/planning/design-partner/sample-preflight")
 
     assert response.status_code == 200
     body = response.json()

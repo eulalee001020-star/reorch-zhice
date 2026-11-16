@@ -2,19 +2,20 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from app.models.enums import DeliveryRiskLevel, StrategyType
 from app.models.impact import AffectedOperation, AffectedWorkOrder, ImpactReport
 from app.models.large_fjsp_replay import LargeFjspReplayRequest
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
+from app.services.constraints.customer_constraint_ingestion import (
+    CustomerConstraintIngestionService,
+)
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
-from app.services.constraints.customer_constraint_ingestion import CustomerConstraintIngestionService
 from app.services.solver.large_fjsp_replay import LargeFjspReplayService
 
-
-NOW = datetime(2026, 7, 6, 8, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 6, 8, 0, tzinfo=UTC)
 
 
 def test_customer_constraint_ingestion_attaches_solver_raw_data() -> None:
@@ -29,12 +30,8 @@ def test_customer_constraint_ingestion_attaches_solver_raw_data() -> None:
                 "available_at": "2026-07-06T09:00:00+00:00",
             }
         ],
-        quality_holds=[
-            {"hold_id": "QH-1", "blocked_operation_ids": "OP-1", "status": "held"}
-        ],
-        tooling_calendar=[
-            {"tooling_id": "FIX-1", "operation_ids": "OP-1;OP-2", "quantity": "1"}
-        ],
+        quality_holds=[{"hold_id": "QH-1", "blocked_operation_ids": "OP-1", "status": "held"}],
+        tooling_calendar=[{"tooling_id": "FIX-1", "operation_ids": "OP-1;OP-2", "quantity": "1"}],
         labor_skill_capacity=[
             {"skill_code": "cnc", "operation_ids": "OP-1,OP-2", "available_headcount": "1"}
         ],

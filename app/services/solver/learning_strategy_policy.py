@@ -74,13 +74,11 @@ class LearningStrategyPolicy:
         impact_report: ImpactReport,
         machine_ranks: list[MachineRank],
     ) -> GraphStateFeatures:
-        operations = [
-            op
-            for wo in snapshot.work_orders
-            for op in wo.operations
-        ]
+        operations = [op for wo in snapshot.work_orders for op in wo.operations]
         node_count = len(operations)
-        precedence_edges = sum(len(op.predecessor_ids) + len(op.successor_ids) for op in operations) // 2
+        precedence_edges = (
+            sum(len(op.predecessor_ids) + len(op.successor_ids) for op in operations) // 2
+        )
         by_resource: dict[str, int] = {}
         for op in operations:
             by_resource[op.resource_id] = by_resource.get(op.resource_id, 0) + 1
@@ -160,11 +158,7 @@ class LearningStrategyPolicy:
     ) -> MultiAgentAdvice:
         affected = {op.operation_id for op in impact_report.affected_operations}
         ordered_ops = sorted(
-            [
-                op
-                for wo in snapshot.work_orders
-                for op in wo.operations
-            ],
+            [op for wo in snapshot.work_orders for op in wo.operations],
             key=lambda op: (
                 0 if op.operation_id in affected else 1,
                 op.start_time,
@@ -183,7 +177,11 @@ class LearningStrategyPolicy:
             eligible = eligible_by_op.get(op.operation_id, [op.resource_id])
             assignment_priority[op.operation_id] = sorted(
                 eligible,
-                key=lambda r: machine_rank_order.index(r) if r in machine_rank_order else len(machine_rank_order),
+                key=lambda r: (
+                    machine_rank_order.index(r)
+                    if r in machine_rank_order
+                    else len(machine_rank_order)
+                ),
             )
         return MultiAgentAdvice(
             operation_sequence_priority=[op.operation_id for op in ordered_ops],
@@ -193,4 +191,3 @@ class LearningStrategyPolicy:
                 "machine_agent": "priority_by_machine_rank",
             },
         )
-

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -142,9 +142,9 @@ class RuleCandidateReplayResult(ReOrchModel):
     """Replay result for one reviewed rule candidate."""
 
     pass_replay: bool
-    checked_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    checked_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     scenario_count: int = 0
-    scenario_results: list["RuleReplayScenarioResult"] = Field(default_factory=list)
+    scenario_results: list[RuleReplayScenarioResult] = Field(default_factory=list)
     evidence_scope_counts: dict[str, int] = Field(default_factory=dict)
     blocked_reason: str | None = None
     metrics: dict[str, float | int | str | bool] = Field(default_factory=dict)
@@ -156,9 +156,7 @@ class RuleCandidatePublicationRecord(ReOrchModel):
 
     release_id: str
     candidate_id: str
-    published_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    published_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     published_by: str
     release_note: str | None = None
     readonly: bool = True
@@ -175,8 +173,8 @@ class RuleCandidateReviewRecord(ReOrchModel):
     reject_reason: str | None = None
     replay_result: RuleCandidateReplayResult | None = None
     published_record: RuleCandidatePublicationRecord | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class RuleCandidateListResponse(ReOrchModel):
@@ -199,7 +197,7 @@ class RuleCandidateReplayRequest(ReOrchModel):
     """Run deterministic replay checks for a reviewed rule candidate."""
 
     scenario_set: str = "lab_replay_acceptance"
-    scenarios: list["RuleReplayScenario"] = Field(default_factory=list)
+    scenarios: list[RuleReplayScenario] = Field(default_factory=list)
     scenario_count: int | None = Field(
         default=None,
         description="Deprecated and ignored; actual scenario results determine coverage.",

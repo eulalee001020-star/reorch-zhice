@@ -20,9 +20,7 @@ from app.services.constraints.constraint_assumption_registry import ConstraintAs
 class ConstraintConflictRefiner:
     """Extract auditable conflict sets without relaxing production constraints."""
 
-    def __init__(
-        self, registry: ConstraintAssumptionRegistry | None = None
-    ) -> None:
+    def __init__(self, registry: ConstraintAssumptionRegistry | None = None) -> None:
         self._registry = registry or ConstraintAssumptionRegistry()
 
     def refine(
@@ -54,8 +52,7 @@ class ConstraintConflictRefiner:
         quality_frozen = {
             str(operation_id)
             for row in raw.get("quality_holds", []) or []
-            if str(row.get("status", "held")).lower()
-            not in {"released", "cleared", "closed"}
+            if str(row.get("status", "held")).lower() not in {"released", "cleared", "closed"}
             for operation_id in row.get("blocked_operation_ids", []) or []
         }
         frozen = set(frozen_operation_ids) | {
@@ -69,10 +66,12 @@ class ConstraintConflictRefiner:
                 continue
             raw_operation = raw_operations.get(operation_id, {})
             status = str(raw_operation.get("status", "unknown")).lower()
-            planning_freeze = (
-                operation_id not in quality_frozen
-                and status in {"planned", "queued", "released", "scheduled"}
-            )
+            planning_freeze = operation_id not in quality_frozen and status in {
+                "planned",
+                "queued",
+                "released",
+                "scheduled",
+            }
             if not planning_freeze:
                 continue
             conflicts.append(
@@ -111,9 +110,7 @@ class ConstraintConflictRefiner:
                 _conflict(
                     family=violation.constraint_type,
                     operation_ids=[violation.operation_id],
-                    resource_ids=[violation.resource_id]
-                    if violation.resource_id
-                    else [],
+                    resource_ids=[violation.resource_id] if violation.resource_id else [],
                     hard=True,
                     relaxable=False,
                     actions=["safe_hold"],
@@ -172,9 +169,7 @@ def _operation_interval_conflict(
     shortage = False
     substitute_release: datetime | None = None
     for row in raw.get("material_availability", []) or []:
-        if operation_id not in {
-            str(item) for item in row.get("operation_ids", []) or []
-        }:
+        if operation_id not in {str(item) for item in row.get("operation_ids", []) or []}:
             continue
         if float(row.get("available_quantity", 0) or 0) < float(
             row.get("required_quantity", 1) or 1
@@ -189,8 +184,7 @@ def _operation_interval_conflict(
         approved_substitutes = [
             row
             for row in raw.get("substitute_material_approvals", []) or []
-            if operation_id
-            in {str(item) for item in row.get("operation_ids", []) or []}
+            if operation_id in {str(item) for item in row.get("operation_ids", []) or []}
             and str(row.get("approval_status", "pending")).lower() == "approved"
             and row.get("approved_by")
             and row.get("source_ref")
@@ -229,8 +223,7 @@ def _operation_interval_conflict(
         (deadline, row)
         for row in raw.get("operation_deadline_constraints", []) or []
         for deadline in [_datetime(row.get("deadline_at"))]
-        if str(row.get("operation_id", "")) == operation_id
-        and deadline is not None
+        if str(row.get("operation_id", "")) == operation_id and deadline is not None
     ]
     if not deadline_rows:
         return None
@@ -295,9 +288,11 @@ def _source_state_conflicts(
         required = {str(item) for item in row.get("required_approvals", []) or []}
         approvals = {str(item) for item in row.get("approvals", []) or []}
         evidence_missing = not row.get("certificate_ref") or not row.get("source_ref")
-        if status in {"released", "cleared", "closed"} and required.issubset(
-            approvals
-        ) and not evidence_missing:
+        if (
+            status in {"released", "cleared", "closed"}
+            and required.issubset(approvals)
+            and not evidence_missing
+        ):
             continue
         result.append(
             _conflict(
@@ -339,9 +334,7 @@ def _resource_capability_conflicts(
 ) -> list[ConflictConstraint]:
     raw = snapshot.raw_data or {}
     capabilities = {
-        str(row.get("resource_id", "")): {
-            str(item) for item in row.get("capabilities", []) or []
-        }
+        str(row.get("resource_id", "")): {str(item) for item in row.get("capabilities", []) or []}
         for row in raw.get("resources", []) or []
         if row.get("resource_id")
     }
@@ -352,15 +345,13 @@ def _resource_capability_conflicts(
         for operation in work_order.operations:
             raw_operation = raw_operations.get(operation.operation_id, {})
             eligible = {
-                str(item)
-                for item in raw_operation.get("eligible_resources", []) or []
+                str(item) for item in raw_operation.get("eligible_resources", []) or []
             } or {operation.resource_id}
             required = set(operation.required_capabilities)
             qualified = [
                 resource_id
                 for resource_id in eligible
-                if resource_id in capabilities
-                and required.issubset(capabilities[resource_id])
+                if resource_id in capabilities and required.issubset(capabilities[resource_id])
             ]
             if qualified:
                 continue
@@ -422,9 +413,7 @@ def _conflict(
     resource_ids: list[str] | None = None,
     source_refs: list[str] | None = None,
 ) -> ConflictConstraint:
-    payload = "|".join(
-        [family, *(operation_ids or []), *(work_order_ids or []), detail]
-    )
+    payload = "|".join([family, *(operation_ids or []), *(work_order_ids or []), detail])
     return ConflictConstraint(
         conflict_id=f"conflict-{hashlib.sha256(payload.encode()).hexdigest()[:16]}",
         constraint_family=family,

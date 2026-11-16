@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.integration_sdk import (
     ConnectorConformanceRunner,
@@ -10,8 +10,8 @@ from app.integration_sdk import (
     WritebackCertificationHarness,
 )
 from app.models.integration_control import (
-    ConnectorRegistrationRequest,
     CanonicalDataEnvelope,
+    ConnectorRegistrationRequest,
     ConstraintCoverageObservation,
     ConstraintDefinitionDraft,
     ConstraintReplayEvidence,
@@ -30,8 +30,8 @@ from app.services.data_gate.integration_registry import (
     IntegrationRegistryService,
     fingerprint_payload,
 )
-from app.services.storage.operational_store import RelationalOperationalStore
 from app.services.data_gate.schema_drift_guard import SchemaDriftGuard
+from app.services.storage.operational_store import RelationalOperationalStore
 
 
 class IntegrationControlValidationHarness:
@@ -47,7 +47,7 @@ class IntegrationControlValidationHarness:
         tenant_id: str = "TENANT-DIGITAL-TWIN",
         actor_id: str = "admin-digital-twin",
     ) -> IntegrationControlValidationResult:
-        reference_time = datetime.now(tz=timezone.utc)
+        reference_time = datetime.now(tz=UTC)
         connector = DigitalTwinEnterpriseConnector(reference_time=reference_time)
 
         matrix = SourceAuthorityMatrixDraft(
@@ -156,9 +156,7 @@ class IntegrationControlValidationHarness:
         connector_request = ConnectorRegistrationRequest(
             tenant_id=tenant_id, manifest=connector.manifest
         )
-        connector_asset = self.registry.register_connector_manifest(
-            connector_request, actor_id
-        )
+        connector_asset = self.registry.register_connector_manifest(connector_request, actor_id)
         conformance = ConnectorConformanceRunner().run(
             connector, tenant_id=tenant_id, evidence_scope="digital_twin"
         )
@@ -202,9 +200,7 @@ class IntegrationControlValidationHarness:
                 source_refs=["digital-twin:schema-breaking"],
             )
         )
-        quarantine = self.store.get_quarantine_record(
-            breaking_drift.quarantine_id or ""
-        )
+        quarantine = self.store.get_quarantine_record(breaking_drift.quarantine_id or "")
         if quarantine is None:
             raise RuntimeError("breaking_schema_was_not_quarantined")
         if quarantine.status == "open":
@@ -267,9 +263,7 @@ class IntegrationControlValidationHarness:
                 entity_id=record.entity_id,
                 observed_at=record.occurred_at,
                 data=record.payload,
-                evidence_refs=[
-                    f"digital-twin:{record.entity_type}:{record.entity_id}"
-                ],
+                evidence_refs=[f"digital-twin:{record.entity_type}:{record.entity_id}"],
             )
             for record in connector.read_snapshot().records
         ]

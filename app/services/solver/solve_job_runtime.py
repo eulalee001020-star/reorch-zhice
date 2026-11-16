@@ -12,8 +12,8 @@ from app.models.production_runtime import (
     SubproblemExecutionResult,
     TenantSolveQuota,
 )
-from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.data_gate.decision_readiness import DecisionReadinessService
+from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.storage.operational_store import RelationalOperationalStore
 
 
@@ -88,9 +88,7 @@ class SolveJobWorker:
         if job is None:
             return SolveWorkerResult(worker_id=self.worker_id, job=None)
 
-        completed_payloads = dict(
-            (job.checkpoint or {}).get("completed_subproblems", {})
-        )
+        completed_payloads = dict((job.checkpoint or {}).get("completed_subproblems", {}))
         checkpoints: dict[str, SubproblemExecutionResult] = {}
         for subproblem_id, payload in completed_payloads.items():
             try:
@@ -125,9 +123,7 @@ class SolveJobWorker:
                 raise ValueError("active_decision_readiness_manifest_required_at_execution")
             result = self.executor.execute(
                 job.solve_request,
-                cancel_check=lambda: self.queue.store.should_cancel_job(
-                    job.job_id, self.worker_id
-                ),
+                cancel_check=lambda: self.queue.store.should_cancel_job(job.job_id, self.worker_id),
                 checkpoint_results=checkpoints,
                 checkpoint_callback=lambda item: self.queue.store.save_job_checkpoint(
                     job.job_id,

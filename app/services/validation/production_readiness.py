@@ -13,9 +13,7 @@ from app.models.production_readiness import (
 class ProductionReadinessGate:
     """Classifies the highest safe deployment level from supplied evidence."""
 
-    def evaluate(
-        self, evidence: ProductionReadinessEvidence
-    ) -> ProductionReadinessResponse:
+    def evaluate(self, evidence: ProductionReadinessEvidence) -> ProductionReadinessResponse:
         checks = [
             _check_data_foundation(evidence),
             _check_recovery_solve(evidence),
@@ -464,6 +462,4 @@ def _claim_boundary(decision: ReadinessDecision) -> str:
             "Evidence supports read-only replay and multi-strategy comparison. It "
             "does not prove customer production readiness, ROI, or policy learning."
         )
-    return (
-        "Core data is insufficient for reliable replay; only data-gap analysis is allowed."
-    )
+    return "Core data is insufficient for reliable replay; only data-gap analysis is allowed."

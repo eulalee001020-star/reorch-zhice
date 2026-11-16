@@ -22,7 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -46,10 +46,10 @@ from app.models.solver import (
     SolverChain,
     SolverMetadata,
 )
+from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
 from app.services.solver.decomposition_executor import DecompositionExecutor
-from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
 
 if TYPE_CHECKING:
     from app.services.solver.solver_policy_orchestrator import SolverPolicyBundle
@@ -77,7 +77,7 @@ class HybridSolver:
 
     async def solve(
         self,
-        bundle: "SolverPolicyBundle",
+        bundle: SolverPolicyBundle,
         impact_report: ImpactReport,
         snapshot: ScheduleSnapshot,
     ) -> list[CandidatePlan]:
@@ -144,9 +144,7 @@ class HybridSolver:
                     exc,
                 )
                 degradation_occurred = True
-                degradation_reason = (
-                    f"Solver '{solver_name}' raised {type(exc).__name__}: {exc}"
-                )
+                degradation_reason = f"Solver '{solver_name}' raised {type(exc).__name__}: {exc}"
                 continue
 
         solve_time = time.monotonic() - start_time
@@ -190,7 +188,7 @@ class HybridSolver:
     async def _run_solver(
         self,
         solver_name: str,
-        bundle: "SolverPolicyBundle",
+        bundle: SolverPolicyBundle,
         impact_report: ImpactReport,
         snapshot: ScheduleSnapshot,
         strategy_type: StrategyType,
@@ -247,9 +245,7 @@ class HybridSolver:
         # 3. Validate constraints and build CandidatePlans (Req 4.7)
         candidates: list[CandidatePlan] = []
         for schedule in best_schedules:
-            report = self._validate_constraints(
-                schedule, snapshot, strategy_type, affected_op_ids
-            )
+            report = self._validate_constraints(schedule, snapshot, strategy_type, affected_op_ids)
             feasibility = "feasible" if report.is_feasible else "infeasible"
 
             chain = SolverChain(
@@ -296,7 +292,7 @@ class HybridSolver:
                 feasibility_status=feasibility,
                 solver_metadata=metadata,
                 constraint_report=report,
-                created_at=datetime.now(tz=timezone.utc),
+                created_at=datetime.now(tz=UTC),
             )
             candidates.append(plan)
 
@@ -307,7 +303,7 @@ class HybridSolver:
     async def _run_cp_sat_solver(
         self,
         solver_name: str,
-        bundle: "SolverPolicyBundle",
+        bundle: SolverPolicyBundle,
         impact_report: ImpactReport,
         snapshot: ScheduleSnapshot,
         strategy_type: StrategyType,
@@ -346,9 +342,7 @@ class HybridSolver:
                 # Invoke once so the policy layer still records runtime
                 # neighborhood intent for CP-SAT/LNS portfolio calls.
                 temp_schedule = ScheduleDetail(
-                    work_orders=[
-                        wo.model_copy(deep=True) for wo in snapshot.work_orders
-                    ]
+                    work_orders=[wo.model_copy(deep=True) for wo in snapshot.work_orders]
                 )
                 temp_plan = CandidatePlan(
                     plan_id=uuid4(),
@@ -487,16 +481,12 @@ class HybridSolver:
                 solve_time_seconds=result.wall_time_seconds,
                 iteration_count=result.branches,
                 objective_trajectory=[
-                    result.objective_value
-                    if result.objective_value is not None
-                    else 0.0
+                    result.objective_value if result.objective_value is not None else 0.0
                 ],
                 best_objective_bound=result.best_objective_bound,
                 relative_gap=result.relative_gap,
                 hint_applied=result.hint_applied,
-                time_to_first_feasible_ms=result.solver_log.get(
-                    "time_to_first_feasible_ms"
-                ),
+                time_to_first_feasible_ms=result.solver_log.get("time_to_first_feasible_ms"),
                 incumbent_source=result.solver_log.get("incumbent_source"),
             )
             candidates.append(
@@ -509,7 +499,7 @@ class HybridSolver:
                     feasibility_status=feasibility,
                     solver_metadata=metadata,
                     constraint_report=report,
-                    created_at=datetime.now(tz=timezone.utc),
+                    created_at=datetime.now(tz=UTC),
                 )
             )
 
@@ -534,8 +524,7 @@ class HybridSolver:
             incident_type="impact_report_recovery",
             affected_operation_ids=affected_op_ids,
             delay_minutes=max(
-                [int(round(item.estimated_delay_minutes)) for item in affected]
-                or [0]
+                [int(round(item.estimated_delay_minutes)) for item in affected] or [0]
             ),
             resource_id=first.resource_id if first else None,
             work_order_id=first.work_order_id if first else None,
@@ -606,9 +595,7 @@ class HybridSolver:
                 "evidence_fingerprint": response.evidence_fingerprint,
             },
             search_budget_seconds=timeout_seconds,
-            constraint_validation_result=(
-                "feasible" if is_feasible else "infeasible"
-            ),
+            constraint_validation_result=("feasible" if is_feasible else "infeasible"),
             stages=[
                 "受影响子图分解",
                 "约束感知首解",
@@ -644,7 +631,7 @@ class HybridSolver:
                 feasibility_status="feasible" if is_feasible else "infeasible",
                 solver_metadata=metadata,
                 constraint_report=report,
-                created_at=datetime.now(tz=timezone.utc),
+                created_at=datetime.now(tz=UTC),
             )
         ]
 
@@ -713,7 +700,7 @@ class HybridSolver:
     async def _lns_optimize(
         self,
         initial_schedule: ScheduleDetail,
-        bundle: "SolverPolicyBundle",
+        bundle: SolverPolicyBundle,
         impact_report: ImpactReport,
         snapshot: ScheduleSnapshot,
         strategy_type: StrategyType,
@@ -780,9 +767,7 @@ class HybridSolver:
                     perturbation = 0.5
                     if hasattr(bundle.repair_config, "allowed_perturbation_scope"):
                         scope_len = len(bundle.repair_config.allowed_perturbation_scope)
-                        perturbation = min(
-                            1.0, scope_len / max(len(affected_op_ids), 1)
-                        )
+                        perturbation = min(1.0, scope_len / max(len(affected_op_ids), 1))
 
                     neighborhood_configs = await bundle.get_neighborhood_config(
                         temp_plan,
@@ -1013,10 +998,7 @@ class HybridSolver:
                 if op_id not in affected_set and not op.is_adjusted:
                     snap_op = snapshot_op_map.get(op_id)
                     if snap_op:
-                        if (
-                            op.start_time != snap_op.start_time
-                            or op.end_time != snap_op.end_time
-                        ):
+                        if op.start_time != snap_op.start_time or op.end_time != snap_op.end_time:
                             violations.append(
                                 ConstraintViolation(
                                     constraint_type="local_repair_invariance",
@@ -1042,21 +1024,15 @@ class HybridSolver:
         self,
         strategy_type: StrategyType,
         solver_name: str,
-        bundle: "SolverPolicyBundle",
+        bundle: SolverPolicyBundle,
         solve_time: float,
         degradation_occurred: bool,
         degradation_reason: str | None,
     ) -> CandidatePlan:
         """Build an infeasible report plan when no solution found (Req 4.9)."""
-        st_val = (
-            strategy_type.value
-            if isinstance(strategy_type, StrategyType)
-            else strategy_type
-        )
+        st_val = strategy_type.value if isinstance(strategy_type, StrategyType) else strategy_type
         repair_mode = bundle.repair_config.repair_mode
-        rm_val = (
-            repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
-        )
+        rm_val = repair_mode.value if hasattr(repair_mode, "value") else str(repair_mode)
 
         chain = SolverChain(
             strategy_type=st_val,
@@ -1067,9 +1043,7 @@ class HybridSolver:
             key_parameters={
                 "degradation_occurred": degradation_occurred,
                 "recovery_required": True,
-                "restoration_endpoint": (
-                    "/api/v1/runtime/feasibility-restoration/evaluate"
-                ),
+                "restoration_endpoint": ("/api/v1/runtime/feasibility-restoration/evaluate"),
                 "writeback_allowed": False,
             },
             search_budget_seconds=bundle.repair_config.search_time_budget_seconds,
@@ -1112,7 +1086,7 @@ class HybridSolver:
             feasibility_status="infeasible",
             solver_metadata=metadata,
             constraint_report=report,
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
 
     # ── Helpers ─────────────────────────────────────────────────────
@@ -1130,6 +1104,4 @@ class HybridSolver:
     @staticmethod
     def _is_cp_sat_solver(solver_name: str) -> bool:
         normalized = solver_name.lower().replace("-", "_")
-        return (
-            "cp_sat" in normalized or "cpsat" in normalized or "ortools" in normalized
-        )
+        return "cp_sat" in normalized or "cpsat" in normalized or "ortools" in normalized

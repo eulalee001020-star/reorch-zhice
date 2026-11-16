@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from app.integration_sdk.base import EnterpriseConnector, WritebackCommand
@@ -152,8 +152,7 @@ class WritebackCertificationHarness:
         checks.append(
             _runtime_check(
                 "compensation_restores_business_state",
-                compensation.status == "compensated"
-                and restored.state_hash == before.state_hash,
+                compensation.status == "compensated" and restored.state_hash == before.state_hash,
                 {
                     "compensation_receipt_id": compensation.receipt_id,
                     "restored_hash": restored.state_hash,
@@ -163,7 +162,7 @@ class WritebackCertificationHarness:
         )
 
         passed = all(check.status != "fail" for check in checks if check.blocking)
-        executed_at = datetime.now(tz=timezone.utc)
+        executed_at = datetime.now(tz=UTC)
         payload = {
             "tenant_id": tenant_id,
             "profile": profile.model_dump(mode="json"),

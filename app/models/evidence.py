@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import Field
 
@@ -29,12 +29,12 @@ class EvidenceItem(ReOrchModel):
     metrics: dict = Field(default_factory=dict)
     table: EvidenceTable | None = None
     limitations: list[str] = Field(default_factory=list)
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
 class EvidenceCenterResponse(ReOrchModel):
     """Evidence Center aggregate response."""
 
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     items: list[EvidenceItem] = Field(default_factory=list)
     summary_counts: dict = Field(default_factory=dict)

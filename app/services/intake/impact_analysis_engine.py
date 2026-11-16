@@ -109,9 +109,7 @@ class ImpactAnalysisEngine:
         all_affected_ops = direct_ops + downstream_ops
 
         # --- Step 3: Build affected work orders with delivery risk (Req 2.5) ---
-        wo_map: dict[str, WorkOrder] = {
-            wo.work_order_id: wo for wo in snapshot.work_orders
-        }
+        wo_map: dict[str, WorkOrder] = {wo.work_order_id: wo for wo in snapshot.work_orders}
         ops_by_wo: dict[str, list[AffectedOperation]] = {}
         for aop in all_affected_ops:
             ops_by_wo.setdefault(aop.work_order_id, []).append(aop)
@@ -136,22 +134,16 @@ class ImpactAnalysisEngine:
             )
 
         # --- Step 4: Aggregate metrics (Req 2.6) ---
-        affected_resource_ids = sorted(
-            {aop.resource_id for aop in all_affected_ops}
-        )
+        affected_resource_ids = sorted({aop.resource_id for aop in all_affected_ops})
         risk_dist: dict[DeliveryRiskLevel, int] = {
             DeliveryRiskLevel.SAFE: 0,
             DeliveryRiskLevel.WARNING: 0,
             DeliveryRiskLevel.BREACH: 0,
         }
         for awo in affected_work_orders:
-            risk_dist[awo.delivery_risk_level] = (
-                risk_dist.get(awo.delivery_risk_level, 0) + 1
-            )
+            risk_dist[awo.delivery_risk_level] = risk_dist.get(awo.delivery_risk_level, 0) + 1
 
-        estimated_total_delay = sum(
-            a.estimated_delay_minutes for a in all_affected_ops
-        )
+        estimated_total_delay = sum(a.estimated_delay_minutes for a in all_affected_ops)
 
         report = ImpactReport(
             incident_id=incident_id,
@@ -241,9 +233,7 @@ class ImpactAnalysisEngine:
         - Breach:  buffer <= 0 or estimated_delay > buffer
         """
         estimated_delay = sum(a.estimated_delay_minutes for a in affected_ops)
-        remaining_processing = self._total_remaining_processing(
-            work_order, reference_time
-        )
+        remaining_processing = self._total_remaining_processing(work_order, reference_time)
         buffer = self._buffer_minutes(work_order, reference_time, remaining_processing)
 
         if buffer <= 0:
@@ -271,9 +261,7 @@ class ImpactAnalysisEngine:
             return report
 
         current_severity = (
-            incident.severity
-            if isinstance(incident.severity, str)
-            else incident.severity.value
+            incident.severity if isinstance(incident.severity, str) else incident.severity.value
         )
         upgraded = _SEVERITY_UPGRADE.get(current_severity, current_severity)
 
@@ -334,8 +322,7 @@ class ImpactAnalysisEngine:
         upgrade_reason: str | None = None
         if breach_count > 0:
             upgrade_rule = (
-                "影响分析发现 Breach 交期风险时只上调一级："
-                "P4->P3 / P3->P2 / P2->P1，P1 保持 P1。"
+                "影响分析发现 Breach 交期风险时只上调一级：P4->P3 / P3->P2 / P2->P1，P1 保持 P1。"
             )
             if report.severity_upgraded:
                 upgrade_reason = (
@@ -410,9 +397,7 @@ class ImpactAnalysisEngine:
         return (end - reference_time).total_seconds() / 60.0
 
     @staticmethod
-    def _total_remaining_processing(
-        work_order: WorkOrder, reference_time: datetime
-    ) -> float:
+    def _total_remaining_processing(work_order: WorkOrder, reference_time: datetime) -> float:
         """Sum of remaining processing minutes for all operations in a work order."""
         total = 0.0
         for op in work_order.operations:

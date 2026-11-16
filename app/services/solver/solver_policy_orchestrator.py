@@ -17,14 +17,13 @@ Key design decisions (Req 22.2, 22.9, 22.10, 4.11, 4.12, 4.13):
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 
 from pydantic import Field
 
 from app.models.base import ReOrchModel
 from app.models.case import CaseRecord, PreferenceProfile
-from app.models.enums import IncidentSeverity, StrategyType
 from app.models.impact import ImpactReport
 from app.models.incident import Incident
 from app.models.solver import CandidatePlan
@@ -37,18 +36,26 @@ from app.models.strategy import (
 )
 from app.services.solver.neighborhood_selector import (
     MODULE_VERSION as NS_VERSION,
+)
+from app.services.solver.neighborhood_selector import (
     NeighborhoodSelector,
 )
 from app.services.solver.repair_policy_advisor import (
     MODULE_VERSION as RPA_VERSION,
+)
+from app.services.solver.repair_policy_advisor import (
     RepairPolicyAdvisor,
 )
 from app.services.solver.rule_selector import (
     MODULE_VERSION as RS_VERSION,
+)
+from app.services.solver.rule_selector import (
     RuleSelector,
 )
 from app.services.solver.solver_portfolio import (
     MODULE_VERSION as SP_VERSION,
+)
+from app.services.solver.solver_portfolio import (
     SolverPortfolio,
 )
 
@@ -61,12 +68,12 @@ MODULE_VERSION: str = "1.0.0"
 # ── Type alias for the runtime neighborhood callback ────────────────
 NeighborhoodCallback = Callable[
     [
-        CandidatePlan,   # current_solution
-        list[str],       # affected_operation_ids
-        int,             # stagnation_count
-        float,           # remaining_budget_seconds
+        CandidatePlan,  # current_solution
+        list[str],  # affected_operation_ids
+        int,  # stagnation_count
+        float,  # remaining_budget_seconds
         StrategyRecommendation,  # strategy
-        float,           # perturbation_constraint
+        float,  # perturbation_constraint
     ],
     Awaitable[list[NeighborhoodConfig]],
 ]
@@ -104,7 +111,8 @@ class SolverPolicyBundle(ReOrchModel):
 
     # Runtime callback — excluded from serialisation
     get_neighborhood_config: NeighborhoodCallback | None = Field(
-        default=None, exclude=True,
+        default=None,
+        exclude=True,
     )
 
 
@@ -197,7 +205,7 @@ class SolverPolicyOrchestrator:
             repair_policy_advisor_version=RPA_VERSION,
             solver_portfolio_version=SP_VERSION,
             orchestrator_version=MODULE_VERSION,
-            built_at=datetime.now(tz=timezone.utc),
+            built_at=datetime.now(tz=UTC),
         )
 
         bundle = SolverPolicyBundle(

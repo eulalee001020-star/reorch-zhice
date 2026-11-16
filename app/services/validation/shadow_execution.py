@@ -71,9 +71,7 @@ class ReadOnlyShadowRunner:
             blockers=blockers,
             evidence_fingerprint=_fingerprint(payload),
         )
-        self._store.upsert_shadow_case(
-            record, request.tenant_id, request.evidence_scope
-        )
+        self._store.upsert_shadow_case(record, request.tenant_id, request.evidence_scope)
         return record
 
     def record_planner_decision(
@@ -90,8 +88,7 @@ class ReadOnlyShadowRunner:
         if decision_status not in {"accepted", "adjusted", "rejected"}:
             raise ValueError("invalid_planner_shadow_decision")
         if decision_status in {"adjusted", "rejected"} and not (
-            planner_decision.get("override_reason")
-            or planner_decision.get("tweak_summary")
+            planner_decision.get("override_reason") or planner_decision.get("tweak_summary")
         ):
             raise ValueError("planner_override_reason_required")
         updated = record.model_copy(
@@ -109,9 +106,7 @@ class ReadOnlyShadowRunner:
             },
             deep=True,
         )
-        self._store.upsert_shadow_case(
-            updated, updated.tenant_id, updated.evidence_scope
-        )
+        self._store.upsert_shadow_case(updated, updated.tenant_id, updated.evidence_scope)
         return updated
 
     def ingest_receipts(
@@ -153,9 +148,7 @@ class ReadOnlyShadowRunner:
             },
             deep=True,
         )
-        self._store.upsert_shadow_case(
-            updated, updated.tenant_id, updated.evidence_scope
-        )
+        self._store.upsert_shadow_case(updated, updated.tenant_id, updated.evidence_scope)
         if closed:
             self._store.put_evidence(
                 evidence_id=f"shadow-execution:{shadow_case_id}",
@@ -213,9 +206,7 @@ def _execution_metrics(
             round(sum(deviations) / len(deviations), 3) if deviations else 0.0
         ),
         "resource_adherence_rate": (
-            round(resource_matches / comparable_resources, 4)
-            if comparable_resources
-            else 0.0
+            round(resource_matches / comparable_resources, 4) if comparable_resources else 0.0
         ),
         "execution_outcome_complete": bool(record.expected_terminal_operation_ids)
         and set(record.expected_terminal_operation_ids).issubset(

@@ -27,9 +27,7 @@ class RuleCandidateReplayService:
     ) -> RuleCandidateReplayResult:
         notes = list(request.notes)
         candidate_blocker = _candidate_blocker(candidate)
-        scenario_results = [
-            self._execute(candidate, scenario) for scenario in request.scenarios
-        ]
+        scenario_results = [self._execute(candidate, scenario) for scenario in request.scenarios]
         blocked_reason = candidate_blocker
         if blocked_reason is None and len(scenario_results) < 3:
             blocked_reason = "at_least_three_executed_scenario_results_required"
@@ -60,9 +58,7 @@ class RuleCandidateReplayService:
                 "readonly_publish_required": True,
                 "caller_scenario_count_ignored": request.scenario_count is not None,
                 "customer_result_count": sum(
-                    count
-                    for scope, count in scope_counts.items()
-                    if scope.startswith("customer_")
+                    count for scope, count in scope_counts.items() if scope.startswith("customer_")
                 ),
             },
             notes=notes,
@@ -113,14 +109,10 @@ def _candidate_blocker(candidate: ConstraintCandidate) -> str | None:
     return None
 
 
-def _evaluate(
-    candidate: ConstraintCandidate, facts: dict[str, Any]
-) -> tuple[str, bool, list[str]]:
+def _evaluate(candidate: ConstraintCandidate, facts: dict[str, Any]) -> tuple[str, bool, list[str]]:
     constraint_type = candidate.constraint_type
     machine_ids = {str(item) for item in candidate.scope.get("machine_ids", []) or []}
-    operation_ids = {
-        str(item) for item in candidate.scope.get("operation_ids", []) or []
-    }
+    operation_ids = {str(item) for item in candidate.scope.get("operation_ids", []) or []}
     machine_id = str(facts.get("machine_id", ""))
     operation_id = str(facts.get("operation_id", ""))
 

@@ -23,7 +23,10 @@ def test_ngs_demo_generates_top_k_feasible_and_rejected_candidates():
     scores = [candidate.soft_score for candidate in response.feasible_candidates]
     assert scores == sorted(scores, reverse=True)
     assert all(candidate.hard_feasible for candidate in response.feasible_candidates)
-    assert all(candidate.gate_report and candidate.gate_report.pass_gate for candidate in response.feasible_candidates)
+    assert all(
+        candidate.gate_report and candidate.gate_report.pass_gate
+        for candidate in response.feasible_candidates
+    )
 
 
 def test_ngs_dispatch_baseline_is_blocked_by_protected_quality_gates():
@@ -184,7 +187,9 @@ async def test_ngs_batch_replay_api_accepts_payload_and_records_planner_decision
             "/api/v1/ngs-lab/batch-replay",
             json={"package_payload": package, "source_name": "uploaded.json"},
         )
-        candidate_id = replay_resp.json()["case_results"][0]["response"]["recommended_candidate"]["candidate_id"]
+        candidate_id = replay_resp.json()["case_results"][0]["response"]["recommended_candidate"][
+            "candidate_id"
+        ]
         decision_resp = await client.post(
             "/api/v1/ngs-lab/planner-decisions",
             json={

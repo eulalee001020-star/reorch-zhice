@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import uuid4
@@ -38,6 +38,7 @@ class ExperimentVariant(str, Enum):
 @dataclass
 class TrafficRule:
     """Defines which traffic goes to the treatment variant."""
+
     workshop_ids: list[str] = field(default_factory=list)
     incident_types: list[str] = field(default_factory=list)
     user_ids: list[str] = field(default_factory=list)
@@ -47,6 +48,7 @@ class TrafficRule:
 @dataclass
 class RollbackThreshold:
     """Thresholds that trigger auto-rollback."""
+
     min_feasibility_rate: float = 0.8  # below this → rollback
     max_mttr_d_increase_pct: float = 20.0  # MTTR-D increase > this % → rollback
     min_sample_size: int = 10  # minimum samples before evaluating
@@ -55,6 +57,7 @@ class RollbackThreshold:
 @dataclass
 class VariantMetrics:
     """Collected metrics for a variant."""
+
     call_count: int = 0
     total_solve_time_ms: float = 0.0
     feasible_count: int = 0
@@ -108,6 +111,7 @@ class VariantMetrics:
 @dataclass
 class Experiment:
     """An A/B test experiment."""
+
     experiment_id: str
     name: str
     description: str
@@ -123,12 +127,13 @@ class Experiment:
 
     def __post_init__(self) -> None:
         if not self.created_at:
-            self.created_at = datetime.now(tz=timezone.utc).isoformat()
+            self.created_at = datetime.now(tz=UTC).isoformat()
 
 
 @dataclass
 class ReplayResult:
     """Result of replaying a historical incident."""
+
     incident_id: str
     variant: str
     version: str
@@ -245,7 +250,11 @@ class ExperimentManager:
         latency_ms: float = 0.0,
     ) -> None:
         exp = self._get_experiment(experiment_id)
-        metrics = exp.treatment_metrics if variant == ExperimentVariant.TREATMENT.value else exp.control_metrics
+        metrics = (
+            exp.treatment_metrics
+            if variant == ExperimentVariant.TREATMENT.value
+            else exp.control_metrics
+        )
 
         metrics.call_count += 1
         metrics.total_solve_time_ms += solve_time_ms
@@ -277,18 +286,24 @@ class ExperimentManager:
         if t.feasibility_rate < threshold.min_feasibility_rate:
             logger.warning(
                 "Auto-rollback experiment %s: feasibility_rate %.2f < %.2f",
-                exp.experiment_id, t.feasibility_rate, threshold.min_feasibility_rate,
+                exp.experiment_id,
+                t.feasibility_rate,
+                threshold.min_feasibility_rate,
             )
             exp.status = ExperimentStatus.ROLLED_BACK
             return
 
         c = exp.control_metrics
         if c.call_count >= threshold.min_sample_size and c.avg_solve_time_ms > 0:
-            mttr_increase_pct = ((t.avg_solve_time_ms - c.avg_solve_time_ms) / c.avg_solve_time_ms) * 100
+            mttr_increase_pct = (
+                (t.avg_solve_time_ms - c.avg_solve_time_ms) / c.avg_solve_time_ms
+            ) * 100
             if mttr_increase_pct > threshold.max_mttr_d_increase_pct:
                 logger.warning(
                     "Auto-rollback experiment %s: MTTR-D increase %.1f%% > %.1f%%",
-                    exp.experiment_id, mttr_increase_pct, threshold.max_mttr_d_increase_pct,
+                    exp.experiment_id,
+                    mttr_increase_pct,
+                    threshold.max_mttr_d_increase_pct,
                 )
                 exp.status = ExperimentStatus.ROLLED_BACK
 

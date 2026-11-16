@@ -73,9 +73,7 @@ class StrategySelector:
         affected_count = len(impact_report.affected_work_orders)
         has_breach = self._has_breach_risk(impact_report)
         affected_ratio = (
-            affected_count / total_active_work_orders
-            if total_active_work_orders > 0
-            else 1.0
+            affected_count / total_active_work_orders if total_active_work_orders > 0 else 1.0
         )
 
         # --- Rank strategies (Req 3.2) ---
@@ -97,9 +95,7 @@ class StrategySelector:
         local_score = 0.0
         if affected_ratio <= _AFFECTED_RATIO_THRESHOLD and not has_breach:
             local_score = _BASE_CONFIDENCE_LOCAL
-            local_factors.append(
-                f"affected_ratio ({affected_ratio:.1%}) ≤ 20%"
-            )
+            local_factors.append(f"affected_ratio ({affected_ratio:.1%}) ≤ 20%")
             local_factors.append("no Breach risk in delivery_risk_distribution")
         scored.append((StrategyType.LOCAL_REPAIR, local_score, local_factors))
 
@@ -109,9 +105,7 @@ class StrategySelector:
         if affected_ratio > _AFFECTED_RATIO_THRESHOLD or has_breach:
             global_score = _BASE_CONFIDENCE_GLOBAL
             if affected_ratio > _AFFECTED_RATIO_THRESHOLD:
-                global_factors.append(
-                    f"affected_ratio ({affected_ratio:.1%}) > 20%"
-                )
+                global_factors.append(f"affected_ratio ({affected_ratio:.1%}) > 20%")
             if has_breach:
                 global_factors.append("Breach risk detected in delivery_risk_distribution")
         scored.append((StrategyType.GLOBAL_RESCHEDULE, global_score, global_factors))
@@ -192,10 +186,7 @@ class StrategySelector:
     @staticmethod
     def _total_buffer_minutes(report: ImpactReport) -> float:
         """Sum remaining_buffer_minutes across all affected work orders."""
-        return sum(
-            wo.remaining_buffer_minutes
-            for wo in report.affected_work_orders
-        )
+        return sum(wo.remaining_buffer_minutes for wo in report.affected_work_orders)
 
     @staticmethod
     def _has_breach_risk(report: ImpactReport) -> bool:
@@ -249,11 +240,13 @@ class StrategySelector:
             pref_weight = profile.strategy_preferences.get(st_value, 0.0)
             if pref_weight > 0 and score > 0:
                 boost = min(pref_weight * _PREFERENCE_BOOST_MAX, _PREFERENCE_BOOST_MAX)
-                result.append((
-                    st,
-                    score + boost,
-                    factors + [f"preference_boost (+{boost:.3f})"],
-                ))
+                result.append(
+                    (
+                        st,
+                        score + boost,
+                        factors + [f"preference_boost (+{boost:.3f})"],
+                    )
+                )
             else:
                 result.append((st, score, factors))
         return result
@@ -292,8 +285,6 @@ class StrategySelector:
 
         if alternative is not None:
             alt_val = alternative.value if hasattr(alternative, "value") else alternative
-            parts.append(
-                f"Low confidence — alternative strategy provided: {alt_val}."
-            )
+            parts.append(f"Low confidence — alternative strategy provided: {alt_val}.")
 
         return " ".join(parts)

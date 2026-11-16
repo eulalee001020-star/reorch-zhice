@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.models.integration_control import (
@@ -51,9 +51,7 @@ class IntegrationRegistryService:
         actor_id: str,
         approval_note: str,
     ) -> VersionedAssetRecord:
-        asset = self._required_asset(
-            tenant_id, "source_authority_matrix", matrix_id, version
-        )
+        asset = self._required_asset(tenant_id, "source_authority_matrix", matrix_id, version)
         self._validate_authority_matrix(SourceAuthorityMatrixDraft.model_validate(asset.payload))
         return self._activate(asset, actor_id, approval_note)
 
@@ -78,9 +76,7 @@ class IntegrationRegistryService:
         actor_id: str,
         approval_note: str,
     ) -> VersionedAssetRecord:
-        asset = self._required_asset(
-            tenant_id, "scenario_data_contract", contract_id, version
-        )
+        asset = self._required_asset(tenant_id, "scenario_data_contract", contract_id, version)
         contract = ScenarioDataContractDraft.model_validate(asset.payload)
         authority = self.store.get_active_integration_asset(
             tenant_id, "source_authority_matrix", "tenant_default"
@@ -89,9 +85,9 @@ class IntegrationRegistryService:
             raise IntegrationRegistryError("active_source_authority_matrix_required")
         matrix = SourceAuthorityMatrixDraft.model_validate(authority.payload)
         known_roles = {rule.authority_role for rule in matrix.rules}
-        required_roles = {
-            item.authority_role for item in contract.field_requirements
-        } | {item.authority_role for item in contract.constraint_requirements}
+        required_roles = {item.authority_role for item in contract.field_requirements} | {
+            item.authority_role for item in contract.constraint_requirements
+        }
         missing_roles = sorted(required_roles - known_roles)
         if missing_roles:
             raise IntegrationRegistryError(
@@ -121,9 +117,7 @@ class IntegrationRegistryService:
         actor_id: str,
         approval_note: str,
     ) -> VersionedAssetRecord:
-        asset = self._required_asset(
-            tenant_id, "connector_manifest", connector_id, version
-        )
+        asset = self._required_asset(tenant_id, "connector_manifest", connector_id, version)
         report = self.store.get_active_integration_asset(
             tenant_id, "connector_conformance", connector_id
         )
@@ -191,9 +185,7 @@ class IntegrationRegistryService:
         actor_id: str,
         approval_note: str,
     ) -> VersionedAssetRecord:
-        asset = self._required_asset(
-            tenant_id, "constraint_definition", constraint_id, version
-        )
+        asset = self._required_asset(tenant_id, "constraint_definition", constraint_id, version)
         definition = ConstraintDefinitionDraft.model_validate(asset.payload)
         if not definition.compiler_ref or not definition.validator_ref:
             raise IntegrationRegistryError("constraint_compiler_and_validator_required")
@@ -215,7 +207,7 @@ class IntegrationRegistryService:
             check.status != "fail" for check in report.checks if check.blocking
         ):
             raise IntegrationRegistryError("writeback_certification_summary_is_inconsistent")
-        if report.passed and report.valid_until <= datetime.now(tz=timezone.utc):
+        if report.passed and report.valid_until <= datetime.now(tz=UTC):
             raise IntegrationRegistryError("writeback_certification_is_already_expired")
         expected_fingerprint = fingerprint_payload(
             {
@@ -254,7 +246,7 @@ class IntegrationRegistryService:
             raise IntegrationRegistryError("writeback_certification_id_mismatch")
         if not report.passed:
             raise IntegrationRegistryError("writeback_certification_failed")
-        if report.valid_until <= datetime.now(tz=timezone.utc):
+        if report.valid_until <= datetime.now(tz=UTC):
             raise IntegrationRegistryError("writeback_certification_expired")
         return report
 
@@ -265,9 +257,7 @@ class IntegrationRegistryService:
         asset_type: str | None = None,
         status: str | None = None,
     ) -> list[VersionedAssetRecord]:
-        return self.store.list_integration_assets(
-            tenant_id, asset_type=asset_type, status=status
-        )
+        return self.store.list_integration_assets(tenant_id, asset_type=asset_type, status=status)
 
     def _register(
         self,
@@ -340,9 +330,7 @@ class IntegrationRegistryService:
     def _required_asset(
         self, tenant_id: str, asset_type: str, asset_id: str, version: str
     ) -> VersionedAssetRecord:
-        asset = self.store.get_integration_asset(
-            tenant_id, asset_type, asset_id, version
-        )
+        asset = self.store.get_integration_asset(tenant_id, asset_type, asset_id, version)
         if asset is None:
             raise IntegrationRegistryError("integration_asset_not_found")
         return asset
@@ -352,9 +340,7 @@ class IntegrationRegistryService:
         winners: dict[tuple[str, str, str], int] = {}
         for rule in draft.rules:
             if rule.writeback_allowed and rule.conflict_policy != "block":
-                raise IntegrationRegistryError(
-                    "writeback_authority_requires_block_conflict_policy"
-                )
+                raise IntegrationRegistryError("writeback_authority_requires_block_conflict_policy")
             for field in rule.canonical_fields:
                 key = (rule.authority_role, rule.canonical_entity, field)
                 previous = winners.get(key)
@@ -363,7 +349,9 @@ class IntegrationRegistryService:
                         "authority_matrix_has_equal_priority_conflict:"
                         f"{rule.authority_role}.{rule.canonical_entity}.{field}"
                     )
-                winners[key] = min(previous, rule.priority) if previous is not None else rule.priority
+                winners[key] = (
+                    min(previous, rule.priority) if previous is not None else rule.priority
+                )
 
 
 def fingerprint_payload(payload: Any) -> str:

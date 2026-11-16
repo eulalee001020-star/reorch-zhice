@@ -26,6 +26,4 @@ class ExecutionResult(TimestampMixin, Base):
     )
     actual_metrics: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
-    __table_args__ = (
-        Index("ix_execution_results_decision_record_id", "decision_record_id"),
-    )
+    __table_args__ = (Index("ix_execution_results_decision_record_id", "decision_record_id"),)

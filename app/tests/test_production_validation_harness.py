@@ -28,10 +28,7 @@ def test_integrated_digital_twin_harness_passes_but_customer_gate_stays_open() -
     assert response.checks["anytime_hybrid_solver"]["status"] == "pass"
     assert response.checks["anytime_hybrid_solver"]["warm_start_verified"] is True
     assert response.checks["feasibility_restoration"]["status"] == "pass"
-    assert (
-        response.checks["feasibility_restoration"]["writeback_authorized"]
-        is False
-    )
+    assert response.checks["feasibility_restoration"]["writeback_authorized"] is False
     assert all(item["status"] == "pass" for item in response.checks.values())
     assert [item["operation_count"] for item in response.scale_results] == [
         1000,

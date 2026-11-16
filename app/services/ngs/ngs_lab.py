@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +31,6 @@ from app.models.ngs import (
     NgsSample,
 )
 
-
 REQUIRED_STAGES = (
     "receipt",
     "extraction",
@@ -43,12 +42,7 @@ REQUIRED_STAGES = (
     "report",
 )
 
-DEFAULT_NGS_EXPERIMENT_PACKAGE = (
-    REPO_ROOT
-    / "demo"
-    / "data"
-    / "ngs_lab_experiment_package.json"
-)
+DEFAULT_NGS_EXPERIMENT_PACKAGE = REPO_ROOT / "demo" / "data" / "ngs_lab_experiment_package.json"
 
 
 class NgsFeasibilityGateValidator:
@@ -136,12 +130,13 @@ class NgsProtectedPortfolioService:
             package = _validate_experiment_package(package_payload, source_name)
             source_path = source_name
         else:
-            path = Path(package_path) if package_path is not None else DEFAULT_NGS_EXPERIMENT_PACKAGE
+            path = (
+                Path(package_path) if package_path is not None else DEFAULT_NGS_EXPERIMENT_PACKAGE
+            )
             package = _load_experiment_package(path)
             source_path = str(path)
         case_results = [
-            self._run_replay_case(package, case, source_path)
-            for case in package.get("cases", [])
+            self._run_replay_case(package, case, source_path) for case in package.get("cases", [])
         ]
         return NgsBatchReplayResponse(
             package_id=str(package.get("package_id", "ngs-experiment-package")),
@@ -161,7 +156,9 @@ class NgsProtectedPortfolioService:
         _apply_snapshot_modifiers(snapshot, case.get("modifiers", {}))
         impact = _build_impact_report(snapshot)
         raw_candidates = _build_demo_candidates(snapshot)
-        _apply_candidate_metric_overrides(raw_candidates, case.get("candidate_metric_overrides", {}))
+        _apply_candidate_metric_overrides(
+            raw_candidates, case.get("candidate_metric_overrides", {})
+        )
 
         validator = NgsFeasibilityGateValidator()
         feasible: list[NgsRepairCandidate] = []
@@ -179,7 +176,9 @@ class NgsProtectedPortfolioService:
 
         feasible.sort(key=lambda item: item.soft_score, reverse=True)
         recommended = feasible[0] if feasible else None
-        agent_trace = _build_agent_trace(snapshot, impact, raw_candidates, feasible, rejected, recommended)
+        agent_trace = _build_agent_trace(
+            snapshot, impact, raw_candidates, feasible, rejected, recommended
+        )
         case_id = str(case.get("case_id", snapshot.snapshot_id))
         scenario_id = str(case.get("scenario_id", case_id))
         expected = case.get("expected", {})
@@ -324,9 +323,7 @@ def _replay_failure_reasons(
             f"rejected_count {len(response.rejected_candidates)} < expected {min_rejected}"
         )
     recommended_strategy = (
-        response.recommended_candidate.strategy_type
-        if response.recommended_candidate
-        else None
+        response.recommended_candidate.strategy_type if response.recommended_candidate else None
     )
     if expected_strategy and recommended_strategy != expected_strategy:
         reasons.append(
@@ -421,9 +418,7 @@ def _qc_route_issues(operations: list[NgsOperation]) -> list[NgsGateIssue]:
     issues: list[NgsGateIssue] = []
     downstream = {"pooling", "sequencing", "analysis", "report"}
     qc_by_sample = {
-        operation.sample_id: operation
-        for operation in operations
-        if operation.stage == "qc"
+        operation.sample_id: operation for operation in operations if operation.stage == "qc"
     }
     for operation in operations:
         qc = qc_by_sample.get(operation.sample_id)
@@ -535,7 +530,9 @@ def _hold_time_issues(
         extraction = by_sample_stage.get((sample.sample_id, "extraction"))
         library = by_sample_stage.get((sample.sample_id, "library"))
         if extraction and library:
-            hold_minutes = int((library.planned_start - extraction.planned_end).total_seconds() / 60)
+            hold_minutes = int(
+                (library.planned_start - extraction.planned_end).total_seconds() / 60
+            )
             if hold_minutes > sample.max_hold_minutes:
                 issues.append(
                     _issue(
@@ -697,12 +694,7 @@ def _zone_issues(
     resources_by_id = {resource.resource_id: resource for resource in resources}
     for operation in operations:
         resource = resources_by_id.get(operation.resource_id)
-        if (
-            operation.zone
-            and resource
-            and resource.zone
-            and operation.zone != resource.zone
-        ):
+        if operation.zone and resource and resource.zone and operation.zone != resource.zone:
             issues.append(
                 _issue(
                     "zone_compatibility",
@@ -732,7 +724,7 @@ def _traceability_issues(candidate: NgsRepairCandidate) -> list[NgsGateIssue]:
 
 
 def _build_demo_snapshot() -> NgsLabSnapshot:
-    base = datetime(2026, 5, 12, 8, 0, tzinfo=timezone.utc)
+    base = datetime(2026, 5, 12, 8, 0, tzinfo=UTC)
     samples = [
         NgsSample(
             sample_id="S-001",
@@ -770,13 +762,45 @@ def _build_demo_snapshot() -> NgsLabSnapshot:
         entities=_entities(samples),
         operations=_baseline_operations(base),
         resources=[
-            NgsResource(resource_id="EXTRACT-01", resource_type="instrument", capabilities=["extraction"], zone="pre_pcr"),
-            NgsResource(resource_id="LIB-01", resource_type="instrument", capabilities=["library"], zone="pre_pcr"),
-            NgsResource(resource_id="QC-01", resource_type="instrument", capabilities=["qc"], zone="pre_pcr"),
-            NgsResource(resource_id="POOL-01", resource_type="operator_pool", capabilities=["pooling"], zone="post_pcr"),
-            NgsResource(resource_id="SEQ-01", resource_type="sequencer", capabilities=["sequencing"], zone="post_pcr"),
-            NgsResource(resource_id="SEQ-02", resource_type="sequencer", capabilities=["sequencing"], zone="post_pcr"),
-            NgsResource(resource_id="BIOINFO-01", resource_type="compute", capabilities=["analysis"], zone=None),
+            NgsResource(
+                resource_id="EXTRACT-01",
+                resource_type="instrument",
+                capabilities=["extraction"],
+                zone="pre_pcr",
+            ),
+            NgsResource(
+                resource_id="LIB-01",
+                resource_type="instrument",
+                capabilities=["library"],
+                zone="pre_pcr",
+            ),
+            NgsResource(
+                resource_id="QC-01", resource_type="instrument", capabilities=["qc"], zone="pre_pcr"
+            ),
+            NgsResource(
+                resource_id="POOL-01",
+                resource_type="operator_pool",
+                capabilities=["pooling"],
+                zone="post_pcr",
+            ),
+            NgsResource(
+                resource_id="SEQ-01",
+                resource_type="sequencer",
+                capabilities=["sequencing"],
+                zone="post_pcr",
+            ),
+            NgsResource(
+                resource_id="SEQ-02",
+                resource_type="sequencer",
+                capabilities=["sequencing"],
+                zone="post_pcr",
+            ),
+            NgsResource(
+                resource_id="BIOINFO-01",
+                resource_type="compute",
+                capabilities=["analysis"],
+                zone=None,
+            ),
         ],
         resource_calendar=[
             NgsResourceWindow(
@@ -804,8 +828,25 @@ def _build_demo_snapshot() -> NgsLabSnapshot:
                 open_stability_hours=24,
             ),
         ],
-        pools=[NgsPool(pool_id="P-001", sample_ids=["S-001", "S-002", "S-003"], index_ids=["IDX-01", "IDX-02", "IDX-03"], max_members=4, run_id="RUN-001")],
-        runs=[NgsRun(run_id="RUN-001", resource_id="SEQ-01", pool_ids=["P-001"], capacity_pools=1, scheduled_start=base + timedelta(hours=9), scheduled_end=base + timedelta(hours=17))],
+        pools=[
+            NgsPool(
+                pool_id="P-001",
+                sample_ids=["S-001", "S-002", "S-003"],
+                index_ids=["IDX-01", "IDX-02", "IDX-03"],
+                max_members=4,
+                run_id="RUN-001",
+            )
+        ],
+        runs=[
+            NgsRun(
+                run_id="RUN-001",
+                resource_id="SEQ-01",
+                pool_ids=["P-001"],
+                capacity_pools=1,
+                scheduled_start=base + timedelta(hours=9),
+                scheduled_end=base + timedelta(hours=17),
+            )
+        ],
         events=[
             NgsLabEvent(
                 event_id="E-001",
@@ -900,7 +941,16 @@ def _entities(samples: list[NgsSample]) -> list[NgsEntity]:
     entities: list[NgsEntity] = []
     for sample in samples:
         previous: str | None = None
-        for entity_type in ("sample", "extract", "library", "pool", "run", "fastq", "analysis", "report"):
+        for entity_type in (
+            "sample",
+            "extract",
+            "library",
+            "pool",
+            "run",
+            "fastq",
+            "analysis",
+            "report",
+        ):
             entity_id = f"{sample.sample_id}-{entity_type}"
             entities.append(
                 NgsEntity(
@@ -1062,14 +1112,22 @@ def _stage_first_candidate(snapshot: NgsLabSnapshot) -> NgsRepairCandidate:
     _set_qc_pass(operations, "S-003")
     for operation in operations:
         if operation.stage == "analysis":
-            operation.planned_start = max(operation.planned_start, base + timedelta(hours=18, minutes=30))
-            operation.planned_end = operation.planned_start + timedelta(minutes=operation.duration_minutes)
+            operation.planned_start = max(
+                operation.planned_start, base + timedelta(hours=18, minutes=30)
+            )
+            operation.planned_end = operation.planned_start + timedelta(
+                minutes=operation.duration_minutes
+            )
         if operation.stage == "report":
             predecessor = next(
-                item for item in operations if item.sample_id == operation.sample_id and item.stage == "analysis"
+                item
+                for item in operations
+                if item.sample_id == operation.sample_id and item.stage == "analysis"
             )
             operation.planned_start = predecessor.planned_end + timedelta(minutes=10)
-            operation.planned_end = operation.planned_start + timedelta(minutes=operation.duration_minutes)
+            operation.planned_end = operation.planned_start + timedelta(
+                minutes=operation.duration_minutes
+            )
     pools = deepcopy(snapshot.pools)
     pools[0].run_id = "RUN-STAGE"
     runs = [
@@ -1129,10 +1187,14 @@ def _repair_operations(
             operation.planned_end -= timedelta(minutes=30)
         if by_sample[operation.sample_id].priority == "STAT" and operation.stage == "library":
             extraction = next(
-                item for item in operations if item.sample_id == operation.sample_id and item.stage == "extraction"
+                item
+                for item in operations
+                if item.sample_id == operation.sample_id and item.stage == "extraction"
             )
             operation.planned_start = extraction.planned_end + timedelta(minutes=30)
-            operation.planned_end = operation.planned_start + timedelta(minutes=operation.duration_minutes)
+            operation.planned_end = operation.planned_start + timedelta(
+                minutes=operation.duration_minutes
+            )
     _repair_precedence(operations)
     return operations
 
@@ -1145,7 +1207,9 @@ def _repair_precedence(operations: list[NgsOperation]) -> None:
         for operation in operations:
             if not operation.predecessor_ids:
                 continue
-            latest_end = max(by_id[pred].planned_end for pred in operation.predecessor_ids if pred in by_id)
+            latest_end = max(
+                by_id[pred].planned_end for pred in operation.predecessor_ids if pred in by_id
+            )
             min_start = latest_end + timedelta(minutes=10)
             if operation.planned_start < min_start:
                 duration = operation.duration_minutes
@@ -1231,9 +1295,8 @@ def _build_agent_trace(
         NgsAgentTraceStep(
             agent_name="NGS Incident Agent",
             input_refs=[f"event:{event.event_id}" for event in snapshot.events],
-            output_refs=[
-                f"sample:{sample_id}" for sample_id in impact.impacted_samples
-            ] + [f"run:{run_id}" for run_id in impact.impacted_runs],
+            output_refs=[f"sample:{sample_id}" for sample_id in impact.impacted_samples]
+            + [f"run:{run_id}" for run_id in impact.impacted_runs],
             decision=(
                 "标准化 urgent sample、sequencer downtime、QC borderline 和 reagent "
                 "open-stability 事件，并限定只使用 observed_at 已发生的信息。"

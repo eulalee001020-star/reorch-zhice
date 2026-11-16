@@ -16,7 +16,7 @@ Key responsibilities:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import httpx
@@ -26,8 +26,8 @@ from app.models.decision import DecisionRecord
 from app.models.enums import WritebackStatus
 from app.models.execution import ExecutionResult
 from app.models.solver import CandidatePlan
-from app.services.storage.persistence import persist_execution_result, persist_writeback_job
 from app.services.governance.writeback_policy import WritebackExecutionPermit, WritebackPolicy
+from app.services.storage.persistence import persist_execution_result, persist_writeback_job
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class WritebackReport:
         self.failed_instructions: list[dict] = []
         self.instructions: list[dict] = []
         self.status: WritebackStatus = WritebackStatus.SUCCESS
-        self.timestamp: str = datetime.now(tz=timezone.utc).isoformat()
+        self.timestamp: str = datetime.now(tz=UTC).isoformat()
 
 
 class MESAdapter:
@@ -158,9 +158,7 @@ class MESAdapter:
         instruction.status = "success"
         return True
 
-    async def get_execution_progress(
-        self, work_order_ids: list[str]
-    ) -> dict[str, dict]:
+    async def get_execution_progress(self, work_order_ids: list[str]) -> dict[str, dict]:
         """Get execution progress from MES for given work orders.
 
         Returns dict of work_order_id -> {completion_pct, actual_start, actual_end, ...}
@@ -188,7 +186,7 @@ class MESAdapter:
             except Exception as exc:
                 logger.warning("MES progress fetch failed, using local fallback: %s", exc)
 
-        now = datetime.now(tz=timezone.utc).isoformat()
+        now = datetime.now(tz=UTC).isoformat()
         return {
             wo_id: {
                 "completion_pct": 1.0,
@@ -321,9 +319,7 @@ class WritebackModule:
         self._writeback_statuses[incident_key] = report.status
 
         next_retry_at = (
-            datetime.now(tz=timezone.utc) + timedelta(minutes=1)
-            if report.failed_count > 0
-            else None
+            datetime.now(tz=UTC) + timedelta(minutes=1) if report.failed_count > 0 else None
         )
         await persist_writeback_job(
             incident_id=decision_record.incident_id,
@@ -333,9 +329,7 @@ class WritebackModule:
             status=report.status,
             request_payload={"instructions": report.instructions},
             response_payload=_report_payload(report),
-            error_message="; ".join(
-                str(item.get("error")) for item in report.failed_instructions
-            )
+            error_message="; ".join(str(item.get("error")) for item in report.failed_instructions)
             if report.failed_instructions
             else None,
             retry_count=0,
@@ -376,8 +370,7 @@ class WritebackModule:
         decision_record = self._decision_records.get(key)
         if decision_record is None:
             raise ValueError(
-                f"No decision record found for incident {incident_id}. "
-                f"Run writeback first."
+                f"No decision record found for incident {incident_id}. Run writeback first."
             )
 
         work_order_ids = self._get_affected_work_order_ids(key)
@@ -386,7 +379,7 @@ class WritebackModule:
         progress = await self._mes.get_execution_progress(work_order_ids)
 
         # Check for deviations (Req 8.6)
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         planned_times: dict[str, datetime] = {}
         actual_times: dict[str, datetime] = {}
         total_deviation = 0.0
@@ -396,7 +389,9 @@ class WritebackModule:
         for wo_id in work_order_ids:
             wo_progress = progress.get(wo_id, {})
             completion_pct = wo_progress.get("completion_pct", 0.0)
-            utilization_samples.append(float(wo_progress.get("resource_utilization", completion_pct)))
+            utilization_samples.append(
+                float(wo_progress.get("resource_utilization", completion_pct))
+            )
 
             # For MVP, use current time as both planned and actual
             planned_times[wo_id] = now
@@ -430,9 +425,7 @@ class WritebackModule:
             planned_completion_times=planned_times,
             actual_otd=1.0 - avg_deviation,
             actual_resource_utilization=round(
-                sum(utilization_samples) / len(utilization_samples)
-                if utilization_samples
-                else 0.0,
+                sum(utilization_samples) / len(utilization_samples) if utilization_samples else 0.0,
                 4,
             ),
             deviation_percentage=round(avg_deviation * 100, 2),

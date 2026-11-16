@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import FastAPI
@@ -34,9 +34,7 @@ def test_p0_sample_pack_is_shadow_ready_without_writeback() -> None:
 def test_unknown_machine_crosswalk_stops_before_snapshot() -> None:
     service = P0RealityHarnessService()
     request = service.load_sample_pack()
-    request.raw_machines = [
-        row for row in request.raw_machines if row["machine_id"] != "M-03"
-    ]
+    request.raw_machines = [row for row in request.raw_machines if row["machine_id"] != "M-03"]
 
     response = service.assess(request)
     codes = {issue.code for issue in response.readiness_report.blockers}
@@ -53,7 +51,7 @@ def test_timezone_warning_allows_replay_but_blocks_shadow() -> None:
     request = P0RealityHarnessRequest(
         source_system="timezone-test",
         workshop_id="WS-TZ",
-        planning_start=datetime(2026, 5, 14, 8, 0, tzinfo=timezone.utc),
+        planning_start=datetime(2026, 5, 14, 8, 0, tzinfo=UTC),
         raw_work_orders=[
             {
                 "work_order_id": "WO-TZ",
@@ -134,7 +132,7 @@ def test_repeated_warning_codes_are_capped_for_large_replay_packs() -> None:
         P0RealityHarnessRequest(
             source_system="large-warning-pack",
             workshop_id="WS-LARGE",
-            planning_start=datetime(2026, 7, 5, 8, 0, tzinfo=timezone.utc),
+            planning_start=datetime(2026, 7, 5, 8, 0, tzinfo=UTC),
             raw_work_orders=raw_work_orders,
             raw_operations=raw_operations,
             raw_machines=[

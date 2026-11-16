@@ -84,9 +84,7 @@ class OIDCTokenVerifier:
         if not tenant_id:
             raise OIDCVerificationError("oidc_tenant_claim_missing")
         user_id = str(claims.get("sub") or "")
-        username = str(
-            claims.get("preferred_username") or claims.get("email") or user_id
-        )
+        username = str(claims.get("preferred_username") or claims.get("email") or user_id)
         return OIDCPrincipal(
             user_id=user_id,
             username=username,

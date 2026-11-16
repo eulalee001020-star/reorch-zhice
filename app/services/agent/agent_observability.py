@@ -15,8 +15,7 @@ class AgentObservabilityService:
 
     def summarize(self, request: AgentTraceObserveRequest) -> AgentTraceCostSummary:
         profiles = {
-            (profile.provider, profile.model_name): profile
-            for profile in request.cost_profiles
+            (profile.provider, profile.model_name): profile for profile in request.cost_profiles
         }
         llm_steps = [step for step in request.trace if step.llm_used]
         deterministic_steps = [step for step in request.trace if not step.llm_used]
@@ -90,15 +89,23 @@ def _recommendations(
     if llm_count == 0:
         recommendations.append("Keep deterministic path as default; no LLM cost observed.")
     if llm_count > 0 and cache_hit_count == 0:
-        recommendations.append("Add cache for repeated explanations, routing, and rule-candidate prompts.")
+        recommendations.append(
+            "Add cache for repeated explanations, routing, and rule-candidate prompts."
+        )
     if fallback_count:
         recommendations.append("Review fallback reasons before increasing model autonomy.")
     high_latency = [step for step in trace if (step.latency_ms or 0) > 3000]
     if high_latency:
-        recommendations.append("Route low-risk tasks to smaller or local models when latency exceeds 3s.")
-    high_token = [step for step in trace if (step.input_tokens or 0) + (step.output_tokens or 0) > 4000]
+        recommendations.append(
+            "Route low-risk tasks to smaller or local models when latency exceeds 3s."
+        )
+    high_token = [
+        step for step in trace if (step.input_tokens or 0) + (step.output_tokens or 0) > 4000
+    ]
     if high_token:
-        recommendations.append("Trim prompt context and use source-ref retrieval instead of full-history prompts.")
+        recommendations.append(
+            "Trim prompt context and use source-ref retrieval instead of full-history prompts."
+        )
     if not recommendations:
         recommendations.append("Current trace is within configured cost and latency hygiene.")
     return recommendations

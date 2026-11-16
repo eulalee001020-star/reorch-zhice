@@ -65,9 +65,7 @@ class ConstraintCalibrationService:
         blocked = any(conflict.severity == "blocker" for conflict in conflicts)
         raw_data_patch = {
             "resource_capabilities": resource_capabilities,
-            "resource_calendar": [
-                window.model_dump(mode="json") for window in resource_calendar
-            ],
+            "resource_calendar": [window.model_dump(mode="json") for window in resource_calendar],
             "changeover_rules": [rule.model_dump(mode="json") for rule in changeovers],
             "freeze_windows": freeze_windows,
             "constraint_calibration_status": "blocked" if blocked else "compiled",

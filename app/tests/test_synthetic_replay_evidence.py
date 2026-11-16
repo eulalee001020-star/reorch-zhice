@@ -7,9 +7,7 @@ from app.services.evidence.synthetic_replay_evidence import SyntheticReplayEvide
 def test_synthetic_replay_evidence_scores_roi_proxy_but_blocks_solver_replay() -> None:
     scenario = SyntheticScenarioPack(
         scenario_id="CNC_AUTO_FJSP",
-        historical_anomaly_cases=[
-            {"incident_id": f"INC-{idx:02d}"} for idx in range(10)
-        ],
+        historical_anomaly_cases=[{"incident_id": f"INC-{idx:02d}"} for idx in range(10)],
         planner_decisions=[
             {
                 "incident_id": f"INC-{idx:02d}",
@@ -58,9 +56,7 @@ def test_synthetic_replay_evidence_scores_roi_proxy_but_blocks_solver_replay() -
 def test_synthetic_replay_evidence_blocks_when_decisions_are_missing() -> None:
     scenario = SyntheticScenarioPack(
         scenario_id="BAD",
-        historical_anomaly_cases=[
-            {"incident_id": f"INC-{idx:02d}"} for idx in range(10)
-        ],
+        historical_anomaly_cases=[{"incident_id": f"INC-{idx:02d}"} for idx in range(10)],
         execution_feedback=[{"incident_id": "INC-01"}],
     )
 

@@ -94,9 +94,7 @@ class ConstraintAssumptionRegistry:
     def all(self) -> list[ConstraintAssumptionSpec]:
         return list(self._specs.values())
 
-    def action_is_registered(
-        self, family: str, action_type: RecoveryActionType
-    ) -> bool:
+    def action_is_registered(self, family: str, action_type: RecoveryActionType) -> bool:
         spec = self.get(family)
         return spec is not None and action_type in spec.recovery_action_types
 

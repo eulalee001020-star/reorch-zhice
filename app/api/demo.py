@@ -148,7 +148,10 @@ async def reset_sandbox_demo(
                 step="incident_loaded",
                 status="completed",
                 actor="DemoSandbox",
-                evidence={"incident_id": str(incident.incident_id), "resource_id": incident.resource_id},
+                evidence={
+                    "incident_id": str(incident.incident_id),
+                    "resource_id": incident.resource_id,
+                },
             ),
         ],
         recommended_frontend_path=[

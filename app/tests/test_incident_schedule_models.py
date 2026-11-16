@@ -4,19 +4,19 @@ Covers JSON serialization/deserialization round-trip consistency,
 field defaults, validation errors, and nested structure integrity.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
 
-from app.models.incident import Incident, IncidentCreateRequest
 from app.models.enums import (
     IncidentSeverity,
     IncidentStatus,
     IncidentType,
     ReportSource,
 )
+from app.models.incident import Incident, IncidentCreateRequest
 from app.models.schedule import (
     GanttDiffPayload,
     Operation,
@@ -26,13 +26,12 @@ from app.models.schedule import (
     WorkOrder,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
-_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
+_DUE = datetime(2025, 1, 20, 18, 0, 0, tzinfo=UTC)
 
 
 def _make_incident(**overrides) -> Incident:
@@ -53,7 +52,7 @@ def _make_operation(**overrides) -> Operation:
         work_order_id="WO-001",
         resource_id="CNC-001",
         start_time=_NOW,
-        end_time=datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
+        end_time=datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC),
     )
     defaults.update(overrides)
     return Operation(**defaults)

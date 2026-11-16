@@ -1,6 +1,6 @@
 """CDC, queue, SSO, backup, and shadow runtime tests."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import jwt
@@ -16,14 +16,13 @@ from app.models.production_runtime import (
 )
 from app.services.data_gate.cdc_consistency import CdcConsistencyService
 from app.services.governance.oidc_auth import OIDCTokenVerifier, OIDCVerificationError
-from app.services.storage.operational_store import RelationalOperationalStore
-from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
-from app.services.storage.runtime_backup import RuntimeBackupService
-from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 from app.services.solver.solve_job_runtime import DurableSolveQueue, SolveJobWorker
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.storage.runtime_backup import RuntimeBackupService
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 
-
-NOW = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
 
 
 def _event(source: str, sequence: int, *, event_id: str | None = None) -> CdcEvent:
@@ -106,7 +105,7 @@ def test_durable_queue_idempotency_quota_lease_and_completion() -> None:
     claimed = queue.claim("worker-a", lease_seconds=3)
     assert queue.claim("worker-b", lease_seconds=3) is None
     assert claimed is not None
-    store.recover_expired_leases(datetime.now(tz=timezone.utc) + timedelta(seconds=5))
+    store.recover_expired_leases(datetime.now(tz=UTC) + timedelta(seconds=5))
     completed = SolveJobWorker(queue, worker_id="worker-b").run_once().job
 
     assert created is True
@@ -118,7 +117,7 @@ def test_durable_queue_idempotency_quota_lease_and_completion() -> None:
 
 def test_oidc_signature_audience_role_and_tenant_mapping() -> None:
     secret = "test-oidc-secret"
-    now = int(datetime.now(tz=timezone.utc).timestamp())
+    now = int(datetime.now(tz=UTC).timestamp())
     verifier = OIDCTokenVerifier(
         issuer="https://idp.example",
         audience="reorch",
@@ -142,9 +141,7 @@ def test_oidc_signature_audience_role_and_tenant_mapping() -> None:
     assert principal.role == "Planner"
     assert principal.tenant_id == "TENANT-1"
     with pytest.raises(OIDCVerificationError):
-        verifier.verify(
-            jwt.encode({**claims, "aud": "other"}, secret, algorithm="HS256")
-        )
+        verifier.verify(jwt.encode({**claims, "aud": "other"}, secret, algorithm="HS256"))
 
 
 def test_runtime_backup_restore_detects_tamper(tmp_path: Path) -> None:

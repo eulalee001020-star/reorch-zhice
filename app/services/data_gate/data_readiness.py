@@ -9,7 +9,6 @@ from app.models.planning import (
 )
 from app.models.schedule import ScheduleSnapshot
 
-
 _INITIAL_REQUIRED_INPUTS = [
     "resources.resource_id",
     "resources.capabilities",
@@ -45,9 +44,7 @@ class DataReadinessService:
 
         resource_ids = [r.resource_id for r in request.resources]
         resource_set = set(resource_ids)
-        capability_by_resource = {
-            r.resource_id: set(r.capabilities) for r in request.resources
-        }
+        capability_by_resource = {r.resource_id: set(r.capabilities) for r in request.resources}
 
         if not request.resources:
             issues.append(_blocker("missing_resources", "No resources provided."))
@@ -123,7 +120,9 @@ class DataReadinessService:
                             )
                         )
                 for rid in op.eligible_resource_ids:
-                    missing_caps = set(op.required_capabilities) - capability_by_resource.get(rid, set())
+                    missing_caps = set(op.required_capabilities) - capability_by_resource.get(
+                        rid, set()
+                    )
                     if missing_caps:
                         issues.append(
                             _warning(
@@ -138,7 +137,9 @@ class DataReadinessService:
                         )
                 if op.required_capabilities and op.eligible_resource_ids:
                     has_capable_resource = any(
-                        set(op.required_capabilities).issubset(capability_by_resource.get(rid, set()))
+                        set(op.required_capabilities).issubset(
+                            capability_by_resource.get(rid, set())
+                        )
                         for rid in op.eligible_resource_ids
                     )
                     if not has_capable_resource:
@@ -233,11 +234,7 @@ class DataReadinessService:
                     )
                 )
 
-        known_families = {
-            wo.product_family
-            for wo in request.work_orders
-            if wo.product_family
-        } | {
+        known_families = {wo.product_family for wo in request.work_orders if wo.product_family} | {
             op.product_family
             for wo in request.work_orders
             for op in wo.operations
@@ -253,7 +250,10 @@ class DataReadinessService:
                         rule.resource_id,
                     )
                 )
-            if rule.from_product_family not in known_families or rule.to_product_family not in known_families:
+            if (
+                rule.from_product_family not in known_families
+                or rule.to_product_family not in known_families
+            ):
                 issues.append(
                     _warning(
                         "changeover_family_not_in_orders",
@@ -267,7 +267,9 @@ class DataReadinessService:
         issues: list[ReadinessIssue] = []
 
         if not snapshot.work_orders:
-            issues.append(_blocker("snapshot_has_no_work_orders", "Schedule snapshot has no work orders."))
+            issues.append(
+                _blocker("snapshot_has_no_work_orders", "Schedule snapshot has no work orders.")
+            )
 
         operation_ids: list[str] = []
         for wo in snapshot.work_orders:
@@ -365,7 +367,7 @@ def _find_cycle_nodes(edges: dict[str, list[str]]) -> set[str]:
             return
         if node in visiting:
             if node in stack:
-                cycle_nodes.update(stack[stack.index(node):])
+                cycle_nodes.update(stack[stack.index(node) :])
             return
         visiting.add(node)
         stack.append(node)
@@ -397,7 +399,9 @@ def _build_report(
         codes = sorted({issue.code for issue in blockers})
         recommendations.append(f"Resolve blocking data issues first: {', '.join(codes)}.")
     if warnings:
-        recommendations.append("Warnings can be accepted for PoC, but they reduce plan explainability and ROI confidence.")
+        recommendations.append(
+            "Warnings can be accepted for PoC, but they reduce plan explainability and ROI confidence."
+        )
     if not blockers:
         recommendations.append("Data is ready for a PoC planning run.")
 

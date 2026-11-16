@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PACK_ROOT = ROOT / "datasets" / "public_reliability_packs"
 
@@ -41,7 +40,11 @@ def validate_pack(pack: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
     if not manifest_path.exists() or not quality_path.exists():
-        return {"pack_id": pack.name, "status": "fail", "errors": ["missing manifest or quality report"]}
+        return {
+            "pack_id": pack.name,
+            "status": "fail",
+            "errors": ["missing manifest or quality report"],
+        }
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     quality = json.loads(quality_path.read_text(encoding="utf-8"))
     for entry in manifest["files"]:
@@ -55,16 +58,20 @@ def validate_pack(pack: Path) -> dict[str, Any]:
         errors.append("source acquisition incomplete")
         gate = quality.get("evidence_gate", {})
         forbidden_true = [
-            key for key in (
+            key
+            for key in (
                 "real_mes_validated",
                 "real_shadow_validated",
                 "real_shadow_2_to_4_weeks_validated",
                 "real_roi_validated",
                 "production_writeback_authorized",
-            ) if gate.get(key) is True
+            )
+            if gate.get(key) is True
         ]
         if forbidden_true:
-            errors.append(f"blocked source has forbidden positive claims: {','.join(forbidden_true)}")
+            errors.append(
+                f"blocked source has forbidden positive claims: {','.join(forbidden_true)}"
+            )
         twin = pack / "digital_twin"
         expected_twin = {
             "operations_10k.csv": 10_000,
@@ -78,7 +85,9 @@ def validate_pack(pack: Path) -> dict[str, Any]:
                 continue
             actual_count = len(read_csv(path))
             if actual_count != expected_count:
-                errors.append(f"digital-twin row count mismatch: {name}={actual_count}, expected={expected_count}")
+                errors.append(
+                    f"digital-twin row count mismatch: {name}={actual_count}, expected={expected_count}"
+                )
         operations = read_csv(twin / "operations_10k.csv")
         work_orders = read_csv(twin / "work_orders_10k.csv")
         receipts = read_csv(twin / "mes_terminal_receipts_10k.csv")
@@ -115,14 +124,20 @@ def validate_pack(pack: Path) -> dict[str, Any]:
             admission_gate = json.loads(gate_path.read_text(encoding="utf-8"))
             if len(cases) != 30:
                 errors.append(f"admission rehearsal case count mismatch: {len(cases)}")
-            if any(case.get("provenance") != "synthetic_customer_admission_rehearsal" for case in cases):
+            if any(
+                case.get("provenance") != "synthetic_customer_admission_rehearsal" for case in cases
+            ):
                 errors.append("admission rehearsal provenance violation")
             if admission_gate.get("real_customer_case_count") != 0:
                 errors.append("synthetic rehearsal incorrectly reports real customer cases")
             if admission_gate.get("customer_admission_ready") is not False:
                 errors.append("synthetic rehearsal incorrectly opened customer gate")
-        warnings.append("digital twin passed engineering checks but official MES acquisition remains blocked")
-        warnings.append("30 synthetic admission cases passed workflow rehearsal; real customer case count remains zero")
+        warnings.append(
+            "digital twin passed engineering checks but official MES acquisition remains blocked"
+        )
+        warnings.append(
+            "30 synthetic admission cases passed workflow rehearsal; real customer case count remains zero"
+        )
     else:
         canonical = pack / "canonical"
         work_orders = read_csv(canonical / "work_orders.csv")
@@ -148,7 +163,9 @@ def validate_pack(pack: Path) -> dict[str, Any]:
         if not work_orders or not operations or not resources:
             errors.append("canonical core table is empty")
         scenario_path = pack / "scenarios" / "incidents.json"
-        scenarios = json.loads(scenario_path.read_text(encoding="utf-8")) if scenario_path.exists() else []
+        scenarios = (
+            json.loads(scenario_path.read_text(encoding="utf-8")) if scenario_path.exists() else []
+        )
         if not scenarios:
             errors.append("no reliability scenarios")
         if any("provenance" not in scenario for scenario in scenarios):
@@ -175,8 +192,14 @@ def validate_pack(pack: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pack", default="all")
-    parser.add_argument("--allow-blocked", action="store_true", help="Return success when only acquisition-blocked packs fail")
-    parser.add_argument("--output", type=Path, default=ROOT / "output" / "public_reliability_pack_report.json")
+    parser.add_argument(
+        "--allow-blocked",
+        action="store_true",
+        help="Return success when only acquisition-blocked packs fail",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=ROOT / "output" / "public_reliability_pack_report.json"
+    )
     args = parser.parse_args()
     packs = sorted(path for path in PACK_ROOT.iterdir() if path.is_dir())
     if args.pack != "all":
@@ -205,7 +228,11 @@ def main() -> int:
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     failures = [result for result in results if result["status"] == "fail"]
     if args.allow_blocked:
-        failures = [result for result in failures if result.get("acquisition_status") != "acquisition_blocked"]
+        failures = [
+            result
+            for result in failures
+            if result.get("acquisition_status") != "acquisition_blocked"
+        ]
     return 1 if failures else 0
 
 

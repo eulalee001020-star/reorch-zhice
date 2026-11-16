@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,14 +12,12 @@ from app.services.storage.operational_store import RelationalOperationalStore
 
 
 class RuntimeBackupService:
-    def create_backup(
-        self, store: RelationalOperationalStore, path: Path
-    ) -> dict[str, Any]:
+    def create_backup(self, store: RelationalOperationalStore, path: Path) -> dict[str, Any]:
         state = store.export_runtime_state()
         state_hash = _fingerprint(state)
         manifest = {
             "schema_version": "runtime-backup-v1",
-            "created_at": datetime.now(tz=timezone.utc).isoformat(),
+            "created_at": datetime.now(tz=UTC).isoformat(),
             "state_sha256": state_hash,
             "table_counts": {name: len(rows) for name, rows in state.items()},
         }
@@ -54,9 +52,7 @@ class RuntimeBackupService:
         return {
             **manifest,
             "restore_verified": True,
-            "restored_table_counts": {
-                name: len(rows) for name, rows in restored.items()
-            },
+            "restored_table_counts": {name: len(rows) for name, rows in restored.items()},
         }
 
     def drill(

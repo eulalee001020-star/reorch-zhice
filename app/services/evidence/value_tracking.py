@@ -27,7 +27,8 @@ class ValueTrackingService:
         )
 
         planner_time_savings = (
-            saved_decision_minutes / 60.0
+            saved_decision_minutes
+            / 60.0
             * value_input.planner_hourly_cost
             * max(1, value_input.incident_count)
         )
@@ -37,9 +38,7 @@ class ValueTrackingService:
             * max(1, value_input.incident_count)
         )
         changeover_savings = (
-            reduced_changeovers
-            * value_input.changeover_cost
-            * max(1, value_input.incident_count)
+            reduced_changeovers * value_input.changeover_cost * max(1, value_input.incident_count)
         )
         overtime_savings = (
             reduced_overtime_hours
@@ -47,18 +46,17 @@ class ValueTrackingService:
             * max(1, value_input.incident_count)
         )
 
-        estimated = (
-            planner_time_savings
-            + tardiness_savings
-            + changeover_savings
-            + overtime_savings
-        )
+        estimated = planner_time_savings + tardiness_savings + changeover_savings + overtime_savings
 
         commentary = (
             "Value is currently driven by decision-time reduction only; "
             "add customer-specific delay, changeover, and overtime costs for renewal-grade ROI."
         )
-        if value_input.tardiness_cost_per_minute or value_input.changeover_cost or value_input.overtime_hourly_cost:
+        if (
+            value_input.tardiness_cost_per_minute
+            or value_input.changeover_cost
+            or value_input.overtime_hourly_cost
+        ):
             commentary = (
                 "Estimated savings include customer-specific delay, changeover, "
                 "overtime, and planner-time assumptions. Validate with finance before renewal pricing."

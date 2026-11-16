@@ -68,9 +68,7 @@ def _request() -> Level23DigitalTwinReplayRequest:
         resources=[
             {"resource_id": "CNC-01", "resource_group": "CNC", "source_basis": "digital_twin"}
         ],
-        work_orders=[
-            {"work_order_id": "WO-1", "due_time": "2026-07-06 20:00:00"}
-        ],
+        work_orders=[{"work_order_id": "WO-1", "due_time": "2026-07-06 20:00:00"}],
         operations=[
             {
                 "operation_id": "OP-1",

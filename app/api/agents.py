@@ -7,7 +7,7 @@ impact calculation, solving, evaluation, confirmation, and writeback.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -31,9 +31,9 @@ from app.models.agent import (
     RuleCandidateOutput,
     RuleCandidatePublicationRecord,
     RuleCandidatePublishRequest,
-    RuleCandidateRequest,
     RuleCandidateReplayRequest,
     RuleCandidateReplayResult,
+    RuleCandidateRequest,
     RuleCandidateReviewRecord,
     RuleCandidateReviewRequest,
 )
@@ -48,8 +48,8 @@ from app.services.agent.agent_workflow import (
     PreferenceLearningAgent,
     RuleCandidateAgent,
 )
-from app.services.storage.persistence import persist_audit_log, record_entity_version
 from app.services.evidence.rule_candidate_replay import RuleCandidateReplayService
+from app.services.storage.persistence import persist_audit_log, record_entity_version
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 _rule_candidate_review_store: dict[str, RuleCandidateReviewRecord] = {}
@@ -195,8 +195,7 @@ async def list_rule_candidates(
     response_model=RuleCandidateReviewRecord,
     summary="人工审核规则候选",
     description=(
-        "计划员可将候选规则送入 replay，或填写拒绝原因。"
-        "被拒绝的候选不会进入 replay 或发布。"
+        "计划员可将候选规则送入 replay，或填写拒绝原因。被拒绝的候选不会进入 replay 或发布。"
     ),
 )
 async def review_rule_candidate(
@@ -228,7 +227,7 @@ async def review_rule_candidate(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="action must be approve_for_replay or reject.",
         )
-    record.updated_at = datetime.now(tz=timezone.utc)
+    record.updated_at = datetime.now(tz=UTC)
     await _record_rule_candidate_version(record, current_user.user_id)
     return record
 
@@ -263,7 +262,7 @@ async def replay_rule_candidate(
     record.replay_result = replay_result
     record.status = "replay_passed" if replay_result.pass_replay else "replay_failed"
     record.candidate.status = record.status
-    record.updated_at = datetime.now(tz=timezone.utc)
+    record.updated_at = datetime.now(tz=UTC)
     await _record_rule_candidate_version(record, current_user.user_id)
     return record
 
@@ -296,7 +295,7 @@ async def publish_rule_candidate(
     )
     record.status = "published_readonly"
     record.candidate.status = record.status
-    record.updated_at = datetime.now(tz=timezone.utc)
+    record.updated_at = datetime.now(tz=UTC)
     await _record_rule_candidate_version(record, current_user.user_id)
     return record
 
@@ -423,7 +422,7 @@ def _upsert_rule_candidate_review_record(
     candidate,
 ) -> RuleCandidateReviewRecord:
     record = _rule_candidate_review_store.get(candidate.candidate_id)
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     if record is None:
         record = RuleCandidateReviewRecord(candidate=candidate, updated_at=now)
         _rule_candidate_review_store[candidate.candidate_id] = record

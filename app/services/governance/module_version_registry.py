@@ -13,8 +13,8 @@ Key capabilities (Req 22.4, 22.5, 22.6, 22.7, 26.1, 26.2):
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -63,9 +63,7 @@ class ModuleVersionRegistry:
     NEIGHBORHOOD_SELECTOR = "Neighborhood_Selector"
     REPAIR_POLICY_ADVISOR = "Repair_Policy_Advisor"
 
-    _KNOWN_MODULES = frozenset(
-        {RULE_SELECTOR, NEIGHBORHOOD_SELECTOR, REPAIR_POLICY_ADVISOR}
-    )
+    _KNOWN_MODULES = frozenset({RULE_SELECTOR, NEIGHBORHOOD_SELECTOR, REPAIR_POLICY_ADVISOR})
 
     def __init__(
         self,
@@ -79,9 +77,7 @@ class ModuleVersionRegistry:
         # module_name → fallback version string
         self._fallback_versions: dict[str, str] = fallback_versions or {}
         # scenario configs for version resolution
-        self._scenario_configs: list[ScenarioVersionConfig] = (
-            scenario_configs or []
-        )
+        self._scenario_configs: list[ScenarioVersionConfig] = scenario_configs or []
 
     # ── Version management ──────────────────────────────────────────
 
@@ -90,7 +86,9 @@ class ModuleVersionRegistry:
         self._versions[module_name] = version
         self._history.setdefault(module_name, [])
         logger.info(
-            "Module registered: %s v%s", module_name, version,
+            "Module registered: %s v%s",
+            module_name,
+            version,
         )
 
     def get_version(self, module_name: str) -> str:
@@ -113,7 +111,9 @@ class ModuleVersionRegistry:
         self._versions[module_name] = version
         logger.info(
             "Module version updated: %s %s → %s",
-            module_name, old, version,
+            module_name,
+            old,
+            version,
         )
 
     def list_versions(self) -> dict[str, str]:
@@ -123,7 +123,9 @@ class ModuleVersionRegistry:
     # ── Scenario-based version resolution (Req 22.4) ────────────────
 
     def resolve_version(
-        self, module_name: str, scenario_key: str | None = None,
+        self,
+        module_name: str,
+        scenario_key: str | None = None,
     ) -> str:
         """Resolve the version to use for *module_name* in *scenario_key*.
 
@@ -136,10 +138,7 @@ class ModuleVersionRegistry:
         """
         if scenario_key:
             for cfg in self._scenario_configs:
-                if (
-                    cfg.module_name == module_name
-                    and cfg.scenario_key == scenario_key
-                ):
+                if cfg.module_name == module_name and cfg.scenario_key == scenario_key:
                     return cfg.version
 
         if module_name in self._versions:
@@ -148,9 +147,7 @@ class ModuleVersionRegistry:
         if module_name in self._fallback_versions:
             return self._fallback_versions[module_name]
 
-        raise KeyError(
-            f"Cannot resolve version for module '{module_name}'"
-        )
+        raise KeyError(f"Cannot resolve version for module '{module_name}'")
 
     # ── Invocation recording (Req 22.6, 26.2) ──────────────────────
 
@@ -166,7 +163,7 @@ class ModuleVersionRegistry:
         timestamp: datetime | None = None,
     ) -> ModuleInvocationRecord:
         """Persist an invocation record and return it."""
-        ts = timestamp or datetime.now(tz=timezone.utc)
+        ts = timestamp or datetime.now(tz=UTC)
         record = ModuleInvocationRecord(
             module_name=module_name,
             version=version,
@@ -180,12 +177,17 @@ class ModuleVersionRegistry:
         self._history.setdefault(module_name, []).append(record)
         logger.info(
             "Invocation recorded: %s v%s success=%s degraded=%s",
-            module_name, version, success, degraded,
+            module_name,
+            version,
+            success,
+            degraded,
         )
         return record
 
     def get_invocation_history(
-        self, module_name: str, limit: int | None = None,
+        self,
+        module_name: str,
+        limit: int | None = None,
     ) -> list[ModuleInvocationRecord]:
         """Return invocation records for *module_name*, newest first.
 
@@ -199,7 +201,9 @@ class ModuleVersionRegistry:
     # ── Fallback / degradation (Req 22.7) ───────────────────────────
 
     def set_fallback_version(
-        self, module_name: str, version: str,
+        self,
+        module_name: str,
+        version: str,
     ) -> None:
         """Define or update the fallback version for *module_name*."""
         self._fallback_versions[module_name] = version
@@ -224,9 +228,7 @@ class ModuleVersionRegistry:
         """
         fallback = self._fallback_versions.get(module_name)
         if fallback is None:
-            raise RuntimeError(
-                f"No fallback version configured for module '{module_name}'"
-            )
+            raise RuntimeError(f"No fallback version configured for module '{module_name}'")
 
         original_version = self._versions.get(module_name, "unknown")
         reason = (

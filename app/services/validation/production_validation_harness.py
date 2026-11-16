@@ -8,7 +8,7 @@ import json
 import math
 import tempfile
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -34,22 +34,22 @@ from app.models.production_runtime import (
     TenantSolveQuota,
 )
 from app.services.data_gate.cdc_consistency import CdcConsistencyService
+from app.services.data_gate.integration_control_validation import (
+    IntegrationControlValidationHarness,
+)
+from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
+from app.services.evidence.rule_candidate_replay import RuleCandidateReplayService
+from app.services.governance.oidc_auth import OIDCTokenVerifier, OIDCVerificationError
 from app.services.solver.decomposition_executor import DecompositionExecutor
 from app.services.solver.feasibility_restoration import (
     FeasibilityRestorationEngine,
     conservative_default_recovery_policy,
 )
-from app.services.data_gate.integration_control_validation import (
-    IntegrationControlValidationHarness,
-)
-from app.services.governance.oidc_auth import OIDCTokenVerifier, OIDCVerificationError
-from app.services.storage.operational_store import RelationalOperationalStore
-from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
-from app.services.evidence.recovery_evidence_ledger import RecoveryEvidenceLedgerService
-from app.services.evidence.rule_candidate_replay import RuleCandidateReplayService
-from app.services.storage.runtime_backup import RuntimeBackupService
-from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 from app.services.solver.solve_job_runtime import DurableSolveQueue, SolveJobWorker
+from app.services.storage.operational_store import RelationalOperationalStore
+from app.services.storage.runtime_backup import RuntimeBackupService
+from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
+from app.services.validation.shadow_execution import ReadOnlyShadowRunner
 
 
 class ProductionValidationHarness:
@@ -62,9 +62,7 @@ class ProductionValidationHarness:
         factory = ProductionDigitalTwinFactory()
         executor = DecompositionExecutor()
 
-        scale_results = self._run_scale_gate(
-            factory, executor, repetitions=scale_repetitions
-        )
+        scale_results = self._run_scale_gate(factory, executor, repetitions=scale_repetitions)
         checks["decomposition_and_joint_optimization"] = {
             "status": "pass"
             if all(item["all_runs_feasible"] for item in scale_results)
@@ -92,25 +90,19 @@ class ProductionValidationHarness:
                 str(item["operation_count"]): item["p95_first_feasible_ms"]
                 for item in scale_results
             },
-            "warm_start_verified": all(
-                item["warm_start_verified"] for item in scale_results
-            ),
+            "warm_start_verified": all(item["warm_start_verified"] for item in scale_results),
             "all_incumbents_validated": all(
                 item["all_incumbents_validated"] for item in scale_results
             ),
             "pareto_front_verified": all(
                 item["min_pareto_front_size"] >= 1 for item in scale_results
             ),
-            "alns_repair_verified": all(
-                item["alns_attempt_count"] > 0 for item in scale_results
-            ),
+            "alns_repair_verified": all(item["alns_attempt_count"] > 0 for item in scale_results),
             "first_feasible_target_ms": 2000,
         }
 
         checks["operational_constraints"] = self._run_constraint_gate(factory, executor)
-        checks["feasibility_restoration"] = self._run_feasibility_restoration_gate(
-            factory
-        )
+        checks["feasibility_restoration"] = self._run_feasibility_restoration_gate(factory)
 
         with tempfile.TemporaryDirectory(prefix="reorch-production-validation-") as temp_dir:
             database_url = f"sqlite+pysqlite:///{Path(temp_dir) / 'runtime.db'}"
@@ -118,9 +110,7 @@ class ProductionValidationHarness:
             checks["cdc_asof_consistency"] = self._run_cdc_gate(store)
             checks["durable_queue_quota_ha"] = self._run_queue_gate(store, factory, executor)
             checks["sso_rbac"] = self._run_sso_gate()
-            checks["shadow_execution_closure"] = self._run_shadow_gate(
-                store, factory
-            )
+            checks["shadow_execution_closure"] = self._run_shadow_gate(store, factory)
             checks["rule_candidate_replay"] = self._run_rule_replay_gate()
             integration_control = IntegrationControlValidationHarness(store).run(
                 tenant_id="digital-twin",
@@ -153,9 +143,7 @@ class ProductionValidationHarness:
                 and not ledger.customer_evidence_gate_passed
                 else "fail",
                 "case_count": ledger.case_count,
-                "incident_types": sorted(
-                    {case.incident.incident_type for case in ledger.cases}
-                ),
+                "incident_types": sorted({case.incident.incident_type for case in ledger.cases}),
                 "customer_evidence_gate_passed": ledger.customer_evidence_gate_passed,
                 "blockers": ledger.blockers,
                 "aggregate_roi": ledger.aggregate_roi,
@@ -225,18 +213,10 @@ class ProductionValidationHarness:
                 for subproblem in response.subproblem_results:
                     metadata = subproblem.solver_metadata
                     if metadata.get("time_to_first_feasible_ms") is not None:
-                        first_feasible.append(
-                            float(metadata["time_to_first_feasible_ms"])
-                        )
-                    validated_incumbents.append(
-                        bool(metadata.get("validated_incumbent"))
-                    )
-                    warm_start_hints.append(
-                        bool(metadata.get("cp_sat_hint_applied"))
-                    )
-                    pareto_front_sizes.append(
-                        int(metadata.get("pareto_front_size", 0))
-                    )
+                        first_feasible.append(float(metadata["time_to_first_feasible_ms"]))
+                    validated_incumbents.append(bool(metadata.get("validated_incumbent")))
+                    warm_start_hints.append(bool(metadata.get("cp_sat_hint_applied")))
+                    pareto_front_sizes.append(int(metadata.get("pareto_front_size", 0)))
                     alns_attempts.append(int(metadata.get("alns_attempts", 0)))
             ordered = sorted(elapsed)
             p95_index = max(0, math.ceil(0.95 * len(ordered)) - 1)
@@ -263,11 +243,8 @@ class ProductionValidationHarness:
                     else float("inf"),
                     "all_incumbents_validated": bool(validated_incumbents)
                     and all(validated_incumbents),
-                    "warm_start_verified": bool(warm_start_hints)
-                    and all(warm_start_hints),
-                    "min_pareto_front_size": min(pareto_front_sizes)
-                    if pareto_front_sizes
-                    else 0,
+                    "warm_start_verified": bool(warm_start_hints) and all(warm_start_hints),
+                    "min_pareto_front_size": min(pareto_front_sizes) if pareto_front_sizes else 0,
                     "alns_attempt_count": sum(alns_attempts),
                     "evidence_fingerprints": fingerprints,
                     "evidence_scope": "digital_twin",
@@ -382,9 +359,7 @@ class ProductionValidationHarness:
         blocked = executor.execute(
             request.model_copy(
                 update={
-                    "snapshot": snapshot.model_copy(
-                        update={"raw_data": blocked_raw}, deep=True
-                    )
+                    "snapshot": snapshot.model_copy(update={"raw_data": blocked_raw}, deep=True)
                 },
                 deep=True,
             )
@@ -473,9 +448,7 @@ class ProductionValidationHarness:
             )
             for role in deadline_action.required_approval_roles
         ]
-        approved = engine.evaluate(
-            request.model_copy(update={"approvals": approvals})
-        )
+        approved = engine.evaluate(request.model_copy(update={"approvals": approvals}))
 
         blocked_raw = copy.deepcopy(raw)
         blocked_raw["qms_release_gates"] = [
@@ -486,9 +459,7 @@ class ProductionValidationHarness:
                 "source_ref": "digital-twin:qms:gate",
             }
         ]
-        blocked_snapshot = snapshot.model_copy(
-            update={"raw_data": blocked_raw}, deep=True
-        )
+        blocked_snapshot = snapshot.model_copy(update={"raw_data": blocked_raw}, deep=True)
         blocked = engine.evaluate(
             request.model_copy(
                 update={
@@ -501,22 +472,17 @@ class ProductionValidationHarness:
             )
         )
         certificate = (
-            approved.recovery_packs[0].feasibility_certificate
-            if approved.recovery_packs
-            else None
+            approved.recovery_packs[0].feasibility_certificate if approved.recovery_packs else None
         )
         passed = (
             pending.status == "pending_approval"
-            and all(
-                pack.executable_schedule is None for pack in pending.recovery_packs
-            )
+            and all(pack.executable_schedule is None for pack in pending.recovery_packs)
             and approved.status == "recovery_available"
             and certificate is not None
             and certificate.hard_violation_count == 0
             and not certificate.writeback_authorized
             and blocked.status == "blocked"
-            and blocked.classification.failure_class
-            == "data_or_governance_blocked"
+            and blocked.classification.failure_class == "data_or_governance_blocked"
             and not blocked.recovery_packs
         )
         return {
@@ -528,9 +494,7 @@ class ProductionValidationHarness:
             "approved_hard_violation_count": (
                 certificate.hard_violation_count if certificate else None
             ),
-            "writeback_authorized": (
-                certificate.writeback_authorized if certificate else None
-            ),
+            "writeback_authorized": (certificate.writeback_authorized if certificate else None),
             "qms_block_status": blocked.status,
             "qms_relaxation_search_entered": bool(blocked.recovery_packs),
         }
@@ -538,7 +502,7 @@ class ProductionValidationHarness:
     @staticmethod
     def _run_cdc_gate(store: RelationalOperationalStore) -> dict[str, Any]:
         service = CdcConsistencyService(store)
-        as_of = datetime(2026, 7, 12, 8, 0, tzinfo=timezone.utc)
+        as_of = datetime(2026, 7, 12, 8, 0, tzinfo=UTC)
 
         def event(source: str, sequence: int) -> CdcEvent:
             return CdcEvent(
@@ -588,9 +552,7 @@ class ProductionValidationHarness:
                 max_operations_per_job=1000,
             ),
         )
-        solve_request = factory.build_solve_request(
-            200, tenant_id="digital-twin", incident_count=5
-        )
+        solve_request = factory.build_solve_request(200, tenant_id="digital-twin", incident_count=5)
         submit = SolveJobSubmitRequest(
             tenant_id="digital-twin",
             idempotency_key="validation-job-1",
@@ -615,16 +577,13 @@ class ProductionValidationHarness:
                 item.subproblem_id,
                 item.model_dump(mode="json"),
             )
-        recovered = store.recover_expired_leases(
-            datetime.now(tz=timezone.utc) + timedelta(seconds=5)
-        )
+        recovered = store.recover_expired_leases(datetime.now(tz=UTC) + timedelta(seconds=5))
         resumed = SolveJobWorker(queue, worker_id="worker-b").run_once().job
         reused = bool(
             resumed
             and resumed.result
             and any(
-                item.status == "checkpoint_reused"
-                for item in resumed.result.subproblem_results
+                item.status == "checkpoint_reused" for item in resumed.result.subproblem_results
             )
         )
         cancelled_job, _ = queue.submit(
@@ -683,16 +642,12 @@ class ProductionValidationHarness:
         principal = verifier.verify(token)
         rejected = False
         try:
-            verifier.verify(
-                jwt.encode({**claims, "aud": "wrong"}, secret, algorithm="HS256")
-            )
+            verifier.verify(jwt.encode({**claims, "aud": "wrong"}, secret, algorithm="HS256"))
         except OIDCVerificationError:
             rejected = True
         return {
             "status": "pass"
-            if principal.role == "Planner"
-            and principal.tenant_id == "digital-twin"
-            and rejected
+            if principal.role == "Planner" and principal.tenant_id == "digital-twin" and rejected
             else "fail",
             "signature_verified": True,
             "issuer_audience_verified": rejected,
@@ -704,9 +659,7 @@ class ProductionValidationHarness:
     @staticmethod
     def _run_shadow_gate(store, factory) -> dict[str, Any]:
         runner = ReadOnlyShadowRunner(store)
-        solve_request = factory.build_solve_request(
-            120, tenant_id="digital-twin", incident_count=3
-        )
+        solve_request = factory.build_solve_request(120, tenant_id="digital-twin", incident_count=3)
         shadow = runner.run(
             ReadOnlyShadowRunRequest(
                 tenant_id="digital-twin",
@@ -805,9 +758,7 @@ class ProductionValidationHarness:
         service = RuleCandidateReplayService()
         result = service.run(
             candidate,
-            RuleCandidateReplayRequest(
-                scenario_set="digital_twin_rule_gate", scenarios=scenarios
-            ),
+            RuleCandidateReplayRequest(scenario_set="digital_twin_rule_gate", scenarios=scenarios),
         )
         count_only = service.run(
             candidate,
@@ -824,9 +775,7 @@ class ProductionValidationHarness:
             "executed_scenario_count": result.scenario_count,
             "passed_scenario_count": result.metrics["passed_scenario_count"],
             "count_only_request_passed": count_only.pass_replay,
-            "result_fingerprints": [
-                item.result_fingerprint for item in result.scenario_results
-            ],
+            "result_fingerprints": [item.result_fingerprint for item in result.scenario_results],
         }
 
 

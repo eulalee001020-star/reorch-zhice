@@ -19,12 +19,11 @@ def test_public_large_fjsp_pack_is_replay_ready_not_production_ready() -> None:
     assert "production_writeback" in response.blocked_actions
     assert "unattended_autonomous_dispatch" in response.blocked_actions
     assert any(
-        "rerun_on_customer_readonly_desensitized_or_shadow_data" == blocker
+        blocker == "rerun_on_customer_readonly_desensitized_or_shadow_data"
         for blocker in response.production_blockers
     )
     assert (
-        "replace_public_benchmark_with_customer_validated_evidence"
-        in response.production_blockers
+        "replace_public_benchmark_with_customer_validated_evidence" in response.production_blockers
     )
 
 

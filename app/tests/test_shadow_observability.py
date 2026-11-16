@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -151,7 +151,7 @@ async def test_shadow_and_observability_api() -> None:
 
 
 def _candidate_plan() -> CandidatePlan:
-    start = datetime(2026, 5, 12, 8, tzinfo=timezone.utc)
+    start = datetime(2026, 5, 12, 8, tzinfo=UTC)
     schedule = ScheduleDetail(
         resources=[
             Resource(

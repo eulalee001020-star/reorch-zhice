@@ -12,7 +12,7 @@ Covers:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -41,10 +41,9 @@ from app.models.strategy import (
 from app.services.solver.hybrid_solver import HybridSolver
 from app.services.validation.production_digital_twin import ProductionDigitalTwinFactory
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
-NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2025, 1, 15, 8, 0, 0, tzinfo=UTC)
 
 
 def _make_snapshot() -> ScheduleSnapshot:
@@ -334,9 +333,7 @@ class TestHybridSolverBasic:
 
         assert plans[0].feasibility_status == "feasible"
         assert plans[0].solver_chain.solver_name.endswith(":decomposition")
-        assert plans[0].solver_metadata.incumbent_source == (
-            "decomposition_anytime_portfolio"
-        )
+        assert plans[0].solver_metadata.incumbent_source == ("decomposition_anytime_portfolio")
         assert plans[0].constraint_report.is_feasible is True
 
     @pytest.mark.asyncio
@@ -424,10 +421,7 @@ class TestStrategySpecificBehavior:
         assert len(plans) >= 1
         plan = plans[0]
         adjusted_count = sum(
-            1
-            for wo in plan.schedule_detail.work_orders
-            for op in wo.operations
-            if op.is_adjusted
+            1 for wo in plan.schedule_detail.work_orders for op in wo.operations if op.is_adjusted
         )
         # Global reschedule should adjust most/all operations
         total_ops = sum(len(wo.operations) for wo in plan.schedule_detail.work_orders)

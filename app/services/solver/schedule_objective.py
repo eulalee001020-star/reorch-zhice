@@ -70,15 +70,11 @@ def evaluate_schedule(
     schedule: ScheduleDetail,
     baseline: ScheduleSnapshot,
 ) -> ScheduleObjective:
-    baseline_ops = {
-        op.operation_id: op for wo in baseline.work_orders for op in wo.operations
-    }
+    baseline_ops = {op.operation_id: op for wo in baseline.work_orders for op in wo.operations}
     starts = [op.start_time for wo in schedule.work_orders for op in wo.operations]
     ends = [op.end_time for wo in schedule.work_orders for op in wo.operations]
     origin = min(starts) if starts else baseline.captured_at
-    makespan = (
-        max(0.0, (max(ends) - origin).total_seconds() / 60.0) if ends else 0.0
-    )
+    makespan = max(0.0, (max(ends) - origin).total_seconds() / 60.0) if ends else 0.0
 
     delayed_count = 0
     critical_tardiness = 0.0
@@ -90,9 +86,7 @@ def evaluate_schedule(
     for work_order in schedule.work_orders:
         if work_order.operations:
             completion = max(op.end_time for op in work_order.operations)
-            tardiness = max(
-                0.0, (completion - work_order.due_date).total_seconds() / 60.0
-            )
+            tardiness = max(0.0, (completion - work_order.due_date).total_seconds() / 60.0)
             if tardiness > 0:
                 delayed_count += 1
             total_tardiness += tardiness
@@ -106,8 +100,7 @@ def evaluate_schedule(
                 changed += 1
                 continue
             shift = abs(
-                (operation.start_time - baseline_operation.start_time).total_seconds()
-                / 60.0
+                (operation.start_time - baseline_operation.start_time).total_seconds() / 60.0
             )
             total_shift += shift
             if (

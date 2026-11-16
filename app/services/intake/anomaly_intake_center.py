@@ -7,13 +7,10 @@ Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError
-
-from app.core.config import settings
 from app.core.kafka_producer import KafkaProducer
 from app.core.kafka_topics import TOPIC_INCIDENTS_CREATED
 from app.core.redis_client import RedisClient
@@ -163,7 +160,7 @@ class AnomalyIntakeCenter:
             description=request.description,
             idempotency_key=request.idempotency_key,
             raw_payload=raw_payload,
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
 
         # --- Step 5: Deduplicate ---
@@ -192,9 +189,7 @@ class AnomalyIntakeCenter:
             new_id = incident.incident_id
             if isinstance(new_id, str):
                 new_id = UUID(new_id)
-            if new_id not in [
-                UUID(str(eid)) for eid in primary.deduplicated_from
-            ]:
+            if new_id not in [UUID(str(eid)) for eid in primary.deduplicated_from]:
                 primary.deduplicated_from.append(new_id)
 
             # Update Redis with the merged primary

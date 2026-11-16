@@ -57,4 +57,3 @@ class RollingWindowPlanner:
             detailed_operation_ids=detailed,
             coarse_operation_ids=coarse,
         )
-

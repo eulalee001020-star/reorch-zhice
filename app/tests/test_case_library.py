@@ -14,7 +14,7 @@ Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.10, 9.11, 9.12
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -59,7 +59,7 @@ def _make_decision_record(
         is_manual_adjusted=False,
         override_reason="Better option" if is_override else None,
         confirmed_by=confirmed_by,
-        confirmed_at=datetime.now(tz=timezone.utc),
+        confirmed_at=datetime.now(tz=UTC),
         plan_selection_input_version="1.0",
         plan_selection_output_version="1.0",
         solver_chain=_make_solver_chain(strategy_type=strategy_type),
@@ -230,9 +230,7 @@ async def test_strategy_effectiveness_tracking():
 
     # Create cases with different override states
     for i in range(3):
-        dr = _make_decision_record(
-            is_override=(i == 0), strategy_type="local_repair"
-        )
+        dr = _make_decision_record(is_override=(i == 0), strategy_type="local_repair")
         er = _make_execution_result()
         await lib.create_case(dr, er)
 
