@@ -24,6 +24,44 @@ _GENERIC_RESOURCE_RE = re.compile(
 )
 
 
+# Site-specific equipment codes such as SMT-02 or FUR-01. Document prefixes
+# (work orders, materials, purchase orders, lots) look the same and are not
+# equipment, so they are excluded by name.
+_CODED_RESOURCE_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,5})[-_](\d{1,4})(?![A-Za-z0-9])")
+_NON_EQUIPMENT_PREFIXES = frozenset(
+    {"WO", "MO", "PO", "SO", "OP", "MAT", "LOT", "SKU", "PN", "BOM", "ASN", "DN", "GRN"}
+)
+
+INCIDENT_TYPES = frozenset(
+    {
+        "machine_down",
+        "material_shortage",
+        "urgent_order_insert",
+        "capacity_degradation",
+        "quality_rework",
+        "unknown",
+    }
+)
+
+_MATERIAL_TERMS = (
+    "物料",
+    "材料",
+    "缺料",
+    "齐套",
+    "没到",
+    "未到",
+    "来料",
+    "到货",
+    "供应商",
+    "库存不够",
+    "库存不足",
+    "欠料",
+    "断料",
+)
+_QUALITY_TERMS = ("返工", "返修", "不合格", "超差", "报废", "质量扣留")
+_URGENT_TERMS = ("客户加急", "急单", "加急", "插单")
+_CAPACITY_TERMS = ("产能下降", "产能降低", "降速", "效率下降", "设备产能", "节拍变慢")
+
 _CLOCK_RE = re.compile(r"(?:after\s*)?([01]?\d|2[0-3]):([0-5]\d)", re.IGNORECASE)
 
 
@@ -48,13 +86,7 @@ def _parse_report_source(value: str) -> ReportSource:
 
 def _parsed_incident_from_llm(data: dict) -> _ParsedIncident | None:
     incident_type = str(data.get("incident_type") or "unknown")
-    if incident_type not in {
-        "machine_down",
-        "material_shortage",
-        "urgent_order_insert",
-        "capacity_degradation",
-        "unknown",
-    }:
+    if incident_type not in INCIDENT_TYPES:
         return None
 
     resource_id = data.get("resource_id")
@@ -155,17 +187,19 @@ def _detect_incident_type(text: str, resource_id: str | None) -> str:
     lowered = text.lower()
     if _is_machine_down(text, lowered, resource_id):
         return "machine_down"
-    if (
-        any(token in text for token in ("物料", "材料", "缺料", "齐套", "没到", "未到"))
-        or "material" in lowered
+    # Material comes before quality: a rejected incoming lot is a supply
+    # problem for the planner even though the wording mentions inspection.
+    if any(token in text for token in _MATERIAL_TERMS) or any(
+        token in lowered for token in ("material", "shortage", "supplier")
     ):
         return "material_shortage"
-    if any(token in text for token in ("客户加急", "急单", "加急", "插单")) or "urgent" in lowered:
-        return "urgent_order_insert"
-    if (
-        any(token in text for token in ("产能下降", "产能降低", "降速", "效率下降", "设备产能"))
-        or "capacity" in lowered
+    if any(token in text for token in _QUALITY_TERMS) or any(
+        token in lowered for token in ("rework", "quality hold", "scrap")
     ):
+        return "quality_rework"
+    if any(token in text for token in _URGENT_TERMS) or "urgent" in lowered:
+        return "urgent_order_insert"
+    if any(token in text for token in _CAPACITY_TERMS) or "capacity" in lowered:
         return "capacity_degradation"
     return "unknown"
 
@@ -185,7 +219,7 @@ def _is_machine_down(text: str, lowered: str, resource_id: str | None) -> bool:
         return True
     if any(term in text for term in machine_failure_terms):
         return resource_id is not None or any(
-            token in text for token in ("设备", "机台", "机器", "产线", "CNC")
+            token in text for token in ("设备", "机台", "机器", "产线", "CNC", "线", "炉")
         )
     return False
 
@@ -223,10 +257,14 @@ def _extract_resource_id(text: str) -> str | None:
     match = _MACHINE_RESOURCE_RE.search(text)
     if match is None:
         match = _GENERIC_RESOURCE_RE.search(text)
-    if match is None:
-        return None
-    resource = match.group(1).upper().replace(" ", "")
-    return resource.replace("_", "-")
+    if match is not None:
+        resource = match.group(1).upper().replace(" ", "")
+        return resource.replace("_", "-")
+    for coded in _CODED_RESOURCE_RE.finditer(text):
+        prefix = coded.group(1).upper()
+        if prefix not in _NON_EQUIPMENT_PREFIXES:
+            return f"{prefix}-{coded.group(2)}"
+    return None
 
 
 def _extract_time_hint(text: str) -> str | None:

@@ -1,0 +1,44 @@
+{"id": "md-01", "text": "M-03 主轴故障停机，预计维修 4 小时", "type": "machine_down", "resource": "M-03", "minutes": 240, "split": "dev"}
+{"id": "md-02", "text": "CNC-12 坏了，修好大概要两个小时", "type": "machine_down", "resource": "CNC-12", "minutes": 120, "split": "dev"}
+{"id": "md-03", "text": "3号机台突然停了，维修说要半小时", "type": "machine_down", "resource": null, "minutes": 30, "split": "dev"}
+{"id": "md-04", "text": "Machine M-07 is down, ETA 90 minutes", "type": "machine_down", "resource": "M-07", "minutes": 90, "split": "dev"}
+{"id": "md-05", "text": "设备 M-11 报警宕机，预计 1.5 小时恢复，后面有客户急单", "type": "machine_down", "resource": "M-11", "minutes": 90, "split": "dev"}
+{"id": "md-06", "text": "贴片线 SMT-02 故障，至少停 45 分钟", "type": "machine_down", "resource": "SMT-02", "minutes": 45, "split": "dev"}
+{"id": "md-07", "text": "M_05 failure reported by MES, repair needs 3 hours", "type": "machine_down", "resource": "M-05", "minutes": 180, "split": "dev"}
+{"id": "md-08", "text": "产线上那台机器停机了，还不知道多久能修好", "type": "machine_down", "resource": null, "minutes": null, "split": "dev"}
+{"id": "md-09", "text": "M-02 刀库卡死停机，预计三个小时", "type": "machine_down", "resource": "M-02", "minutes": 180, "split": "dev"}
+{"id": "md-10", "text": "炉子 FUR-01 温控故障，停机二十分钟", "type": "machine_down", "resource": "FUR-01", "minutes": 20, "split": "dev"}
+{"id": "ms-01", "text": "轴承座来料没到，WO-1023 今天开不了工", "type": "material_shortage", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ms-02", "text": "物料 MAT-4410 缺料，供应商说明天下午才能到", "type": "material_shortage", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ms-03", "text": "三号工单齐套检查不过，缺两种标准件", "type": "material_shortage", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ms-04", "text": "Material shortage on housing castings, supplier delayed by 8 hours", "type": "material_shortage", "resource": null, "minutes": 480, "split": "dev"}
+{"id": "ms-05", "text": "供应商延期交货，电机还要晚 6 小时到", "type": "material_shortage", "resource": null, "minutes": 360, "split": "dev"}
+{"id": "ms-06", "text": "仓库说 PCB 板库存不够，只能做一半", "type": "material_shortage", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ms-07", "text": "来料检验不合格被退货，这批铸件要重新送", "type": "material_shortage", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ms-08", "text": "采购反馈芯片到货推迟两个小时", "type": "material_shortage", "resource": null, "minutes": 120, "split": "dev"}
+{"id": "uo-01", "text": "客户加急，WO-2001 要提前到今晚交", "type": "urgent_order_insert", "resource": null, "minutes": null, "split": "dev"}
+{"id": "uo-02", "text": "销售插了一张急单，200 件明早必须发", "type": "urgent_order_insert", "resource": null, "minutes": null, "split": "dev"}
+{"id": "uo-03", "text": "Urgent order from key account, needs to ship tomorrow", "type": "urgent_order_insert", "resource": null, "minutes": null, "split": "dev"}
+{"id": "uo-04", "text": "大客户临时插单，优先级提到最高", "type": "urgent_order_insert", "resource": null, "minutes": null, "split": "dev"}
+{"id": "cd-01", "text": "M-04 降速运行，产能下降三成", "type": "capacity_degradation", "resource": "M-04", "minutes": null, "split": "dev"}
+{"id": "cd-02", "text": "二号线效率下降，节拍变慢了", "type": "capacity_degradation", "resource": null, "minutes": null, "split": "dev"}
+{"id": "cd-03", "text": "Capacity on M-09 reduced to 60% for the shift", "type": "capacity_degradation", "resource": "M-09", "minutes": null, "split": "dev"}
+{"id": "qr-01", "text": "WO-3312 首检不合格，整批要返工", "type": "quality_rework", "resource": null, "minutes": null, "split": "dev"}
+{"id": "qr-02", "text": "终检发现尺寸超差，50 件需要返修", "type": "quality_rework", "resource": null, "minutes": null, "split": "dev"}
+{"id": "qr-03", "text": "Quality hold on lot 7781, rework required", "type": "quality_rework", "resource": null, "minutes": null, "split": "dev"}
+{"id": "un-01", "text": "今天食堂的饭不错", "type": "unknown", "resource": null, "minutes": null, "split": "dev"}
+{"id": "un-02", "text": "帮我看看下周的排班", "type": "unknown", "resource": null, "minutes": null, "split": "dev"}
+{"id": "un-03", "text": "M-03 的保养记录在哪里查", "type": "unknown", "resource": "M-03", "minutes": null, "split": "dev"}
+{"id": "un-04", "text": "What is the status of the line?", "type": "unknown", "resource": null, "minutes": null, "split": "dev"}
+{"id": "ho-01", "text": "压铸机 DC-08 液压泄漏停机，预计要修五个小时", "type": "machine_down", "resource": "DC-08", "minutes": 300, "split": "holdout"}
+{"id": "ho-02", "text": "LINE-2 stopped because of a jammed conveyor, 25 min", "type": "machine_down", "resource": "LINE-2", "minutes": 25, "split": "holdout"}
+{"id": "ho-03", "text": "喷涂线机器人报错停了，厂家工程师明天才能来", "type": "machine_down", "resource": null, "minutes": null, "split": "holdout"}
+{"id": "ho-04", "text": "外协电镀件还没回厂，装配线下午要断料", "type": "material_shortage", "resource": null, "minutes": null, "split": "holdout"}
+{"id": "ho-05", "text": "Supplier pushed the gearbox delivery back by 2 hours", "type": "material_shortage", "resource": null, "minutes": 120, "split": "holdout"}
+{"id": "ho-06", "text": "螺栓批次检验超差被扣，需要全检返工", "type": "quality_rework", "resource": null, "minutes": null, "split": "holdout"}
+{"id": "ho-07", "text": "客户临时要求 WO-5566 提前两天交货", "type": "urgent_order_insert", "resource": null, "minutes": null, "split": "holdout"}
+{"id": "ho-08", "text": "M-06 主轴振动大，只能半速跑", "type": "capacity_degradation", "resource": "M-06", "minutes": null, "split": "holdout"}
+{"id": "ho-09", "text": "今晚夜班少两个操作工", "type": "unknown", "resource": null, "minutes": null, "split": "holdout"}
+{"id": "ho-10", "text": "把 M-03 的甘特图导出来给我", "type": "unknown", "resource": "M-03", "minutes": null, "split": "holdout"}
+{"id": "ho-11", "text": "EQ-14 传感器故障，停机 40 分钟排查", "type": "machine_down", "resource": "EQ-14", "minutes": 40, "split": "holdout"}
+{"id": "ho-12", "text": "PO-7781 的钢材到货延迟一天", "type": "material_shortage", "resource": null, "minutes": null, "split": "holdout"}
