@@ -29,6 +29,7 @@ from app.api.ngs_lab import router as ngs_lab_router
 from app.api.planning import router as planning_router
 from app.api.production_runtime import router as production_runtime_router
 from app.api.solver import router as solver_router
+from app.api.supply import router as supply_router
 from app.api.ws import router as ws_router
 from app.core.config import settings
 from app.core.database import engine
@@ -115,6 +116,7 @@ app.include_router(incidents_router)
 app.include_router(integration_control_router)
 app.include_router(analysis_router)
 app.include_router(solver_router)
+app.include_router(supply_router)
 app.include_router(confirmation_router)
 app.include_router(cases_router)
 app.include_router(demo_router)

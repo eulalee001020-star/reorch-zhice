@@ -17,9 +17,14 @@ class IncidentSeverity(str, Enum):
 
 
 class IncidentType(str, Enum):
-    """Anomaly event types. MVP: equipment failure only."""
+    """Anomaly event types handled by the main decision loop.
+
+    For a material shortage the incident's ``resource_id`` is the item, and
+    the supply event details travel in ``raw_payload``.
+    """
 
     EQUIPMENT_FAILURE = "equipment_failure"
+    MATERIAL_SHORTAGE = "material_shortage"
 
 
 class IncidentStatus(str, Enum):

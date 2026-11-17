@@ -1,0 +1,2 @@
+incident_id,item_id,kind,order_id,line_id,occurred_at,new_promised_at,short_quantity,severity,description
+INC-DEMO-BRG-LATE,BRG-6205,eta_slip,PO-7781,1,2026-05-14T12:30:00+08:00,2026-05-15T09:00:00+08:00,,P2-High,供应商通知 PO-7781 轴承延期，改到次日 09:00 到货

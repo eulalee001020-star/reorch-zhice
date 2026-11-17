@@ -19,6 +19,8 @@ from app.models.impact import (
 )
 from app.models.incident import Incident
 from app.models.schedule import Operation, ScheduleSnapshot, WorkOrder
+from app.services.intake.recovery_context import RecoveryContext
+from app.services.intake.right_shift import right_shift
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +165,103 @@ class ImpactAnalysisEngine:
             report,
         )
 
+        return report
+
+    # ── recovery-context analysis ───────────────────────────────────
+
+    async def analyze_recovery(
+        self,
+        incident: Incident,
+        snapshot: ScheduleSnapshot,
+        context: RecoveryContext,
+    ) -> ImpactReport:
+        """Impact measured against the right-shift baseline.
+
+        Used when the incident's physical facts are known: the repair window
+        of a failed machine, or material release times. Every figure answers
+        "what happens if we only wait":
+
+        * an operation's delay is how much later it starts;
+        * a work order's delay is how much later it completes;
+        * the total is the sum over work orders, so a chain of operations
+          pushed by the same cause is counted once.
+
+        A work order is in breach when it would complete after its due date,
+        and in warning when the delay uses up more than half of the slack it
+        had before the incident.
+        """
+        shifted = right_shift(
+            snapshot,
+            decision_time=context.decision_time,
+            resource_windows=context.windows_by_resource(),
+            material_release=context.material_release_by_operation(),
+            frozen_operation_ids=set(context.frozen_operation_ids),
+        )
+        affected_ops = [
+            AffectedOperation(
+                operation_id=item.operation_id,
+                work_order_id=item.work_order_id,
+                resource_id=item.resource_id,
+                is_direct=item.is_direct,
+                estimated_delay_minutes=round(item.delay_minutes, 2),
+            )
+            for item in shifted.values()
+            if item.is_direct or item.delay_minutes > 0
+        ]
+        affected_ops.sort(key=lambda op: (not op.is_direct, op.operation_id))
+        ops_by_wo: dict[str, list[AffectedOperation]] = {}
+        for affected in affected_ops:
+            ops_by_wo.setdefault(affected.work_order_id, []).append(affected)
+
+        affected_work_orders: list[AffectedWorkOrder] = []
+        total_delay = 0.0
+        for work_order in snapshot.work_orders:
+            if work_order.work_order_id not in ops_by_wo or not work_order.operations:
+                continue
+            planned_completion = max(op.end_time for op in work_order.operations)
+            projected_completion = max(
+                shifted[op.operation_id].new_end for op in work_order.operations
+            )
+            delay = max(0.0, (projected_completion - planned_completion).total_seconds() / 60.0)
+            buffer = (work_order.due_date - projected_completion).total_seconds() / 60.0
+            if buffer < 0:
+                risk = DeliveryRiskLevel.BREACH
+            elif delay > 0 and buffer < delay:
+                risk = DeliveryRiskLevel.WARNING
+            else:
+                risk = DeliveryRiskLevel.SAFE
+            total_delay += delay
+            affected_work_orders.append(
+                AffectedWorkOrder(
+                    work_order_id=work_order.work_order_id,
+                    product_name=work_order.product_name,
+                    due_date=work_order.due_date,
+                    delivery_risk_level=risk,
+                    remaining_buffer_minutes=round(buffer, 2),
+                    affected_operations=ops_by_wo[work_order.work_order_id],
+                )
+            )
+
+        risk_dist: dict[DeliveryRiskLevel, int] = {
+            DeliveryRiskLevel.SAFE: 0,
+            DeliveryRiskLevel.WARNING: 0,
+            DeliveryRiskLevel.BREACH: 0,
+        }
+        for item in affected_work_orders:
+            risk_dist[item.delivery_risk_level] += 1
+
+        report = ImpactReport(
+            incident_id=self._to_uuid(incident.incident_id),
+            schedule_snapshot_id=self._to_uuid(snapshot.snapshot_id),
+            analysis_reference_time=context.decision_time,
+            affected_work_orders=affected_work_orders,
+            affected_operations=affected_ops,
+            affected_resource_ids=sorted({op.resource_id for op in affected_ops}),
+            delivery_risk_distribution=risk_dist,
+            estimated_total_delay_minutes=round(total_delay, 2),
+        )
+        report = self._maybe_upgrade_severity(incident, report)
+        report.severity_explanation = self._build_severity_explanation(incident, report)
         return report
 
     # ── downstream propagation ──────────────────────────────────────

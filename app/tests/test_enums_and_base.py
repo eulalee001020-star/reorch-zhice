@@ -42,8 +42,11 @@ class TestIncidentType:
     def test_equipment_failure(self):
         assert IncidentType.EQUIPMENT_FAILURE.value == "equipment_failure"
 
+    def test_material_shortage(self):
+        assert IncidentType.MATERIAL_SHORTAGE.value == "material_shortage"
+
     def test_member_count(self):
-        assert len(IncidentType) == 1
+        assert len(IncidentType) == 2
 
 
 class TestIncidentStatus:

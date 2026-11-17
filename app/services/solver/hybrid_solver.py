@@ -47,7 +47,10 @@ from app.models.solver import (
     SolverMetadata,
 )
 from app.services.constraints.operational_constraint_validator import OperationalConstraintValidator
-from app.services.solver.anytime_hybrid_scheduler import AnytimeHybridScheduler
+from app.services.solver.anytime_hybrid_scheduler import (
+    AnytimeHybridScheduler,
+    _schedule_signature,
+)
 from app.services.solver.cp_sat_scheduler import CpSatFjspScheduler
 from app.services.solver.decomposition_executor import DecompositionExecutor
 
@@ -61,6 +64,7 @@ MODULE_VERSION: str = "1.0.0"
 # ── Constants ───────────────────────────────────────────────────────
 _DEFAULT_TIMEOUT_SECONDS: float = 60.0
 _TOP_K: int = 3
+_CANDIDATE_GOAL_MODES: tuple[str, ...] = ("balanced", "stability_priority", "delivery_priority")
 _MAX_LNS_ITERATIONS: int = 50
 _STAGNATION_LIMIT: int = 10
 
@@ -396,8 +400,12 @@ class HybridSolver:
         candidates: list[CandidatePlan] = []
         incumbent_schedule: ScheduleDetail | None = None
 
+        seen_signatures: set[tuple] = set()
         for candidate_index in range(min(candidate_target, _TOP_K)):
             scheduler = anytime_scheduler if candidate_index == 0 else cp_sat_scheduler
+            # Alternatives differ by what they optimise for, not by an
+            # arbitrary time offset: balanced, least disruption, delivery first.
+            goal_mode = _CANDIDATE_GOAL_MODES[candidate_index % len(_CANDIDATE_GOAL_MODES)]
             result = await asyncio.to_thread(
                 scheduler.solve,
                 snapshot=snapshot,
@@ -408,6 +416,7 @@ class HybridSolver:
                 timeout_seconds=per_candidate_timeout,
                 candidate_index=candidate_index,
                 initial_solution=incumbent_schedule,
+                goal_mode=goal_mode,
             )
             if not result.is_feasible or result.schedule_detail is None:
                 if candidate_index == 0:
@@ -416,6 +425,10 @@ class HybridSolver:
                         result.status_name,
                     )
                 break
+            signature = _schedule_signature(result.schedule_detail)
+            if signature in seen_signatures:
+                continue
+            seen_signatures.add(signature)
 
             all_operation_ids = {
                 operation.operation_id

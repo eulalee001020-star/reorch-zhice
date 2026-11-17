@@ -253,7 +253,7 @@ class CpSatFjspScheduler:
                     lower_bound += delay_by_op.get(op_id, 0)
                 lower_bound = max(lower_bound, material_available_by_op.get(op_id, 0))
                 lower_bound = max(lower_bound, quality_release_by_op.get(op_id, 0))
-                model.Add(start >= lower_bound + candidate_index * 5)
+                model.Add(start >= lower_bound)
             else:
                 model.Add(start == ref.original_start)
 
@@ -876,8 +876,25 @@ class CpSatFjspScheduler:
         transport_lag = sum(
             int(row.get("eta_minutes", 0) or 0) for row in raw.get("transport_lanes", []) or []
         )
+        # A late material release or a long outage can sit beyond the current
+        # plan; everything queued behind it still has to fit in the horizon.
+        latest_release = baseline
+        for row in raw.get("material_availability", []) or []:
+            moment = _parse_datetime_or_none(row.get("available_at"))
+            if moment is not None:
+                latest_release = max(latest_release, int((moment - origin).total_seconds() // 60))
+        for row in raw.get("resource_calendar", []) or []:
+            moment = _parse_datetime_or_none(row.get("window_end"))
+            if moment is not None:
+                latest_release = max(latest_release, int((moment - origin).total_seconds() // 60))
+        release_slack = max(0, latest_release - baseline)
         return max(
-            baseline + sum(delay_by_op.values()) + outsource_lead + transport_lag + 240,
+            baseline
+            + sum(delay_by_op.values())
+            + outsource_lead
+            + transport_lag
+            + release_slack
+            + 240,
             total_duration * 2 + outsource_lead + transport_lag + 240,
         )
 
@@ -1483,3 +1500,14 @@ def _as_list(value: Any) -> list[str]:
             if item.strip()
         ]
     return [str(value)]
+
+
+def _parse_datetime_or_none(value: Any) -> datetime | None:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None

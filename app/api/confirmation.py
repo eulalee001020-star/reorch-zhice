@@ -183,6 +183,23 @@ async def confirm_plan(
             detail="No ScheduleSnapshot available.",
         )
 
+    # 2b. Validate against the same facts the plan was solved on
+    from app.api.analysis import prepare_incident_recovery
+    from app.api.incidents import _incident_store
+    from app.services.intake.recovery_planning import MATERIAL_OPTION_SUBSTITUTE
+
+    incident = _incident_store.get(key)
+    if incident is not None:
+        chosen = next((p for p in candidates if p.plan_id == body.selected_plan_id), None)
+        uses_substitute = (
+            chosen is not None
+            and chosen.solver_chain.key_parameters.get("material_option")
+            == MATERIAL_OPTION_SUBSTITUTE
+        )
+        snapshot = prepare_incident_recovery(
+            incident, snapshot, allow_substitutes=uses_substitute
+        ).snapshot
+
     # 3. Get recommendation for recommended_plan_id
     recommendation = _recommendation_store.get(key)
     if recommendation is None:
