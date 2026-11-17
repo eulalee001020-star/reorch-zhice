@@ -16,7 +16,8 @@
 
 import React from 'react';
 import { Layout, Row, Col, Grid, Tag } from 'antd';
-import { useWorkbenchStore } from '@/stores';
+import { useAnalysisStore, useIncidentStore, useWorkbenchStore } from '@/stores';
+import { incidentTypeLabel } from '@/types';
 import { IncidentListPanel } from '@/components/IncidentListPanel';
 import { ProcessingStatusPanel } from '@/components/ProcessingStatusPanel';
 import { ImpactAnalysisPanel } from '@/components/ImpactAnalysisPanel';
@@ -40,6 +41,11 @@ const DecisionWorkbench: React.FC = () => {
   const currentView = useWorkbenchStore((s) => s.currentView);
   const screens = useBreakpoint();
   const isDesktop = screens.lg;
+  const incidentContextId = useWorkbenchStore((s) => s.incidentContextId);
+  const incident = useIncidentStore((s) =>
+    s.incidents.find((item) => item.incident_id === incidentContextId),
+  );
+  const impactReport = useAnalysisStore((s) => s.impactReport);
 
   if (!isDesktop) {
     // Mobile / narrow: step-by-step fallback, still shares incident context
@@ -80,8 +86,8 @@ const DecisionWorkbench: React.FC = () => {
         <div className="demo-hero demo-hero-dark">
           <Row gutter={[18, 18]} align="middle">
             <Col xs={24} lg={12}>
-              <div className="hero-eyebrow">Demo Scenario / CNC machine-down recovery</div>
-              <h1 className="hero-title">设备故障后的异常恢复决策层</h1>
+              <div className="hero-eyebrow">Exception Recovery Workbench</div>
+              <h1 className="hero-title">异常发生后的恢复决策层</h1>
               <div className="hero-subtitle">
                 异常进入系统后，ReOrch 先做影响分析，再生成候选恢复方案，并通过质量门和计划员确认控制生产风险。
               </div>
@@ -90,12 +96,18 @@ const DecisionWorkbench: React.FC = () => {
               <div className="metric-strip">
                 <div className="metric-tile">
                   <div className="metric-label">当前异常</div>
-                  <div className="metric-value">M-03</div>
-                  <div className="metric-note">设备故障</div>
+                  <div className="metric-value">{incident?.resource_id ?? '未选择'}</div>
+                  <div className="metric-note">
+                    {incident ? incidentTypeLabel(incident.incident_type) : '从左侧选择事件'}
+                  </div>
                 </div>
                 <div className="metric-tile">
                   <div className="metric-label">影响范围</div>
-                  <div className="metric-value">5 / 15</div>
+                  <div className="metric-value">
+                    {impactReport
+                      ? `${impactReport.affected_work_orders.length} / ${impactReport.affected_operations.length}`
+                      : '- / -'}
+                  </div>
                   <div className="metric-note">工单 / 工序</div>
                 </div>
                 <div className="metric-tile">

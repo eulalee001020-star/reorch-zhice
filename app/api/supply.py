@@ -133,16 +133,20 @@ async def get_mrp(
 ) -> MrpResult:
     supply = _require_supply()
     schedule = await _current_schedule()
+    # Operations already started have drawn their material, so only open
+    # work is netted. Buckets start at midnight so a column is a calendar day.
+    reference = schedule.captured_at
     requirements = [
         (item_id, quantity, operation.start_time)
         for _work_order, operation, item_id, quantity in collect_requirements(supply, schedule)
+        if operation.start_time >= reference
     ]
     return run_mrp(
         supply,
         requirements,
         bucket_minutes=bucket_minutes,
         bucket_count=bucket_count,
-        horizon_start=schedule.captured_at,
+        horizon_start=reference.replace(hour=0, minute=0, second=0, microsecond=0),
     )
 
 

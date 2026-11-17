@@ -36,7 +36,7 @@ import { useIncidentStore, useWorkbenchStore } from '@/stores';
 import { switchIncident } from '@/stores';
 import { createIncident, resetSandboxDemo, understandIncidentText } from '@/api';
 import type { Incident } from '@/types';
-import { IncidentSeverity, IncidentStatus, IncidentType, ReportSource } from '@/types';
+import { INCIDENT_TYPE_LABELS, IncidentSeverity, IncidentStatus, IncidentType, ReportSource, incidentTypeLabel } from '@/types';
 import { incidentStatusMap } from '@/utils/statusMapping';
 
 const { RangePicker } = DatePicker;
@@ -235,7 +235,7 @@ export const IncidentListPanel: React.FC = () => {
       title: '类型',
       dataIndex: 'incident_type',
       width: 80,
-      render: (t: IncidentType) => (t === IncidentType.EQUIPMENT_FAILURE ? '设备故障' : t),
+      render: (t: IncidentType) => incidentTypeLabel(t),
     },
     {
       title: '资源',
@@ -398,7 +398,7 @@ export const IncidentListPanel: React.FC = () => {
           style={{ width: 100 }}
           value={filters.incident_type}
           onChange={(v) => { setFilters({ ...filters, incident_type: v }); fetchIncidents(); }}
-          options={[{ value: 'equipment_failure', label: '设备故障' }]}
+          options={Object.entries(INCIDENT_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
         />
         <Select
           placeholder="等级"

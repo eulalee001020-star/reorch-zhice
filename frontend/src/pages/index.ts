@@ -9,3 +9,4 @@ export { default as PreferenceProfilePage } from './PreferenceProfilePage';
 export { default as RuleCandidateReviewPage } from './RuleCandidateReviewPage';
 export { default as ProductionRuntimePage } from './ProductionRuntimePage';
 export { default as IntegrationControlPage } from './IntegrationControlPage';
+export { default as SupplyPage } from './SupplyPage';

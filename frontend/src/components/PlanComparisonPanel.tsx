@@ -297,6 +297,17 @@ export const PlanComparisonPanel: React.FC = () => {
                       {title.title}
                       <Tag color={title.color}>{title.tag}</Tag>
                       {planTag(row.plan_id)}
+                      {plan?.solver_chain.solver_name === 'right_shift_baseline' && (
+                        <Tooltip title="不换设备、不调顺序，只把受影响的工序往后推。用来衡量重排是否值得。">
+                          <Tag color="default">基准：只顺延</Tag>
+                        </Tooltip>
+                      )}
+                      {plan?.solver_chain.key_parameters?.material_option === 'approved_substitute' && (
+                        <Tag color="purple">使用已批准替代料</Tag>
+                      )}
+                      {plan?.solver_chain.key_parameters?.material_option === 'wait_for_supply' && (
+                        <Tag color="orange">等待到货</Tag>
+                      )}
                     </h3>
                     <p>{title.desc}</p>
                     <div className="plan-checks">

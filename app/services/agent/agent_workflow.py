@@ -61,7 +61,12 @@ from app.services.agent.incident_parsing import (
 )
 from app.services.agent.llm_agent_client import LLMAgentClient, LLMJsonResult
 from app.services.data_gate.data_readiness import DataReadinessService
-from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.intake.recovery_flow import (
+    analyze_incident_impact,
+    expected_wait_minutes,
+    solve_with_recovery,
+)
+from app.services.intake.recovery_planning import BASELINE_SOLVER_NAME
 from app.services.recommendation.evaluation_center import EvaluationCenter
 from app.services.recommendation.explainability_layer import ExplainabilityLayer
 from app.services.recommendation.plan_quality_gate import PlanQualityGate
@@ -306,7 +311,7 @@ class ImpactAnalysisAgent:
         *,
         user_id: str | None,
     ) -> tuple[ImpactReport, AgentTraceStep]:
-        report = await ImpactAnalysisEngine().analyze(incident, snapshot)
+        report = await analyze_incident_impact(incident, snapshot)
         await persist_impact_report(report, user_id=user_id)
 
         from app.api.analysis import _impact_report_cache
@@ -414,13 +419,24 @@ class SolverAgent:
                 preference_profile=preference_profile,
                 similar_cases=[],
             )
-            generated = await solver.solve(
-                bundle=bundle,
-                impact_report=impact_report,
+            generated = await solve_with_recovery(
+                incident=incident,
                 snapshot=snapshot,
+                impact_report=impact_report,
+                bundle=bundle,
+                solver=solver,
             )
             if not generated:
                 continue
+            if any(
+                plan.solver_chain.solver_name == BASELINE_SOLVER_NAME for plan in generated
+            ) and _strategy_value(current_strategy.strategy_type) == _strategy_value(
+                strategy.strategy_type
+            ):
+                # The recovery-aware solve already returns re-plans together
+                # with the wait reference; other strategies would only repeat it.
+                candidates = list(generated)
+                break
 
             if _strategy_value(current_strategy.strategy_type) == _strategy_value(
                 strategy.strategy_type
@@ -1034,7 +1050,11 @@ class AgentOrchestrator:
                 impact_report,
                 snapshot,
                 planner_id=request.planner_id,
-                estimated_repair_time_minutes=request.estimated_repair_time_minutes,
+                estimated_repair_time_minutes=(
+                    request.estimated_repair_time_minutes
+                    if request.estimated_repair_time_minutes is not None
+                    else expected_wait_minutes(incident, impact_report)
+                ),
                 user_id=user_id,
             ),
             settings.agent.strategy_timeout_seconds,

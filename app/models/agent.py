@@ -75,7 +75,8 @@ class AgentDecisionFlowRequest(ReOrchModel):
     """Run the controlled incident decision workflow from an existing Incident."""
 
     incident_id: UUID
-    estimated_repair_time_minutes: float = 60.0
+    # None means: use the incident's own expected duration, else 60 minutes.
+    estimated_repair_time_minutes: float | None = None
     goal_mode: str = "balanced"
     manual_weights: dict[str, float] | None = None
     auto_solve: bool = True

@@ -85,3 +85,5 @@ export {
   listIntegrationAudit,
   runIntegrationControlValidation,
 } from './integrationControl';
+export { getKitReport, getSupplyReadiness, getSupplierScores, getMrp } from './supply';
+export type { KitReportParams } from './supply';

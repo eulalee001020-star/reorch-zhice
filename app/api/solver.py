@@ -25,6 +25,8 @@ from app.models.enums import GoalMode
 from app.models.recommendation import PlanSelectionOutput
 from app.models.schedule import ScheduleDetail
 from app.models.solver import CandidatePlan, SolverChain
+from app.services.intake.recovery_flow import solve_with_recovery
+from app.services.supply.shortage import ShortageEventError
 
 logger = logging.getLogger(__name__)
 
@@ -60,102 +62,6 @@ class RecommendRequest(BaseModel):
         default=None,
         description="人工微调权重覆盖（可选）",
     )
-
-
-async def _solve_with_recovery_context(
-    *, incident, snapshot, impact_report, bundle, solver
-) -> list[CandidatePlan]:
-    """Solve on the snapshot that carries the incident's constraints.
-
-    With a recovery context the solver gets the blocked machine window, the
-    frozen history and material release times as explicit constraints, so the
-    per-operation delay estimates are cleared: they describe waiting, and a
-    plan that moves work to another machine should not inherit them.
-
-    A supply incident with an approved substitute is solved twice, once
-    waiting for the supply and once using the substitute, so the planner can
-    compare the two.
-    """
-    from app.api.analysis import prepare_incident_recovery
-    from app.models.enums import StrategyType
-    from app.services.intake.recovery_planning import (
-        MATERIAL_OPTION_SUBSTITUTE,
-        baseline_candidate,
-        is_material_incident,
-    )
-
-    base_frozen = list(bundle.repair_config.frozen_operation_ids)
-    prepared = prepare_incident_recovery(incident, snapshot)
-    if prepared.context is None:
-        return await solver.solve(bundle=bundle, impact_report=impact_report, snapshot=snapshot)
-
-    # Waiting is exactly the right-shift baseline; no search is needed.
-    if bundle.strategy.strategy_type in (StrategyType.WAIT_AND_REPAIR, "wait_and_repair"):
-        waiting = baseline_candidate(prepared)
-        if waiting is not None:
-            return [waiting]
-
-    variants = [prepared]
-    if (
-        is_material_incident(incident)
-        and prepared.material_impact is not None
-        and prepared.material_impact.approved_substitutes
-    ):
-        with_substitute = prepare_incident_recovery(incident, snapshot, allow_substitutes=True)
-        if (
-            with_substitute.context is not None
-            and with_substitute.context.material_rows != prepared.context.material_rows
-        ):
-            variants.append(with_substitute)
-
-    solver_impact = impact_report.model_copy(
-        update={
-            "affected_operations": [
-                item.model_copy(update={"estimated_delay_minutes": 0.0})
-                for item in impact_report.affected_operations
-            ]
-        }
-    )
-    per_variant: list[list[CandidatePlan]] = []
-    for variant in variants:
-        bundle.repair_config.frozen_operation_ids = sorted(
-            set(base_frozen) | set(variant.frozen_operation_ids)
-        )
-        plans = await solver.solve(
-            bundle=bundle, impact_report=solver_impact, snapshot=variant.snapshot
-        )
-        for plan in plans:
-            plan.solver_chain.key_parameters["decision_time"] = (
-                variant.context.decision_time.isoformat()
-            )
-            plan.solver_chain.key_parameters["frozen_history_operations"] = len(
-                variant.frozen_operation_ids
-            )
-            if variant.material_option:
-                plan.solver_chain.key_parameters["material_option"] = variant.material_option
-                if variant.material_option == MATERIAL_OPTION_SUBSTITUTE:
-                    plan.solver_chain.stages.append("已批准替代料")
-        per_variant.append(plans)
-    bundle.repair_config.frozen_operation_ids = base_frozen
-
-    # Keep the do-nothing plan as the reference a re-plan has to beat.
-    baseline = baseline_candidate(prepared)
-    if baseline is not None and prepared.material_option:
-        baseline.solver_chain.key_parameters["material_option"] = prepared.material_option
-
-    if len(per_variant) == 1:
-        merged = [plan for plan in per_variant[0] if plan.feasibility_status == "feasible"]
-        merged = merged or per_variant[0]
-    else:
-        # Interleave so that both material options are represented.
-        merged = []
-        for rank in range(3):
-            for plans in per_variant:
-                if rank < len(plans):
-                    merged.append(plans[rank])
-    if baseline is None:
-        return merged[:3]
-    return [*merged[:2], baseline]
 
 
 # ---------------------------------------------------------------------------
@@ -261,13 +167,18 @@ async def solve_incident(
     )
 
     # 6. Solve against the incident's physical facts
-    candidates = await _solve_with_recovery_context(
-        incident=incident,
-        snapshot=snapshot,
-        impact_report=impact_report,
-        bundle=bundle,
-        solver=HybridSolver(),
-    )
+    try:
+        candidates = await solve_with_recovery(
+            incident=incident,
+            snapshot=snapshot,
+            impact_report=impact_report,
+            bundle=bundle,
+            solver=HybridSolver(),
+        )
+    except ShortageEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     # 7. Store results
     _candidate_plans_store[key] = candidates

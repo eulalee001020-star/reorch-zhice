@@ -22,9 +22,13 @@ from app.models.impact import ImpactReport
 from app.models.incident import Incident
 from app.models.schedule import ScheduleSnapshot
 from app.models.strategy import StrategyRecommendation
-from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
-from app.services.intake.recovery_context import incident_duration_minutes
-from app.services.intake.recovery_planning import PreparedRecovery, prepare_recovery
+from app.services.intake.recovery_flow import (
+    DEFAULT_WAIT_MINUTES,
+    analyze_incident_impact,
+    expected_wait_minutes,
+    prepare_for_incident,
+)
+from app.services.intake.recovery_planning import PreparedRecovery
 from app.services.solver.strategy_selector import StrategySelector
 from app.services.storage.persistence import (
     assign_snapshot_version,
@@ -71,12 +75,8 @@ def prepare_incident_recovery(
     A supply event that cannot be applied to the supply snapshot is the
     caller's data problem, so it is reported as 422 rather than hidden.
     """
-    from app.api.supply import current_supply
-
     try:
-        return prepare_recovery(
-            incident, snapshot, current_supply(), allow_substitutes=allow_substitutes
-        )
+        return prepare_for_incident(incident, snapshot, allow_substitutes=allow_substitutes)
     except ShortageEventError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
@@ -155,16 +155,12 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
         if snapshot is not None:
             _snapshot_store[str(snapshot.snapshot_id)] = snapshot
 
-    engine = ImpactAnalysisEngine()
-    prepared = (
-        prepare_incident_recovery(incident, snapshot)
-        if snapshot is not None and snapshot.work_orders
-        else None
-    )
-    if prepared is not None and prepared.context is not None:
-        report = await engine.analyze_recovery(incident, snapshot, prepared.context)
-    else:
-        report = await engine.analyze(incident, snapshot)
+    try:
+        report = await analyze_incident_impact(incident, snapshot)
+    except ShortageEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     _impact_report_cache[cache_key] = report
     await persist_impact_report(report)
@@ -211,8 +207,11 @@ async def get_strategy(
         from app.api.incidents import _incident_store
 
         incident = _incident_store.get(cache_key)
-        known = incident_duration_minutes(incident) if incident is not None else None
-        estimated_repair_time_minutes = float(known) if known is not None else 60.0
+        estimated_repair_time_minutes = (
+            expected_wait_minutes(incident, report)
+            if incident is not None
+            else DEFAULT_WAIT_MINUTES
+        )
 
     # Determine total_active_work_orders from snapshot
     total_active_work_orders = 0
