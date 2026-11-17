@@ -19,9 +19,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.auth import CurrentUser, get_optional_current_user
 from app.models.case import PreferenceProfile
 from app.models.impact import ImpactReport
+from app.models.incident import Incident
 from app.models.schedule import ScheduleSnapshot
 from app.models.strategy import StrategyRecommendation
-from app.services.intake.impact_analysis_engine import ImpactAnalysisEngine
+from app.services.intake.recovery_flow import (
+    DEFAULT_WAIT_MINUTES,
+    analyze_incident_impact,
+    expected_wait_minutes,
+    prepare_for_incident,
+)
+from app.services.intake.recovery_planning import PreparedRecovery
 from app.services.solver.strategy_selector import StrategySelector
 from app.services.storage.persistence import (
     assign_snapshot_version,
@@ -33,6 +40,7 @@ from app.services.storage.persistence import (
     persist_schedule_snapshot,
     persist_strategy_recommendation,
 )
+from app.services.supply.shortage import ShortageEventError
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +52,35 @@ router = APIRouter(tags=["analysis"])
 _snapshot_store: dict[str, ScheduleSnapshot] = {}
 _impact_report_cache: dict[str, ImpactReport] = {}
 _strategy_cache: dict[str, StrategyRecommendation] = {}
+
+
+async def current_snapshot() -> ScheduleSnapshot | None:
+    """The schedule snapshot the loop is working on: the first one imported."""
+    for snapshot in _snapshot_store.values():
+        return snapshot
+    snapshot = await fetch_any_snapshot()
+    if snapshot is not None:
+        _snapshot_store[str(snapshot.snapshot_id)] = snapshot
+    return snapshot
+
+
+def prepare_incident_recovery(
+    incident: Incident,
+    snapshot: ScheduleSnapshot,
+    *,
+    allow_substitutes: bool = False,
+) -> PreparedRecovery:
+    """Recovery context and planning snapshot for an incident.
+
+    A supply event that cannot be applied to the supply snapshot is the
+    caller's data problem, so it is reported as 422 rather than hidden.
+    """
+    try:
+        return prepare_for_incident(incident, snapshot, allow_substitutes=allow_substitutes)
+    except ShortageEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -118,8 +155,12 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
         if snapshot is not None:
             _snapshot_store[str(snapshot.snapshot_id)] = snapshot
 
-    engine = ImpactAnalysisEngine()
-    report = await engine.analyze(incident, snapshot)
+    try:
+        report = await analyze_incident_impact(incident, snapshot)
+    except ShortageEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     _impact_report_cache[cache_key] = report
     await persist_impact_report(report)
@@ -140,8 +181,8 @@ async def get_impact_report(incident_id: UUID) -> ImpactReport:
 )
 async def get_strategy(
     incident_id: UUID,
-    estimated_repair_time_minutes: float = Query(
-        60.0, description="设备预计修复时间（分钟），默认 60"
+    estimated_repair_time_minutes: float | None = Query(
+        None, description="设备预计修复时间（分钟）。不传时取异常自带的预计时长，都没有则按 60"
     ),
 ) -> StrategyRecommendation:
     cache_key = str(incident_id)
@@ -161,6 +202,16 @@ async def get_strategy(
         report = await get_impact_report(incident_id)
     else:
         report = _impact_report_cache[cache_key]
+
+    if estimated_repair_time_minutes is None:
+        from app.api.incidents import _incident_store
+
+        incident = _incident_store.get(cache_key)
+        estimated_repair_time_minutes = (
+            expected_wait_minutes(incident, report)
+            if incident is not None
+            else DEFAULT_WAIT_MINUTES
+        )
 
     # Determine total_active_work_orders from snapshot
     total_active_work_orders = 0

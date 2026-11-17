@@ -10,6 +10,7 @@ import {
   DatabaseOutlined,
   DeploymentUnitOutlined,
   ExperimentOutlined,
+  InboxOutlined,
   ProfileOutlined,
   SafetyCertificateOutlined,
   ScheduleOutlined,
@@ -36,6 +37,7 @@ const PreferenceProfilePage = lazy(() => import('@/pages/PreferenceProfilePage')
 const RuleCandidateReviewPage = lazy(() => import('@/pages/RuleCandidateReviewPage'));
 const ProductionRuntimePage = lazy(() => import('@/pages/ProductionRuntimePage'));
 const IntegrationControlPage = lazy(() => import('@/pages/IntegrationControlPage'));
+const SupplyPage = lazy(() => import('@/pages/SupplyPage'));
 
 function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -153,6 +155,11 @@ function App() {
                 label: '异常工作台',
               },
               {
+                key: 'supply',
+                icon: <InboxOutlined />,
+                label: '物料齐套',
+              },
+              {
                 key: 'readiness',
                 icon: <SafetyCertificateOutlined />,
                 label: 'DataGate',
@@ -227,6 +234,7 @@ function App() {
             {activeTab === 'workbench' && <DecisionWorkbench />}
             {activeTab === 'rules' && <RuleCandidateReviewPage />}
             {activeTab === 'preference' && <PreferenceProfilePage />}
+            {activeTab === 'supply' && <SupplyPage />}
             {activeTab === 'readiness' && <DataReadinessPage />}
             {activeTab === 'initial' && <InitialSchedulingPage />}
             {activeTab === 'partner' && <DesignPartnerPreflightPage />}

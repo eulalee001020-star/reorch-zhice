@@ -4,7 +4,8 @@
 
 | 包 | 职责 | 代表模块 |
 | --- | --- | --- |
-| `intake` | 异常接入、事件状态机、影响分析 | `anomaly_intake_center`、`impact_analysis_engine` |
+| `intake` | 异常接入、事件状态机、影响分析、恢复上下文 | `anomaly_intake_center`、`impact_analysis_engine`、`recovery_flow` |
+| `supply` | BOM 展开、MRP 净需求、齐套检查、到货就绪、供应商评分 | `kitting`、`mrp`、`shortage` |
 | `data_gate` | 数据健康门、来源治理、接入预检 | `data_readiness`、`schema_drift_guard`、`reality_harness` |
 | `constraints` | 约束定义、校验、校准、不可行归因 | `operational_constraint_validator`、`constraint_calibration` |
 | `solver` | 候选方案生成：规则、SSGS、CP-SAT、分解与混合求解 | `cp_sat_scheduler`、`hybrid_solver`、`feasibility_restoration` |
@@ -22,6 +23,8 @@
 intake -> data_gate -> constraints -> solver -> recommendation -> agent
        -> governance -> evidence
 ```
+
+`supply` 在 `intake` 之前算出每道工序的齐套时间，`intake` 把它和异常本身的事实（决策时点、设备不可用窗口）一起写成约束，后面的环节照常工作。
 
 `validation` 和 `storage` 为上面各环节提供回放验证与存储，不在主链路上。
 

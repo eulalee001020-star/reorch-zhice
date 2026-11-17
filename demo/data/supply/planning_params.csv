@@ -1,0 +1,9 @@
+item_id,lead_time_minutes,inspection_minutes,lot_multiple,minimum_order_quantity
+BRG-6205,2880,60,50,100
+SEAL-45,1440,60,50,50
+GASKET-C,1440,30,100,100
+BOLT-M8,4320,0,500,1000
+KEY-8,1440,0,100,100
+RM-BAR-40,4320,0,100,200
+RM-CAST-H,7200,120,20,40
+RM-PLATE-3,4320,0,100,200

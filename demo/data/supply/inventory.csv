@@ -1,0 +1,10 @@
+item_id,on_hand,allocated,quality_hold,safety_stock
+RM-BAR-40,900,0,0,50
+RM-CAST-H,220,0,0,20
+RM-PLATE-3,900,0,0,50
+BRG-6205,180,0,0,20
+BRG-6205-ALT,150,0,0,0
+SEAL-45,60,0,20,0
+KEY-8,300,0,0,20
+BOLT-M8,2500,0,0,200
+GASKET-C,40,0,0,0

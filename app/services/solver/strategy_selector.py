@@ -82,7 +82,8 @@ class StrategySelector:
         # Wait-and-Repair (Req 3.3)
         wait_factors: list[str] = []
         wait_score = 0.0
-        if estimated_repair_time_minutes < total_buffer:
+        # Waiting is only an option when it does not push an order past due.
+        if estimated_repair_time_minutes < total_buffer and not has_breach:
             wait_score = _BASE_CONFIDENCE_WAIT
             wait_factors.append(
                 f"estimated_repair_time ({estimated_repair_time_minutes:.1f}min) "

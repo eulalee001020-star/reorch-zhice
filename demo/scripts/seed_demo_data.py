@@ -18,6 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from app.adapters.csv_adapter import CSVAdapter  # noqa: E402
 from app.adapters.mapping_validator import validate_customer_payloads  # noqa: E402
+from app.services.supply.csv_loader import load_supply_snapshot  # noqa: E402
 
 DEFAULT_SOURCE_DIR = REPO_ROOT / "demo" / "data"
 DEFAULT_RUNTIME_DIR = REPO_ROOT / "demo" / "runtime"
@@ -72,6 +73,16 @@ async def seed_demo_data(
 
     adapter = CSVAdapter(source_dir)
     snapshot = await adapter.fetch_current_schedule(workshop_id="DEMO-LINE-01")
+    # The demo schedule is dated. Capture it at the incident time so that the
+    # API treats earlier operations as history and later ones as open.
+    incident_time = datetime.fromisoformat(raw["incidents"][0]["start_time"])
+    snapshot.captured_at = incident_time
+    supply = load_supply_snapshot(
+        source_dir / "supply",
+        captured_at=incident_time,
+        work_orders_csv=source_dir / "work_orders.csv",
+        workshop_id="DEMO-LINE-01",
+    )
     affected = _affected_operations(raw["operations"], raw["incidents"][0])
 
     artifacts = {
@@ -95,6 +106,7 @@ async def seed_demo_data(
         api_result = _seed_running_api(
             api_base_url=api_base_url,
             schedule_snapshot=snapshot.model_dump(mode="json"),
+            supply_snapshot=supply.model_dump(mode="json"),
             incident=raw["incidents"][0],
         )
         _write_json(runtime_dir / "api_seed_result.json", api_result)
@@ -129,9 +141,11 @@ def _seed_running_api(
     *,
     api_base_url: str,
     schedule_snapshot: dict[str, Any],
+    supply_snapshot: dict[str, Any],
     incident: dict[str, Any],
 ) -> dict[str, Any]:
     base_url = api_base_url.rstrip("/")
+    supply_response = _post_json(f"{base_url}/supply/snapshots", supply_snapshot)
     snapshot_response = _post_json(
         f"{base_url}/schedule-snapshots",
         schedule_snapshot,
@@ -153,6 +167,7 @@ def _seed_running_api(
     )
     return {
         "schedule_snapshot": snapshot_response,
+        "supply_snapshot_id": supply_response.get("supply_snapshot_id"),
         "incident": incident_response,
     }
 

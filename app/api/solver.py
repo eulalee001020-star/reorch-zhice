@@ -25,6 +25,8 @@ from app.models.enums import GoalMode
 from app.models.recommendation import PlanSelectionOutput
 from app.models.schedule import ScheduleDetail
 from app.models.solver import CandidatePlan, SolverChain
+from app.services.intake.recovery_flow import solve_with_recovery
+from app.services.supply.shortage import ShortageEventError
 
 logger = logging.getLogger(__name__)
 
@@ -164,13 +166,19 @@ async def solve_incident(
         similar_cases=[],
     )
 
-    # 6. Solve
-    solver = HybridSolver()
-    candidates = await solver.solve(
-        bundle=bundle,
-        impact_report=impact_report,
-        snapshot=snapshot,
-    )
+    # 6. Solve against the incident's physical facts
+    try:
+        candidates = await solve_with_recovery(
+            incident=incident,
+            snapshot=snapshot,
+            impact_report=impact_report,
+            bundle=bundle,
+            solver=HybridSolver(),
+        )
+    except ShortageEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     # 7. Store results
     _candidate_plans_store[key] = candidates

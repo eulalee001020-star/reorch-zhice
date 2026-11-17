@@ -11,6 +11,16 @@ export enum IncidentSeverity {
 
 export enum IncidentType {
   EQUIPMENT_FAILURE = 'equipment_failure',
+  MATERIAL_SHORTAGE = 'material_shortage',
+}
+
+export const INCIDENT_TYPE_LABELS: Record<string, string> = {
+  [IncidentType.EQUIPMENT_FAILURE]: '设备故障',
+  [IncidentType.MATERIAL_SHORTAGE]: '物料短缺',
+};
+
+export function incidentTypeLabel(type: string): string {
+  return INCIDENT_TYPE_LABELS[type] ?? type;
 }
 
 export enum IncidentStatus {

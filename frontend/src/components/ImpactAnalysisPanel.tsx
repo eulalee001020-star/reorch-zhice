@@ -35,7 +35,7 @@ import {
 } from '@/stores';
 import { transitionView, canEnterPlanSelection } from '@/stores';
 import type { AffectedWorkOrder } from '@/types';
-import { DeliveryRiskLevel, IncidentType } from '@/types';
+import { DeliveryRiskLevel, incidentTypeLabel } from '@/types';
 import { incidentStatusMap } from '@/utils/statusMapping';
 import type { IncidentStatus } from '@/types';
 
@@ -155,7 +155,7 @@ export const ImpactAnalysisPanel: React.FC = () => {
       {/* Incident info */}
       <Descriptions size="small" column={3} bordered style={{ marginBottom: 12 }}>
         <Descriptions.Item label="异常类型">
-          {incident.incident_type === IncidentType.EQUIPMENT_FAILURE ? '设备故障' : incident.incident_type}
+          {incidentTypeLabel(incident.incident_type)}
         </Descriptions.Item>
         <Descriptions.Item label="发生时间">
           {dayjs(incident.occurred_at).format('YYYY-MM-DD HH:mm')}
