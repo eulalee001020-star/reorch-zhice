@@ -21,6 +21,7 @@ from app.api.auth import router as auth_router
 from app.api.cases import router as cases_router
 from app.api.confirmation import router as confirmation_router
 from app.api.demo import router as demo_router
+from app.api.dispatch import router as dispatch_router
 from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
 from app.api.incidents import router as incidents_router
@@ -117,6 +118,7 @@ app.include_router(integration_control_router)
 app.include_router(analysis_router)
 app.include_router(solver_router)
 app.include_router(supply_router)
+app.include_router(dispatch_router)
 app.include_router(confirmation_router)
 app.include_router(cases_router)
 app.include_router(demo_router)
