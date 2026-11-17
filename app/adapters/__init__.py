@@ -14,6 +14,7 @@ from app.adapters.mapping_validator import (
     validate_customer_payloads,
 )
 from app.adapters.mock_adapter import MockAdapter
+from app.adapters.odoo_adapter import OdooAdapter, OdooClient, OdooConnectionSettings
 from app.adapters.rest_adapter import RESTAdapter, RESTEndpointConfig
 
 __all__ = [
@@ -25,6 +26,9 @@ __all__ = [
     "MappingValidationIssue",
     "MappingValidationReport",
     "MockAdapter",
+    "OdooAdapter",
+    "OdooClient",
+    "OdooConnectionSettings",
     "RESTAdapter",
     "RESTEndpointConfig",
     "validate_canonical_dataset",

@@ -64,6 +64,7 @@
 | [Production Readiness Gap](deployment/production_readiness_gap.md) | `deployment/production_readiness_gap.md` |
 | [Industrial Constraint Roadmap](domain/industrial_constraint_roadmap.md) | `domain/industrial_constraint_roadmap.md` |
 | [ERP/MES/APS Adapter Contract](integration/adapter_contract.md) | `integration/adapter_contract.md` |
+| [Odoo 适配器](integration/odoo_adapter.md) | `integration/odoo_adapter.md` |
 | [Canonical Data Model](integration/canonical_data_model.md) | `integration/canonical_data_model.md` |
 | [Customer Data Request List](integration/customer_data_request_list.md) | `integration/customer_data_request_list.md` |
 | [Data Readiness 停损规则](integration/data_readiness_stop_rules.md) | `integration/data_readiness_stop_rules.md` |
