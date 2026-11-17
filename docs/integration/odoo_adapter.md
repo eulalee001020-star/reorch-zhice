@@ -37,8 +37,11 @@ Odoo 的时间是不带时区的 UTC 字符串，空值是 `False`，多对一�
 from app.adapters.odoo_adapter import OdooAdapter, OdooClient, OdooFieldNames
 
 client = OdooClient(
-    "https://erp.example.com", database="prod",
-    login="planner", api_key="...", protocol="jsonrpc",
+    "https://erp.example.com",
+    database="prod",
+    login="planner",
+    api_key="...",
+    protocol="jsonrpc",
 )
 adapter = OdooAdapter(
     client,
