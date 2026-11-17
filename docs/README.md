@@ -59,6 +59,7 @@
 | [Solver Strategy Architecture Memory](architecture/solver_strategy_memory.md) | `architecture/solver_strategy_memory.md` |
 | [恢复上下文：把异常的物理事实变成约束](architecture/recovery_context.md) | `architecture/recovery_context.md` |
 | [物料侧计划：从 BOM 到工序开工下限](architecture/supply_planning.md) | `architecture/supply_planning.md` |
+| [发运调度：恢复方案对到货的影响](architecture/dispatch_planning.md) | `architecture/dispatch_planning.md` |
 | [Docker Compose Validation Note](deployment/compose_validation.md) | `deployment/compose_validation.md` |
 | [Enterprise Deployment Demo Checklist](deployment/enterprise_deployment_demo_checklist.md) | `deployment/enterprise_deployment_demo_checklist.md` |
 | [Production Readiness Gap](deployment/production_readiness_gap.md) | `deployment/production_readiness_gap.md` |

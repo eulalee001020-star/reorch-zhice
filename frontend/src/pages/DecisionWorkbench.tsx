@@ -22,6 +22,7 @@ import { IncidentListPanel } from '@/components/IncidentListPanel';
 import { ProcessingStatusPanel } from '@/components/ProcessingStatusPanel';
 import { ImpactAnalysisPanel } from '@/components/ImpactAnalysisPanel';
 import { PlanComparisonPanel } from '@/components/PlanComparisonPanel';
+import { DispatchImpactPanel } from '@/components/DispatchImpactPanel';
 import { ConfirmationPanel } from '@/components/ConfirmationPanel';
 import { CaseReferencePanel } from '@/components/CaseReferencePanel';
 
@@ -65,6 +66,9 @@ const DecisionWorkbench: React.FC = () => {
             <>
               <div style={{ marginTop: 12 }}>
                 <PlanComparisonPanel />
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <DispatchImpactPanel />
               </div>
               <div style={{ marginTop: 12 }}>
                 <ConfirmationPanel />
@@ -155,7 +159,12 @@ const DecisionWorkbench: React.FC = () => {
             {currentView === 'incident_analysis' ? (
               <ImpactAnalysisPanel />
             ) : (
-              <PlanComparisonPanel />
+              <>
+                <PlanComparisonPanel />
+                <div style={{ marginTop: 12 }}>
+                  <DispatchImpactPanel />
+                </div>
+              </>
             )}
             {/* Case reference always visible on workbench (Req 31.6) */}
             <div style={{ marginTop: 12 }}>

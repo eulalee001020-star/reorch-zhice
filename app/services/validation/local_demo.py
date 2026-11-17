@@ -26,6 +26,7 @@ import httpx
 
 from app.adapters.csv_adapter import CSVAdapter
 from app.core.paths import REPO_ROOT
+from app.services.dispatch.planner import load_dispatch_snapshot
 from app.services.supply.csv_loader import load_supply_snapshot
 
 DEMO_DATA_DIR = REPO_ROOT / "demo" / "data"
@@ -82,6 +83,19 @@ class DemoResult:
     violations: int = 0
     decision_record_id: str = ""
     supply_summary: list[str] = field(default_factory=list)
+    dispatch_plans: list[dict[str, Any]] = field(default_factory=list)
+
+    def dispatch_lines(self) -> list[str]:
+        lines = []
+        for plan in self.dispatch_plans:
+            mark = "推荐" if plan["is_recommended"] else "    "
+            held = len(plan["unserved_shipment_ids"])
+            lines.append(
+                f"    {mark}  {plan['label']:<14} 迟到 {plan['late_stop_count']} 票"
+                f"（共 {plan['total_late_minutes']:.0f} 分钟），当班发不出 {held} 票，"
+                f"用车 {plan['vehicles_used']} 辆，里程 {plan['total_distance_km']:.0f} km"
+            )
+        return lines
 
     @property
     def recommended(self) -> CandidateSummary:
@@ -103,6 +117,7 @@ class DemoResult:
             f"恢复策略      {self.strategy_type}",
             "候选方案",
             *[candidate.line(self.recommended_plan_id) for candidate in self.candidates],
+            *(["发运影响", *self.dispatch_lines()] if self.dispatch_plans else []),
             f"推荐理由      {self.reason_summary}",
             f"确认前校验    {len(self.checked_constraints)} 类约束，违反 {self.violations} 项",
             f"决策记录      {self.decision_record_id}",
@@ -113,6 +128,7 @@ class DemoResult:
 def reset_in_memory_state() -> None:
     """Clear the API's in-memory working stores so a walk starts from nothing."""
     from app.api.analysis import _impact_report_cache, _snapshot_store, _strategy_cache
+    from app.api.dispatch import _dispatch_store
     from app.api.incidents import _incident_store
     from app.api.solver import _candidate_plans_store, _plan_index, _recommendation_store
     from app.api.supply import _supply_store
@@ -126,6 +142,7 @@ def reset_in_memory_state() -> None:
         _plan_index,
         _recommendation_store,
         _supply_store,
+        _dispatch_store,
     ):
         store.clear()
 
@@ -160,11 +177,18 @@ async def _seed_supply(client: httpx.AsyncClient, data_dir: Path, captured_at: d
     await _call(client, "POST", "/supply/snapshots", json=supply.model_dump(mode="json"))
 
 
+async def _seed_dispatch(client: httpx.AsyncClient, data_dir: Path, captured_at: datetime) -> None:
+    dispatch = load_dispatch_snapshot(data_dir / "dispatch", captured_at=captured_at)
+    if dispatch.stops:
+        await _call(client, "POST", "/dispatch/snapshots", json=dispatch.model_dump(mode="json"))
+
+
 async def seed(client: httpx.AsyncClient, data_dir: Path = DEMO_DATA_DIR) -> str:
     """Post the demo schedule and the machine-down incident; return the incident id."""
     row = _first_row(data_dir / "incidents.csv")
     occurred_at = datetime.fromisoformat(row["start_time"])
     await _seed_schedule(client, data_dir, occurred_at)
+    await _seed_dispatch(client, data_dir, occurred_at)
     created = await _call(
         client,
         "POST",
@@ -191,6 +215,7 @@ async def seed_material(client: httpx.AsyncClient, data_dir: Path = DEMO_DATA_DI
     occurred_at = datetime.fromisoformat(row["occurred_at"])
     await _seed_schedule(client, data_dir, occurred_at)
     await _seed_supply(client, data_dir, occurred_at)
+    await _seed_dispatch(client, data_dir, occurred_at)
     created = await _call(
         client,
         "POST",
@@ -261,6 +286,11 @@ async def _walk_incident(
     recommendation = await _call(client, "POST", f"{base}/recommend", json={})
 
     plan_id = str(recommendation["recommended_plan_id"])
+    from app.api.dispatch import current_dispatch
+
+    dispatch_plans: list[dict[str, Any]] = []
+    if current_dispatch() is not None:
+        dispatch_plans = (await _call(client, "GET", f"{base}/dispatch-impact"))["plans"]
     confirmed = await _call(
         client,
         "POST",
@@ -287,6 +317,7 @@ async def _walk_incident(
         violations=len(validation["violations"]),
         decision_record_id=str(record["decision_record_id"]),
         supply_summary=supply_summary,
+        dispatch_plans=dispatch_plans,
     )
 
 

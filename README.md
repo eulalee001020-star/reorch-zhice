@@ -72,6 +72,8 @@ flowchart LR
 
 每次求解都会同时给出“只顺延不调整”的基准方案。重排方案值不值得采纳，看它比基准好多少。设计见 [恢复上下文](docs/architecture/recovery_context.md) 和 [物料侧计划](docs/architecture/supply_planning.md)。
 
+候选方案还会接到当班的车辆排线上：每票货在对应工单完工后放行，系统对每个方案分别排线，列出迟到几票、发不出几票。设计与验证见 [发运调度](docs/architecture/dispatch_planning.md)。读取 ERP 的参照实现是 [Odoo 适配器](docs/integration/odoo_adapter.md)。
+
 详细设计见 [工业 AI Copilot 方案](docs/portfolio/industrial_ai_copilot_solution.md)、[技术内核架构](docs/architecture/constraint_to_recovery_technical_stack.md) 和 [可行性恢复机制](docs/architecture/feasibility_restoration.md)。
 
 ## 已验证状态
@@ -201,6 +203,8 @@ cd ../portfolio_site && npm ci && npm run lint && npm run build
 - 生产自动写回默认关闭；即使通过人工确认，也必须另行完成客户 Sandbox、权限、回滚、安全和现场验收。
 - LLM 不负责生产事实、硬约束、排程可行性或最终执行责任。
 - 主决策闭环目前接入**设备故障**和**物料短缺**两类异常。急单插入和质量返工只在异常理解和柔性车间能力模块里有覆盖，还没有接入同一条从影响分析到确认的闭环。
+- Odoo 适配器只用录制的请求和响应形状测试过，没有连过真实实例。
+- 发运调度用直线距离和固定车速，一车一趟；结果只用于比较，不参与方案评分。
 - 物料侧数据（BOM、库存、在途、供应商记录）只存在内存里，演示数据为合成数据；评分权重、检验时长等参数未经真实企业数据校准。
 
 因此，本仓库可以证明完整产品闭环、AI Native 架构、工程实现、评测治理与生产化思考，但不能被解读为已完成客户生产上线。

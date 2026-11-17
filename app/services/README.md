@@ -13,6 +13,7 @@
 | `agent` | 受控 Agent 工作流、模型调用、可观测性 | `agent_workflow`、`llm_agent_client` |
 | `governance` | 人工确认、审批、受控回写、鉴权 | `confirmation_module`、`writeback_module` |
 | `evidence` | 证据台账、案例库、规则候选复盘 | `recovery_evidence_ledger`、`case_library` |
+| `dispatch` | 发运调度：带时间窗和放行时间的车辆路径，衔接恢复方案的完工时间 | `routing`、`planner` |
 | `validation` | 回放、影子模式、数字孪生验证 | `replay_validation`、`digital_twin_runner` |
 | `storage` | 持久化、运行态存储、备份 | `persistence`、`operational_store` |
 | `ngs` | NGS 实验室特化场景 | `ngs_lab` |
