@@ -62,6 +62,16 @@ flowchart LR
 | 执行 | 不调用生产写回 | 双审批、短时 permit、幂等键、sandbox certification 和审计记录共同控制 |
 | 降级 | 说明不确定性和缺失证据 | 超时、冲突、漂移或权限不足时 fail closed |
 
+## 恢复方案必须遵守的物理事实
+
+一次异常带来三件排程快照里没有的事，系统把它们写成求解器的硬约束，并在测试里逐条断言：
+
+- **已经发生的不改。** 异常发生前已开工的工序冻结；只有故障时正在故障设备上加工的那道被视为打断、需要重排。
+- **不可用的不排。** 故障设备在预计修复时间内不可用，候选方案不会把工序排上去。
+- **没料的不开工。** 工序不早于它的齐套时间开工；齐套时间来自库存、在途和到货缺项的逐笔核对。
+
+每次求解都会同时给出“只顺延不调整”的基准方案。重排方案值不值得采纳，看它比基准好多少。设计见 [恢复上下文](docs/architecture/recovery_context.md) 和 [物料侧计划](docs/architecture/supply_planning.md)。
+
 详细设计见 [工业 AI Copilot 方案](docs/portfolio/industrial_ai_copilot_solution.md)、[技术内核架构](docs/architecture/constraint_to_recovery_technical_stack.md) 和 [可行性恢复机制](docs/architecture/feasibility_restoration.md)。
 
 ## 已验证状态
@@ -116,12 +126,20 @@ flowchart LR
 
 ```bash
 uv sync --extra dev
-uv run python tools/run_local_demo.py            # 只打印闭环结果
-uv run python tools/run_local_demo.py --serve    # 结果保留在 :8000，供前端查看
+uv run python tools/run_local_demo.py                      # 设备故障：M-03 停机 4 小时
+uv run python tools/run_local_demo.py --scenario material  # 供应延期：轴承到货推迟到次日
+uv run python tools/run_local_demo.py --serve              # 结果保留在 :8000，供前端查看
 cd frontend && npm install && npm run dev        # 另开终端，打开 http://localhost:3000
 ```
 
-轻量模式下工作状态只存在内存里，重启即清空，适合演示和开发。
+两个场景在演示数据上的结果：
+
+| 场景 | 只顺延不调整 | 系统推荐 |
+| --- | --- | --- |
+| 设备故障 | 1 张工单延期，最长 90 分钟 | 重排后 0 张延期，调整约 10 道工序 |
+| 供应延期 | 2 张工单延期，最长 835 分钟 | 使用已批准替代料，0 张延期，不需要调整工序 |
+
+演示数据是合成的，这组数字只说明闭环在这份数据上的行为，不代表真实产线效果。轻量模式下工作状态只存在内存里，重启即清空，适合演示和开发。
 
 **完整栈**包含 FastAPI、React、PostgreSQL/pgvector、Redis、Redpanda 和 mock ERP/MES/APS：
 
@@ -182,5 +200,7 @@ cd ../portfolio_site && npm ci && npm run lint && npm run build
 - 公开结果来自自动化测试、公开来源数据、合成回放与数字孪生演练。
 - 生产自动写回默认关闭；即使通过人工确认，也必须另行完成客户 Sandbox、权限、回滚、安全和现场验收。
 - LLM 不负责生产事实、硬约束、排程可行性或最终执行责任。
+- 主决策闭环目前接入**设备故障**和**物料短缺**两类异常。急单插入和质量返工只在异常理解和柔性车间能力模块里有覆盖，还没有接入同一条从影响分析到确认的闭环。
+- 物料侧数据（BOM、库存、在途、供应商记录）只存在内存里，演示数据为合成数据；评分权重、检验时长等参数未经真实企业数据校准。
 
 因此，本仓库可以证明完整产品闭环、AI Native 架构、工程实现、评测治理与生产化思考，但不能被解读为已完成客户生产上线。
