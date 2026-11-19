@@ -31,8 +31,9 @@ Writeback only ever sends the dates and work centre of operations in a
 human-confirmed plan, and only when ``allow_writeback`` is set. Otherwise the
 call returns the payload it would have sent.
 
-This adapter is tested against recorded request and response shapes. It has
-not been run against a live Odoo instance.
+Recorded-shape tests cover both protocols. Opt-in live tests also exercise
+Odoo 18 Community JSON-RPC manufacturing/supply reads, confirmed writeback
+and default dry-run behaviour; see docs/integration/odoo_sandbox_validation.md.
 """
 
 from __future__ import annotations

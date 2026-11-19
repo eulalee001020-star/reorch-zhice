@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["dispatch"])
 
-# Latest dispatch snapshot, kept in memory like the supply snapshot.
+# Compatibility cache for local-demo reset; durable reads use the operational store.
 _dispatch_store: dict[str, DispatchSnapshot] = {}
 
 ORIGINAL_LABEL = "原计划"
@@ -36,9 +36,11 @@ MATERIAL_OPTION_LABELS = {
 
 
 def current_dispatch() -> DispatchSnapshot | None:
-    if not _dispatch_store:
-        return None
-    return next(reversed(_dispatch_store.values()))
+    """Read the durable head so restarts and other workers see committed imports."""
+    from app.api.production_runtime import get_operational_store
+
+    payload = get_operational_store().latest_planning_snapshot("dispatch")
+    return DispatchSnapshot.model_validate(payload) if payload is not None else None
 
 
 def _require_dispatch() -> DispatchSnapshot:
@@ -77,6 +79,14 @@ async def create_dispatch_snapshot(body: DispatchSnapshot) -> DispatchSnapshot:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="shipment_id values must be unique",
         )
+    from app.api.production_runtime import get_operational_store
+
+    try:
+        get_operational_store().save_planning_snapshot(
+            "dispatch", str(body.dispatch_snapshot_id), body.model_dump(mode="json")
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     _dispatch_store[str(body.dispatch_snapshot_id)] = body
     logger.info("Dispatch snapshot stored: %s", body.dispatch_snapshot_id)
     return body

@@ -19,6 +19,7 @@ from app.services.dispatch.routing import (
     Node,
     Problem,
     Vehicle,
+    Weights,
     evaluate_route,
     solve,
 )
@@ -75,6 +76,7 @@ def build_problem(snapshot: DispatchSnapshot, completions: dict[str, datetime]) 
         depot=(snapshot.depot_x_km, snapshot.depot_y_km),
         speed_kmh=snapshot.speed_kmh,
         loading_minutes=float(snapshot.loading_minutes),
+        weights=Weights(**snapshot.cost_weights.model_dump()),
     )
 
 

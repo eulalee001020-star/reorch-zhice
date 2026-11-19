@@ -7,7 +7,8 @@ import threading
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import DateTime, create_engine, func, select
+from sqlalchemy import DateTime, create_engine, func, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -19,6 +20,7 @@ from app.models.db.operational_runtime import (
     IntegrationAuditRecordORM,
     IntegrationQuarantineRecordORM,
     OperationalBase,
+    PlanningSnapshotRecordORM,
     RuntimeEvidenceRecordORM,
     ShadowCaseRecordORM,
     SolveJobRecordORM,
@@ -53,6 +55,52 @@ class RelationalOperationalStore:
 
     def session(self) -> Session:
         return self._sessions()
+
+    def save_planning_snapshot(self, kind: str, snapshot_id: str, payload: dict) -> None:
+        """Commit before acknowledging import; IDs cannot silently change meaning."""
+        try:
+            with self._lock, self.session() as session, session.begin():
+                existing = session.scalar(
+                    select(PlanningSnapshotRecordORM).where(
+                        PlanningSnapshotRecordORM.kind == kind,
+                        PlanningSnapshotRecordORM.snapshot_id == snapshot_id,
+                    )
+                )
+                if existing is not None:
+                    if existing.payload != payload:
+                        raise ValueError("snapshot_id already exists with different content")
+                    return
+                session.add(
+                    PlanningSnapshotRecordORM(
+                        kind=kind,
+                        snapshot_id=snapshot_id,
+                        payload=payload,
+                        stored_at=datetime.now(UTC),
+                    )
+                )
+        except IntegrityError:
+            # Another worker may have committed this same ID after our read.
+            with self.session() as session:
+                existing = session.scalar(
+                    select(PlanningSnapshotRecordORM).where(
+                        PlanningSnapshotRecordORM.kind == kind,
+                        PlanningSnapshotRecordORM.snapshot_id == snapshot_id,
+                    )
+                )
+                if existing is None:
+                    raise
+                if existing.payload != payload:
+                    raise ValueError("snapshot_id already exists with different content") from None
+
+    def latest_planning_snapshot(self, kind: str) -> dict | None:
+        with self.session() as session:
+            row = session.scalar(
+                select(PlanningSnapshotRecordORM)
+                .where(PlanningSnapshotRecordORM.kind == kind)
+                .order_by(PlanningSnapshotRecordORM.sequence.desc())
+                .limit(1)
+            )
+            return row.payload if row else None
 
     def get_cdc_event(self, event_id: str) -> CdcEventRecord | None:
         with self.session() as session:
@@ -816,6 +864,7 @@ class RelationalOperationalStore:
             "integration_assets": IntegrationAssetRecordORM,
             "integration_quarantine": IntegrationQuarantineRecordORM,
             "integration_audit_events": IntegrationAuditRecordORM,
+            "planning_snapshots": PlanningSnapshotRecordORM,
         }
         result: dict[str, list[dict[str, Any]]] = {}
         with self.session() as session:
@@ -833,6 +882,7 @@ class RelationalOperationalStore:
     def clear_runtime_state(self) -> None:
         with self._lock, self.session() as session, session.begin():
             for model in (
+                PlanningSnapshotRecordORM,
                 IntegrationAuditRecordORM,
                 IntegrationQuarantineRecordORM,
                 IntegrationAssetRecordORM,
@@ -861,10 +911,12 @@ class RelationalOperationalStore:
             "integration_assets": IntegrationAssetRecordORM,
             "integration_quarantine": IntegrationQuarantineRecordORM,
             "integration_audit_events": IntegrationAuditRecordORM,
+            "planning_snapshots": PlanningSnapshotRecordORM,
         }
         with self._lock, self.session() as session, session.begin():
             if clear_existing:
                 for model in (
+                    PlanningSnapshotRecordORM,
                     IntegrationAuditRecordORM,
                     IntegrationQuarantineRecordORM,
                     IntegrationAssetRecordORM,
@@ -888,6 +940,14 @@ class RelationalOperationalStore:
                             value = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
                         values[key] = value
                     session.add(model(**values))
+            if self.engine.dialect.name == "postgresql" and state.get("planning_snapshots"):
+                session.flush()
+                session.execute(
+                    text(
+                        "SELECT setval(pg_get_serial_sequence('planning_snapshots', 'sequence'), "
+                        "(SELECT MAX(sequence) FROM planning_snapshots), true)"
+                    )
+                )
 
 
 def _job_orm(record: SolveJobRecord) -> SolveJobRecordORM:

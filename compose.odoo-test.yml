@@ -1,0 +1,34 @@
+# Isolated synthetic-data test stack; does not use the application database.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo-test
+      POSTGRES_DB: postgres
+    ports:
+      - '127.0.0.1:55432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U odoo -d postgres']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+  odoo:
+    image: odoo:18.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo-test
+    command: ['odoo', '-d', 'reorch_odoo_test', '-i', 'mrp,purchase_stock', '--without-demo=all', '--max-cron-threads=0', '--db-filter=^reorch_odoo_test$$']
+    ports:
+      - '127.0.0.1:18069:8069'
+    healthcheck:
+      test: ['CMD', 'python3', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8069/web/health', timeout=5)"]
+      interval: 5s
+      timeout: 10s
+      retries: 36

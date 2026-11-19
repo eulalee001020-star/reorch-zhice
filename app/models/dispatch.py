@@ -42,6 +42,15 @@ class DispatchVehicle(ReOrchModel):
     shift_end: datetime
 
 
+class DispatchCostWeights(ReOrchModel):
+    """Penalty rates divided by cost per km (all in kilometre-equivalents)."""
+
+    late: float = Field(default=5.0, ge=0, allow_inf_nan=False)
+    overtime: float = Field(default=5.0, ge=0, allow_inf_nan=False)
+    vehicle: float = Field(default=50.0, ge=0, allow_inf_nan=False)
+    unserved: float = Field(default=5000.0, ge=0, allow_inf_nan=False)
+
+
 class DispatchSnapshot(ReOrchModel):
     """Shipments and vehicles for one dispatch horizon. Distances are planar."""
 
@@ -51,6 +60,7 @@ class DispatchSnapshot(ReOrchModel):
     depot_y_km: float = 0.0
     speed_kmh: float = Field(default=40.0, gt=0)
     loading_minutes: int = Field(default=0, ge=0)
+    cost_weights: DispatchCostWeights = Field(default_factory=DispatchCostWeights)
     stops: list[DispatchStop] = Field(default_factory=list)
     vehicles: list[DispatchVehicle] = Field(default_factory=list)
 

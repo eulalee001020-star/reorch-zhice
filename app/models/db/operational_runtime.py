@@ -236,3 +236,19 @@ class IntegrationAuditRecordORM(OperationalBase):
     actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
     details: Mapped[dict] = mapped_column(JSON_DOCUMENT, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PlanningSnapshotRecordORM(OperationalBase):
+    """Immutable supply/dispatch imports, ordered by committed ingestion sequence."""
+
+    __tablename__ = "planning_snapshots"
+    __table_args__ = (
+        UniqueConstraint("kind", "snapshot_id", name="uq_planning_snapshot_identity"),
+        Index("ix_planning_snapshot_latest", "kind", "sequence"),
+    )
+
+    sequence: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    snapshot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON_DOCUMENT, nullable=False)
+    stored_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
