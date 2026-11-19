@@ -1,0 +1,12 @@
+{
+  "source": "synthetic-test-v1: explicit 30 km/h travel model and illustrative cost ledger; not enterprise observations",
+  "drives": [
+    {"km": 10, "minutes": 20, "split": "train"},
+    {"km": 20, "minutes": 40, "split": "train"},
+    {"km": 30, "minutes": 60, "split": "train"},
+    {"km": 15, "minutes": 31, "split": "holdout"},
+    {"km": 25, "minutes": 49, "split": "holdout"}
+  ],
+  "cost_rates": {"distance_per_km": 2, "late_per_minute": 20, "overtime_per_minute": 6, "vehicle_per_trip": 120, "unserved_per_shipment": 12000},
+  "supplier_late_minutes": {"train": [0, 0, 10, 20, 30, 40, 60, 90, 120, 180], "holdout": [0, 20, 40, 100, 150]}
+}

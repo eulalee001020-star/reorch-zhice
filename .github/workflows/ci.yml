@@ -91,3 +91,34 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  odoo-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install '.[dev]'
+      - name: Start isolated Odoo 18 and PostgreSQL
+        run: docker compose -f compose.odoo-test.yml up -d --wait --wait-timeout 240
+      - name: Seed synthetic manufacturing, inventory and purchase data
+        run: |
+          docker compose -f compose.odoo-test.yml exec -T odoo odoo shell \
+            --db_host=db --db_port=5432 --db_user=odoo --db_password=odoo-test \
+            -d reorch_odoo_test --no-http < tools/odoo_sandbox_seed.py
+          docker compose -f compose.odoo-test.yml exec -T db createdb -U odoo reorch_runtime_test
+      - name: Exercise actual RPC read/write, default dry-run and PostgreSQL recovery
+        env:
+          ODOO_TEST_URL: http://127.0.0.1:18069
+          ODOO_TEST_DATABASE: reorch_odoo_test
+          ODOO_TEST_LOGIN: reorch-test
+          ODOO_TEST_PASSWORD: odoo-sandbox-only
+          PLANNING_TEST_DATABASE_URL: postgresql+psycopg2://odoo:odoo-test@127.0.0.1:55432/reorch_runtime_test
+        run: pytest -q app/tests/integration
+      - name: Odoo test logs
+        if: failure()
+        run: docker compose -f compose.odoo-test.yml logs --tail=150
+      - name: Remove isolated stack
+        if: always()
+        run: docker compose -f compose.odoo-test.yml down -v

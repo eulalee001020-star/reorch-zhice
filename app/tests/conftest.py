@@ -34,3 +34,19 @@ def _legacy_event_loop_for_sync_tests(request):
         if created and loop is not None:
             loop.close()
             asyncio.set_event_loop(None)
+
+
+@pytest.fixture(autouse=True)
+def _isolated_planning_database(monkeypatch, tmp_path):
+    """Never let snapshot imports in tests reach the developer's runtime database."""
+    from app.api import production_runtime
+    from app.core.config import settings
+
+    monkeypatch.setattr(production_runtime, "_store", None)
+    monkeypatch.setattr(
+        settings.runtime, "database_url", f"sqlite+pysqlite:///{tmp_path}/runtime.db"
+    )
+    yield
+    store = production_runtime._store
+    if store is not None:
+        store.engine.dispose()

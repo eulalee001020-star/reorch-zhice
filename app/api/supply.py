@@ -41,16 +41,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["supply"])
 
-# Latest supply snapshot. Supply state is kept in memory: it is re-imported
-# with every schedule snapshot and is not yet part of the durable schema.
+# Compatibility cache for local-demo reset; durable reads use the operational store.
 _supply_store: dict[str, SupplySnapshot] = {}
 
 
 def current_supply() -> SupplySnapshot | None:
-    """The most recently imported supply snapshot, if any."""
-    if not _supply_store:
-        return None
-    return next(reversed(_supply_store.values()))
+    """Read the durable head so restarts and other workers see committed imports."""
+    from app.api.production_runtime import get_operational_store
+
+    payload = get_operational_store().latest_planning_snapshot("supply")
+    return SupplySnapshot.model_validate(payload) if payload is not None else None
 
 
 async def _current_schedule() -> ScheduleSnapshot:
@@ -92,6 +92,14 @@ async def create_supply_snapshot(body: SupplySnapshot) -> SupplySnapshot:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"message": "BOM contains a cycle", "cycle": str(exc)},
         ) from exc
+    from app.api.production_runtime import get_operational_store
+
+    try:
+        get_operational_store().save_planning_snapshot(
+            "supply", str(body.supply_snapshot_id), body.model_dump(mode="json")
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     _supply_store[str(body.supply_snapshot_id)] = body
     logger.info("Supply snapshot stored: %s", body.supply_snapshot_id)
     return body
